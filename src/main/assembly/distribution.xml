@@ -45,13 +45,16 @@
             <outputDirectory>conf</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>dist/assembly/migrations</directory>
-            <outputDirectory>migrations</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>src/main/scripts</directory>
             <outputDirectory/>
             <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>target/</directory>
+            <outputDirectory/>
+            <includes>
+                <include>rpki-ta-0-*.jar</include>
+            </includes>
         </fileSet>
     </fileSets>
 </assembly>

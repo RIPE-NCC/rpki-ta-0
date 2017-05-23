@@ -15,14 +15,13 @@ else
     : ${JAVA_HOME:?"Please export JAVA_HOME"}
 fi
 
-MAIN_CLASS=net.ripe.rpki.ta.App
 CONF_DIR="conf"
 LIB_DIR="lib"
 TA_CONF=${CONF_DIR}/ta-${APPLICATION_ENVIRONMENT}.properties
 CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
 CARDSET="TA"
 
-TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --config ${TA_CONF} $@"
+TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} --config ${TA_CONF} $@"
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
   #
