@@ -16,7 +16,7 @@ public class Env {
         } else if ("production".equals(envName)) {
             return production();
         } else {
-            throw new Exception("Unknow environemt name: " + envName);
+            throw new Exception("Unknown environment name: " + envName);
         }
     }
 
