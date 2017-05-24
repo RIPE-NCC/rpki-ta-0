@@ -19,7 +19,7 @@ public class App {
             }
             // TODO Implement other options
         } catch (ParseException e) {
-            System.err.println("The following problem occured: " + e.getMessage());
+            System.err.println("The following problem occurred: " + e.getMessage());
             e.printStackTrace(System.err);
             System.exit(2);
         }
