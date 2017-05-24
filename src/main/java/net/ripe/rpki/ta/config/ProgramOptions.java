@@ -23,4 +23,12 @@ public class ProgramOptions {
     public boolean hasInitialise() {
         return commandLine.hasOption(INITIALISE_OPT);
     }
+
+    public boolean hasAnyMeaningfulOption() {
+        return hasInitialise();
+    }
+
+    public String getUsageString() {
+        return "Usage: ";
+    }
 }
