@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>${project.artifactId}</name>
+    <name>RIPE NCC Trust Anchor</name>
     <groupId>net.ripe.rpki-trust-anchor</groupId>
     <artifactId>rpki-ta-0</artifactId>
     <version>0.1</version>
     <packaging>pom</packaging>
-    <inceptionYear>2008</inceptionYear>
+    <inceptionYear>2017</inceptionYear>
 
     <scm>
         <connection>scm:git:ssh://git@stash.ripe.net:7999/swe/rpki-ta-0.git</connection>
@@ -106,6 +106,29 @@
                         <exclude>assembly/</exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.12</version>
+                <configuration>
+                    <inceptionYear>2017</inceptionYear>
+                    <organizationName>RIPE NCC</organizationName>
+                    <licenseName>bsd_3</licenseName>
+                    <encoding>UTF-8</encoding>
+                    <processStartTag>========================LICENSE_START=================================</processStartTag>
+                    <sectionDelimiter>-</sectionDelimiter>
+                    <processEndTag>=========================LICENSE_END==================================</processEndTag>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>first</id>
+                        <goals>
+                            <goal>update-file-header</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 
