@@ -41,15 +41,15 @@ import org.apache.commons.cli.ParseException;
 
 public class ProgramOptions {
 
-    public static final String INITIALISE_OPT = "initialise";
+    private static final String INITIALISE_OPT = "initialise";
+    private static final String ENV_OPT = "env";
 
-    private final Options options;
     private CommandLine commandLine;
 
-
     public ProgramOptions(String[] args) throws ParseException {
-        options = new Options();
+        final Options options = new Options();
         options.addOption("initialise", "Initialise the trust ancor and persist it's state");
+        options.addOption("env", "Must be one of 'production' or 'development'");
         commandLine = new DefaultParser().parse(options, args);
     }
 
@@ -63,5 +63,13 @@ public class ProgramOptions {
 
     public String getUsageString() {
         return "Usage: ";
+    }
+
+    public boolean hasEnv() {
+        return commandLine.hasOption(ENV_OPT);
+    }
+
+    public String getEnv() {
+        return commandLine.getOptionValue(ENV_OPT);
     }
 }

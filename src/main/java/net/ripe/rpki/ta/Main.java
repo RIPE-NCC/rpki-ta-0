@@ -33,13 +33,11 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
+import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
-import org.apache.commons.cli.ParseException;
 
-import javax.security.auth.x500.X500Principal;
-import java.net.URI;
-
-public class App {
+public class Main {
     public static void main(String[] args) {
         try {
             final ProgramOptions clOptions = new ProgramOptions(args);
@@ -47,11 +45,12 @@ public class App {
                 System.err.println(clOptions.getUsageString());
                 System.exit(1);
             }
+            final Config config = Env.config(clOptions.getEnv());
             if (clOptions.hasInitialise()) {
-                initialiseTa(clOptions);
+                initialiseTa(clOptions, config);
             }
-            // TODO Implement other options
-        } catch (ParseException e) {
+
+        } catch (Exception e) {
             System.err.println("The following problem occurred: " + e.getMessage());
             e.printStackTrace(System.err);
             System.exit(2);
@@ -60,7 +59,7 @@ public class App {
         System.out.println("I am the TA application");
     }
 
-    private static void initialiseTa(ProgramOptions clOptions) {
+    private static void initialiseTa(ProgramOptions clOptions, Config config) {
 //        KeyHandlingDetails keyHandlingDetails = new KeyHandlingDetails(options.getKeyPairGeneratorProvider(), keyStoreProvider, keyStoreType, signatureProvider);
 //        TrustAnchorDetails trustAnchorDetails = new TrustAnchorDetails(new X500Principal("CN=" + trustAnchorName), URI.create(trustAnchorCertificatePublicationUri), URI.create(trustAnchorProductsPublicationUri));
 //

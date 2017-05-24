@@ -44,7 +44,7 @@ import java.net.URI;
 public class Env {
 
     public static Config config(String envName) throws Exception {
-        if ("development".equals(envName)) {
+        if (envName == null || "development".equals(envName)) {
             return development();
         } else if ("production".equals(envName)) {
             return production();

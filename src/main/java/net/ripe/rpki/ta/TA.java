@@ -77,7 +77,7 @@ public class TA {
         final X509CertificateInformationAccessDescriptor productsPublication =
                 Preconditions.checkNotNull(descriptorsMap.get(ID_AD_CA_REPOSITORY), "SIA descriptors must include 'CA Repository'");
 
-        final URI manifestUri = TaNames.manifestPublicationUri(productsPublication.getLocation(), config.trustAnchorName);
+        final URI manifestUri = TaNames.manifestPublicationUri(productsPublication.getLocation(), config.getTrustAnchorName());
 
         descriptorsMap.put(ID_AD_RPKI_MANIFEST,
                 new X509CertificateInformationAccessDescriptor(ID_AD_RPKI_MANIFEST, manifestUri));
@@ -90,15 +90,15 @@ public class TA {
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
 
-        taBuilder.withIssuerDN(config.trustAnchorName);
-        taBuilder.withSubjectDN(config.trustAnchorName);
+        taBuilder.withIssuerDN(config.getTrustAnchorName());
+        taBuilder.withSubjectDN(config.getTrustAnchorName());
         taBuilder.withSerial(serial);
         taBuilder.withResources(ROOT_RESOURCE_SET);
 
         // TODO Implement
 //        taBuilder.withPublicKey(rootKeyPair.getPublic());
 //        taBuilder.withSigningKeyPair(rootKeyPair);
-        taBuilder.withSignatureProvider(config.signatureProvider);
+        taBuilder.withSignatureProvider(config.getSignatureProvider());
         taBuilder.withSubjectKeyIdentifier(true);
         taBuilder.withAuthorityKeyIdentifier(false);
 

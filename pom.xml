@@ -12,7 +12,7 @@
     </scm>
 
     <properties>
-        <main.class>net.ripe.rpki.ta.App</main.class>
+        <main.class>net.ripe.rpki.ta.Main</main.class>
         <junit.version>4.12</junit.version>
     </properties>
 
