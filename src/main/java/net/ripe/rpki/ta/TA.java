@@ -111,4 +111,9 @@ public class TA {
         return taBuilder.build();
     }
 
+    public Object generateRootKeyPair(final Config config) {
+        // TODO Implement
+        return null;
+    }
+
 }
