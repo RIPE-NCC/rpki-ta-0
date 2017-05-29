@@ -36,6 +36,7 @@ package net.ripe.rpki.ta;
 import com.google.common.base.Preconditions;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
+import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
@@ -61,10 +62,22 @@ public class TA {
     private static final IpResourceSet ROOT_RESOURCE_SET = IpResourceSet.parse("AS0-AS65536, 0/0, 0::/0");
 
     private final Config config;
+    private final KeyPairFactory keyPairFactory;
+
+    // TODO We should also support the
     private BigInteger serial = BigInteger.ONE;
 
     public TA(Config config) {
+        this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
         this.config = config;
+    }
+
+    public void initialiseTa() {
+        final KeyPair rootKeyPair = generateRootKeyPair();
+        X509ResourceCertificate rootTaCertificate = issueRootCertificate(rootKeyPair);
+
+        final KeyStore keyStore = new KeyStore(config);
+        keyStore.save(rootKeyPair, rootTaCertificate);
     }
 
     public X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
@@ -86,7 +99,7 @@ public class TA {
         return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[descriptorsMap.size()]);
     }
 
-    private X509ResourceCertificate issueRootCertificate() {
+    private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
@@ -96,9 +109,8 @@ public class TA {
         taBuilder.withSerial(serial);
         taBuilder.withResources(ROOT_RESOURCE_SET);
 
-        // TODO Implement
-//        taBuilder.withPublicKey(rootKeyPair.getPublic());
-//        taBuilder.withSigningKeyPair(rootKeyPair);
+        taBuilder.withPublicKey(rootKeyPair.getPublic());
+        taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(config.getSignatureProvider());
         taBuilder.withSubjectKeyIdentifier(true);
         taBuilder.withAuthorityKeyIdentifier(false);
@@ -112,9 +124,9 @@ public class TA {
         return taBuilder.build();
     }
 
-    public KeyPair generateRootKeyPair(final Config config) {
-        // TODO Implement
-        return null;
+    private KeyPair generateRootKeyPair() {
+        return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
     }
+
 
 }

@@ -47,7 +47,7 @@ public class Main {
             }
             final Config config = Env.config(clOptions.getEnv());
             if (clOptions.hasInitialise()) {
-                initialiseTa(clOptions, config);
+                new TA(config).initialiseTa();
             }
 
         } catch (Exception e) {
@@ -59,10 +59,4 @@ public class Main {
         System.out.println("I am the TA application");
     }
 
-    private static void initialiseTa(ProgramOptions clOptions, Config config) {
-//        KeyHandlingDetails keyHandlingDetails = new KeyHandlingDetails(options.getKeyPairGeneratorProvider(), keyStoreProvider, keyStoreType, signatureProvider);
-//        TrustAnchorDetails trustAnchorDetails = new TrustAnchorDetails(new X500Principal("CN=" + trustAnchorName), URI.create(trustAnchorCertificatePublicationUri), URI.create(trustAnchorProductsPublicationUri));
-//
-//        createAndStoreTrustAnchor(keyHandlingDetails, trustAnchorDetails);
-    }
 }
