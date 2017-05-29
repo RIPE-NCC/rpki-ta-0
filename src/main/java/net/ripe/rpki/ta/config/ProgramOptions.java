@@ -36,6 +36,8 @@ package net.ripe.rpki.ta.config;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -48,8 +50,16 @@ public class ProgramOptions {
 
     public ProgramOptions(String[] args) throws ParseException {
         final Options options = new Options();
-        options.addOption("initialise", "Initialise the trust ancor and persist it's state");
-        options.addOption("env", "Must be one of 'production' or 'development'");
+        options.addOption(Option.builder().longOpt( "env" ).
+                hasArg().
+                desc( "Must be one of 'production' or 'development'" ).
+                build());
+
+        options.addOption(Option.builder().longOpt( "initialise" ).
+                hasArg(false).
+                desc( "Initialise the trust anchor and persist it's state" ).
+                build());
+
         commandLine = new DefaultParser().parse(options, args);
     }
 

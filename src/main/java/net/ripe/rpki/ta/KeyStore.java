@@ -60,18 +60,23 @@ public class KeyStore {
 
     private final Config config;
 
-    public KeyStore(Config config) {
+    private java.security.KeyStore keyStore = null;
+
+    KeyStore(Config config) {
         this.config = config;
     }
 
-    public void save(final KeyPair keyPair, final X509ResourceCertificate taCertificate) {
-
+    synchronized void save(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws KeyStoreException {
+        if (keyStore == null) {
+            keyStore = createKeyStore(keyPair, taCertificate);
+        }
     }
 
-    private void createKeyStore() {
+    private java.security.KeyStore createKeyStore(final KeyPair keyPair, final X509ResourceCertificate taCertificate) {
         try {
-            java.security.KeyStore keyStore = generateKeyStore();
-            encodeKeyStore(keyStore);
+            final java.security.KeyStore ks = loadKeyStore(null, keyStorePassphrase); // empty, initialized key store
+            ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassphrase, new Certificate[] { taCertificate.getCertificate() });
+            return ks;
         } catch (GeneralSecurityException e) {
             throw new KeyStoreException(e);
         } catch (IOException e) {
@@ -79,13 +84,7 @@ public class KeyStore {
         }
     }
 
-    private java.security.KeyStore generateKeyStore() throws GeneralSecurityException, IOException {
-        java.security.KeyStore keyStore = loadKeyStore(null, keyStorePassphrase); // empty, initialized key store
-        keyStore.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassphrase, new Certificate[] { taCertificate.getCertificate() });
-        return keyStore;
-    }
-
-    private java.security.KeyStore loadKeyStore(InputStream input, char[] password) throws GeneralSecurityException, IOException {
+    private java.security.KeyStore loadKeyStore(final InputStream input, char[] password) throws GeneralSecurityException, IOException {
         java.security.KeyStore keyStore = java.security.KeyStore.getInstance(config.getKeystoreType(), config.getKeystoreProvider());
         keyStore.load(input, password);
         return keyStore;

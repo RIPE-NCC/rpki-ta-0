@@ -41,7 +41,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             final ProgramOptions clOptions = new ProgramOptions(args);
-            if (clOptions.hasAnyMeaningfulOption()) {
+            if (!clOptions.hasAnyMeaningfulOption()) {
                 System.err.println(clOptions.getUsageString());
                 System.exit(1);
             }
@@ -55,8 +55,6 @@ public class Main {
             e.printStackTrace(System.err);
             System.exit(2);
         }
-
-        System.out.println("I am the TA application");
     }
 
 }

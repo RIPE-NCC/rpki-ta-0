@@ -37,6 +37,7 @@ import com.google.common.base.Preconditions;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
+import net.ripe.rpki.commons.crypto.util.KeyStoreException;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
@@ -68,11 +69,11 @@ public class TA {
     private BigInteger serial = BigInteger.ONE;
 
     public TA(Config config) {
-        this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
         this.config = config;
+        this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
     }
 
-    public void initialiseTa() {
+    public void initialiseTa() throws KeyStoreException {
         final KeyPair rootKeyPair = generateRootKeyPair();
         X509ResourceCertificate rootTaCertificate = issueRootCertificate(rootKeyPair);
 

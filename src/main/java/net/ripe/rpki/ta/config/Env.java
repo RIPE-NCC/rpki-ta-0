@@ -57,7 +57,7 @@ public class Env {
         Config config = new Config();
         config.setSignatureProvider("nCipherKM");
         config.setKeystoreProvider("nCipherKM");
-        config.setKeystoreProvider("nCipherKM");
+        config.setKeypairGeneratorProvider("nCipherKM");
         config.setKeystoreType("ncipher.sworld");
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setMinimumValidityPeriod(Period.months(1));
@@ -71,14 +71,13 @@ public class Env {
     public static Config development() {
         Config config = new Config();
         config.setSignatureProvider("SunRsaSign");
-        config.setKeystoreProvider("SunRsaSign");
+        config.setKeypairGeneratorProvider("SunRsaSign");
         config.setKeystoreProvider("SUN");
         config.setKeystoreType("JKS");
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-" + new DateTime(DateTimeZone.UTC).toString("YYYY-MM-dd")));
         config.setPersistentStorageDir("/export/bad/certification/ta/data");
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
-        config.setTrustAnchorName(new X500Principal("ripe-ncc-ta"));
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
         return config;
