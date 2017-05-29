@@ -47,6 +47,7 @@ import org.joda.time.DateTimeZone;
 
 import java.math.BigInteger;
 import java.net.URI;
+import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -111,7 +112,7 @@ public class TA {
         return taBuilder.build();
     }
 
-    public Object generateRootKeyPair(final Config config) {
+    public KeyPair generateRootKeyPair(final Config config) {
         // TODO Implement
         return null;
     }
