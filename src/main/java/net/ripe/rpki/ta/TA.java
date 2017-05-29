@@ -64,7 +64,7 @@ public class TA {
     private final Config config;
     private final KeyPairFactory keyPairFactory;
 
-    // TODO We should also support the
+    // TODO We should also support other values taken from the serialized TA
     private BigInteger serial = BigInteger.ONE;
 
     public TA(Config config) {
@@ -80,7 +80,7 @@ public class TA {
         keyStore.save(rootKeyPair, rootTaCertificate);
     }
 
-    public X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
+    private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
             X509CertificateInformationAccessDescriptor... siaDescriptors) {
 
         final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> descriptorsMap = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
@@ -118,10 +118,14 @@ public class TA {
         final DateTime now = new DateTime(DateTimeZone.UTC);
         taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
-        // TODO Implement
-//        taBuilder.withSubjectInformationAccess(siaDescriptors);
+        taBuilder.withSubjectInformationAccess(generateSiaDescriptors(config.getTaProductsPublicationUri()));
 
         return taBuilder.build();
+    }
+
+    private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(URI taProductsPublicationUri) {
+        return generateSiaDescriptors(
+                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, taProductsPublicationUri));
     }
 
     private KeyPair generateRootKeyPair() {
