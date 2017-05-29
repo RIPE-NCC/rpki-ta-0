@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,36 +33,26 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.config.ProgramOptions;
-import net.ripe.rpki.ta.serializers.TASerializer;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializer;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.commons.xml.XmlSerializer;
+import net.ripe.rpki.ta.TA;
 
-public class Main {
-    public static void main(String[] args) {
-        try {
-            final ProgramOptions clOptions = new ProgramOptions(args);
-            if (!clOptions.hasAnyMeaningfulOption()) {
-                System.err.println(clOptions.getUsageString());
-                System.exit(1);
-            }
-            final Config config = Env.config(clOptions.getEnv());
-            if (clOptions.hasInitialise()) {
-                final TA ta = new TA(config);
-                ta.initialiseTa();
-                persistResponse(ta);
-            }
+public class TASerializer implements XmlSerializer<TA> {
 
-        } catch (Exception e) {
-            System.err.println("The following problem occurred: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(2);
-        }
+    private final XStreamXmlSerializer<TA> xStreamXmlSerializer;
+
+    public TASerializer() {
+        final XStreamXmlSerializerBuilder<TA> builder = XStreamXmlSerializerBuilder.newForgivingXmlSerializerBuilder(TA.class);
+
+        this.xStreamXmlSerializer = builder.build();
     }
 
-    private static void persistResponse(final TA ta) {
-        final TASerializer serializer = new TASerializer();
-        System.out.println("serialised = " + serializer.serialize(ta));     // TODO: [ES] persist response to disk
+    public String serialize(final TA ta) {
+        return this.xStreamXmlSerializer.serialize(ta);
     }
 
+    public TA deserialize(final String xml) {
+        return this.xStreamXmlSerializer.deserialize(xml);
+    }
 }
