@@ -50,6 +50,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.URI;
@@ -146,8 +147,14 @@ public class TA implements Serializable {
         return serializer.serialize(taState);
     }
 
-    void persist(TAState taState) throws Exception {
+    public void persist(TAState taState) throws IOException {
         new TAPersistence(config).save(serialize(taState));
+    }
+
+    public TAState load() throws Exception {
+        final String xml = new TAPersistence(config).load();
+        final TAStateSerializer serializer = new TAStateSerializer();
+        return serializer.deserialize(xml);
     }
 
 }
