@@ -1,8 +1,17 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta.persistence;
 
+import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Config;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import net.ripe.rpki.ta.config.Env;
+import net.ripe.rpki.ta.serializers.TAState;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
 
 /*-
  * ========================LICENSE_START=================================
@@ -37,48 +46,45 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * =========================LICENSE_END==================================
  */
 
-/**
- * TA state to be serialized to ta.xml
- */
-public class TAState {
-    private byte[] encoded;
-    private Config config;
+public class TAPersistenceTest {
 
-    public byte[] getEncoded() {
-        return encoded;
+    private static final String STORAGE_DIR = ".";
+
+    @Before
+    public void setUp() throws Exception {
+        cleanTaXml();
     }
 
-    public void setEncoded(byte[] encoded) {
-        this.encoded = encoded;
+    @After
+    public void tearDown() throws Exception {
+        cleanTaXml();
     }
 
-    public Config getConfig() {
-        return config;
+    @Test
+    public void saveAndLoad() throws Exception {
+        final Config testConfig = Env.development();
+        testConfig.setPersistentStorageDir(STORAGE_DIR);
+
+        final TA ta = new TA(testConfig);
+        final TAState taState = ta.initialiseTaState();
+        ta.persist(taState);
+
+        assertEquals(taState, ta.load());
     }
 
-    public void setConfig(Config config) {
-        this.config = config;
+    @Test(expected = IOException.class)
+    public void cantSaveTwice() throws Exception {
+        final Config testConfig = Env.development();
+        testConfig.setPersistentStorageDir(STORAGE_DIR);
+
+        final TA ta = new TA(testConfig);
+        TAState taState = ta.initialiseTaState();
+        ta.persist(taState);
+        ta.persist(taState);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
-
-        TAState taState = (TAState) o;
-
-        return new EqualsBuilder()
-                .append(encoded, taState.encoded)
-                .append(config, taState.config)
-                .isEquals();
+    private void cleanTaXml() {
+        new File(STORAGE_DIR + "/ta.xml").delete();
     }
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(encoded)
-                .append(config)
-                .toHashCode();
-    }
 }

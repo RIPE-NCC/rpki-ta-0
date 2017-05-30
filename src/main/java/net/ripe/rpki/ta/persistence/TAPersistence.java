@@ -60,9 +60,9 @@ public class TAPersistence {
         this.trustAnchorFile = new File(this.persistenceDirectory, TRUST_ANCHOR_FILENAME + "." + TRUST_ANCHOR_FILE_EXT);
     }
 
-    public void save(String xml) throws Exception {
+    public void save(String xml) throws IOException {
         if (trustAnchorFile.exists()) {
-            throw new Exception("File " + trustAnchorFile.getAbsolutePath() + " already exists");
+            throw new IOException("File " + trustAnchorFile.getAbsolutePath() + " already exists");
         }
         final File tempFile = File.createTempFile(Strings.padStart(TRUST_ANCHOR_FILENAME, 3, '_'), TRUST_ANCHOR_FILE_EXT, persistenceDirectory);
         try {
