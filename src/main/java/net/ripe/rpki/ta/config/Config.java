@@ -33,6 +33,8 @@ package net.ripe.rpki.ta.config;
  * =========================LICENSE_END==================================
  */
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
@@ -132,5 +134,43 @@ public class Config {
 
     public void setTaProductsPublicationUri(URI taProductsPublicationUri) {
         this.taProductsPublicationUri = taProductsPublicationUri;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Config config = (Config) o;
+
+        return new EqualsBuilder()
+                .append(trustAnchorName, config.trustAnchorName)
+                .append(taCertificatePublicationUri, config.taCertificatePublicationUri)
+                .append(taProductsPublicationUri, config.taProductsPublicationUri)
+                .append(keystoreProvider, config.keystoreProvider)
+                .append(keypairGeneratorProvider, config.keypairGeneratorProvider)
+                .append(signatureProvider, config.signatureProvider)
+                .append(keystoreType, config.keystoreType)
+                .append(persistentStorageDir, config.persistentStorageDir)
+                .append(minimumValidityPeriod, config.minimumValidityPeriod)
+                .append(updatePeriod, config.updatePeriod)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(trustAnchorName)
+                .append(taCertificatePublicationUri)
+                .append(taProductsPublicationUri)
+                .append(keystoreProvider)
+                .append(keypairGeneratorProvider)
+                .append(signatureProvider)
+                .append(keystoreType)
+                .append(persistentStorageDir)
+                .append(minimumValidityPeriod)
+                .append(updatePeriod)
+                .toHashCode();
     }
 }

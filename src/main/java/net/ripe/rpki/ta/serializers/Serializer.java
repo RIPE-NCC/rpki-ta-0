@@ -44,8 +44,11 @@ public abstract class Serializer<T> implements XmlSerializer<T> {
     private final XStreamXmlSerializer<T> xStreamXmlSerializer;
 
     protected Serializer() {
-        this.xStreamXmlSerializer = XStreamXmlSerializerBuilder.newForgivingXmlSerializerBuilder(clazz()).build();
+        final XStreamXmlSerializerBuilder<T> builder = XStreamXmlSerializerBuilder.newForgivingXmlSerializerBuilder(clazz());
+        this.xStreamXmlSerializer = configureBuilder(builder).build();
     }
+
+    protected abstract XStreamXmlSerializerBuilder<T> configureBuilder(XStreamXmlSerializerBuilder<T> builder);
 
     protected abstract Class<T> clazz();
 

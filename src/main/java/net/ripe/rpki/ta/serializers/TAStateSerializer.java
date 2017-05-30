@@ -34,7 +34,15 @@ package net.ripe.rpki.ta.serializers;
  */
 
 
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+
 public class TAStateSerializer extends Serializer<TAState> {
+
+
+    protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
+        return builder.withAliasType("TA", TAState.class);
+    }
+
     protected Class<TAState> clazz() {
         return TAState.class;
     }

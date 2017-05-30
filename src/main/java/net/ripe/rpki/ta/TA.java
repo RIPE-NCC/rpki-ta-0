@@ -43,6 +43,7 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.serializers.TAState;
+import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
@@ -139,5 +140,9 @@ public class TA implements Serializable {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
     }
 
+    public static String serialize(TAState taState) {
+        final TAStateSerializer serializer = new TAStateSerializer();
+        return serializer.serialize(taState);
+    }
 
 }

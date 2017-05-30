@@ -51,7 +51,7 @@ public class Main {
             final Config config = Env.config(clOptions.getEnv());
             if (clOptions.hasInitialise()) {
                 final TA ta = new TA(config);
-                persistResponse(ta.initialiseTaState());
+                TA.serialize(ta.initialiseTaState());
             }
 
         } catch (Exception e) {
@@ -59,11 +59,6 @@ public class Main {
             e.printStackTrace(System.err);
             System.exit(2);
         }
-    }
-
-    private static void persistResponse(final TAState ta) {
-        final TAStateSerializer serializer = new TAStateSerializer();
-        System.out.println("serialised = " + serializer.serialize(ta));     // TODO: [ES] persist response to disk
     }
 
 }
