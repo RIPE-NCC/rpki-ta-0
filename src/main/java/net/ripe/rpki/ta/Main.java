@@ -43,7 +43,7 @@ import net.ripe.rpki.ta.serializers.TAStateSerializer;
 
 public class Main {
     public static void main(String[] args) {
-        try {   
+        try {
             final ProgramOptions clOptions = new ProgramOptions(args);
             if (!clOptions.hasAnyMeaningfulOption()) {
                 System.err.println(clOptions.getUsageString());
@@ -52,10 +52,8 @@ public class Main {
             final Config config = Env.config(clOptions.getEnv());
             if (clOptions.hasInitialise()) {
                 final TA ta = new TA(config);
-                final String xml = TA.serialize(ta.initialiseTaState());
-                new TAPersistence(config).save(xml);
+                ta.persist(ta.initialiseTaState());
             }
-
         } catch (Exception e) {
             System.err.println("The following problem occurred: " + e.getMessage());
             e.printStackTrace(System.err);
