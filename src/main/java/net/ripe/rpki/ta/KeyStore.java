@@ -39,6 +39,8 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateParser;
 import net.ripe.rpki.ta.config.Config;
 import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -52,24 +54,16 @@ import java.security.cert.Certificate;
 public class KeyStore {
 
     private final char[] keyStorePassphrase = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
-    private final String keyStoreKeyAlias = "RTA"; //(mj) changing the alias means keystore migration!
-
-    private X509ResourceCertificate taCertificate;
-    private KeyPair keyPair;
-    private byte[] encoded;
+    private final String keyStoreKeyAlias = "RTA";
 
     private final Config config;
-
-    private java.security.KeyStore keyStore = null;
 
     KeyStore(Config config) {
         this.config = config;
     }
 
-    synchronized void save(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws KeyStoreException {
-        if (keyStore == null) {
-            keyStore = createKeyStore(keyPair, taCertificate);
-        }
+    byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws Exception {
+        return encodeKeyStore(createKeyStore(keyPair, taCertificate));
     }
 
     private java.security.KeyStore createKeyStore(final KeyPair keyPair, final X509ResourceCertificate taCertificate) {
@@ -90,12 +84,12 @@ public class KeyStore {
         return keyStore;
     }
 
-    private void encodeKeyStore(java.security.KeyStore keyStore) throws GeneralSecurityException, IOException {
+    private byte[] encodeKeyStore(java.security.KeyStore keyStore) throws Exception {
         final Closer closer = Closer.create();
         try {
             final ByteArrayOutputStream output = closer.register(new ByteArrayOutputStream());
             keyStore.store(output, keyStorePassphrase);
-            this.encoded = output.toByteArray();
+            return output.toByteArray();
         } catch (final Throwable t) {
             throw closer.rethrow(t, GeneralSecurityException.class);
         } finally {
@@ -103,29 +97,21 @@ public class KeyStore {
         }
     }
 
-    public void open() {
-        Validate.notNull(encoded, "encoded is null");
-        try {
-            decodeKeyStore();
-        } catch (GeneralSecurityException ex) {
-            throw new KeyStoreException(ex);
-        } catch (IOException ex) {
-            throw new KeyStoreException(ex);
-        }
-    }
-
-    private void decodeKeyStore() throws GeneralSecurityException, IOException {
+    private Pair<KeyPair, X509ResourceCertificate> decodeKeyStore(byte[] encoded) throws GeneralSecurityException, IOException {
         final Closer closer = Closer.create();
         try {
             final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));
-            java.security.KeyStore keyStore = loadKeyStore(input, keyStorePassphrase);
-            PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, keyStorePassphrase);
+            final java.security.KeyStore keyStore = loadKeyStore(input, keyStorePassphrase);
+            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, keyStorePassphrase);
             Validate.notNull(privateKey, "private key is null");
-            Certificate certificate = keyStore.getCertificateChain(keyStoreKeyAlias)[0];
-            X509ResourceCertificateParser parser = new X509ResourceCertificateParser();
+            final Certificate certificate = keyStore.getCertificateChain(keyStoreKeyAlias)[0];
+            final X509ResourceCertificateParser parser = new X509ResourceCertificateParser();
             parser.parse("keystore", certificate.getEncoded());
-            this.taCertificate = parser.getCertificate();
-            this.keyPair = new KeyPair(taCertificate.getPublicKey(), privateKey);
+
+            final X509ResourceCertificate taCertificate = parser.getCertificate();
+            final KeyPair keyPair = new KeyPair(taCertificate.getPublicKey(), privateKey);
+            return ImmutablePair.of(keyPair, taCertificate);
+
         } catch (final Throwable t) {
             throw closer.rethrow(t, GeneralSecurityException.class);
         } finally {

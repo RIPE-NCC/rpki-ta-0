@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,37 +33,27 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.config.ProgramOptions;
-import net.ripe.rpki.ta.serializers.Serializer;
-import net.ripe.rpki.ta.serializers.TAState;
-import net.ripe.rpki.ta.serializers.TAStateSerializer;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializer;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.commons.xml.XmlSerializer;
 
-public class Main {
-    public static void main(String[] args) {
-        try {
-            final ProgramOptions clOptions = new ProgramOptions(args);
-            if (!clOptions.hasAnyMeaningfulOption()) {
-                System.err.println(clOptions.getUsageString());
-                System.exit(1);
-            }
-            final Config config = Env.config(clOptions.getEnv());
-            if (clOptions.hasInitialise()) {
-                final TA ta = new TA(config);
-                persistResponse(ta.initialiseTaState());
-            }
+import java.lang.reflect.ParameterizedType;
 
-        } catch (Exception e) {
-            System.err.println("The following problem occurred: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(2);
-        }
+public abstract class Serializer<T> implements XmlSerializer<T> {
+
+    private final XStreamXmlSerializer<T> xStreamXmlSerializer;
+
+    protected Serializer() {
+        this.xStreamXmlSerializer = XStreamXmlSerializerBuilder.newForgivingXmlSerializerBuilder(clazz()).build();
     }
 
-    private static void persistResponse(final TAState ta) {
-        final TAStateSerializer serializer = new TAStateSerializer();
-        System.out.println("serialised = " + serializer.serialize(ta));     // TODO: [ES] persist response to disk
+    protected abstract Class<T> clazz();
+
+    public String serialize(final T taState) {
+        return this.xStreamXmlSerializer.serialize(taState);
     }
 
+    public T deserialize(final String xml) {
+        return this.xStreamXmlSerializer.deserialize(xml);
+    }
 }

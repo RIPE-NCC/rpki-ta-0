@@ -42,6 +42,7 @@ import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDes
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.serializers.TAState;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
@@ -64,7 +65,7 @@ public class TA implements Serializable {
     private static final IpResourceSet ROOT_RESOURCE_SET = IpResourceSet.parse("AS0-AS65536, 0/0, 0::/0");
 
     private final Config config;
-    private final KeyPairFactory keyPairFactory;
+    private final transient KeyPairFactory keyPairFactory;
 
     // TODO We should also support other values taken from the serialized TA
     private BigInteger serial = BigInteger.ONE;
@@ -74,13 +75,18 @@ public class TA implements Serializable {
         this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
     }
 
-    public void initialiseTa() throws KeyStoreException {
+    public TAState initialiseTaState() throws Exception {
         final KeyPair rootKeyPair = generateRootKeyPair();
-        X509ResourceCertificate rootTaCertificate = issueRootCertificate(rootKeyPair);
+        final X509ResourceCertificate rootTaCertificate = issueRootCertificate(rootKeyPair);
 
-        final KeyStore keyStore = new KeyStore(config);
-        keyStore.save(rootKeyPair, rootTaCertificate);
+        byte[] encoded = new KeyStore(config).encode(rootKeyPair, rootTaCertificate);
+
+        final TAState taState = new TAState();
+        taState.setConfig(config);
+        taState.setEncoded(encoded);
+        return taState;
     }
+
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
             X509CertificateInformationAccessDescriptor... siaDescriptors) {
@@ -103,14 +109,13 @@ public class TA implements Serializable {
 
     private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
+
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-
         taBuilder.withIssuerDN(config.getTrustAnchorName());
         taBuilder.withSubjectDN(config.getTrustAnchorName());
         taBuilder.withSerial(serial);
         taBuilder.withResources(ROOT_RESOURCE_SET);
-
         taBuilder.withPublicKey(rootKeyPair.getPublic());
         taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(config.getSignatureProvider());

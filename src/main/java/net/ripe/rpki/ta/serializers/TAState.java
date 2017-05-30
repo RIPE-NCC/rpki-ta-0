@@ -1,4 +1,6 @@
-package net.ripe.rpki.ta;
+package net.ripe.rpki.ta.serializers;
+
+import net.ripe.rpki.ta.config.Config;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,37 +35,26 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.config.ProgramOptions;
-import net.ripe.rpki.ta.serializers.Serializer;
-import net.ripe.rpki.ta.serializers.TAState;
-import net.ripe.rpki.ta.serializers.TAStateSerializer;
+/**
+ * TA state to be serialized to ta.xml
+ */
+public class TAState {
+    private byte[] encoded;
+    private Config config;
 
-public class Main {
-    public static void main(String[] args) {
-        try {
-            final ProgramOptions clOptions = new ProgramOptions(args);
-            if (!clOptions.hasAnyMeaningfulOption()) {
-                System.err.println(clOptions.getUsageString());
-                System.exit(1);
-            }
-            final Config config = Env.config(clOptions.getEnv());
-            if (clOptions.hasInitialise()) {
-                final TA ta = new TA(config);
-                persistResponse(ta.initialiseTaState());
-            }
-
-        } catch (Exception e) {
-            System.err.println("The following problem occurred: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(2);
-        }
+    public byte[] getEncoded() {
+        return encoded;
     }
 
-    private static void persistResponse(final TAState ta) {
-        final TAStateSerializer serializer = new TAStateSerializer();
-        System.out.println("serialised = " + serializer.serialize(ta));     // TODO: [ES] persist response to disk
+    public void setEncoded(byte[] encoded) {
+        this.encoded = encoded;
     }
 
+    public Config getConfig() {
+        return config;
+    }
+
+    public void setConfig(Config config) {
+        this.config = config;
+    }
 }

@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta;
 
 /*-
  * ========================LICENSE_START=================================
@@ -8,18 +8,18 @@ package net.ripe.rpki.ta.serializers;
  * -
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of the RIPE NCC nor the names of its contributors
  *    may be used to endorse or promote products derived from this software without
  *    specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -33,26 +33,21 @@ package net.ripe.rpki.ta.serializers;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.xml.XStreamXmlSerializer;
-import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
-import net.ripe.rpki.commons.xml.XmlSerializer;
-import net.ripe.rpki.ta.TA;
+import net.ripe.rpki.ta.config.Env;
+import org.junit.Test;
 
-public class TASerializer implements XmlSerializer<TA> {
+import static org.junit.Assert.*;
 
-    private final XStreamXmlSerializer<TA> xStreamXmlSerializer;
+public class KeyStoreTest {
 
-    public TASerializer() {
-        final XStreamXmlSerializerBuilder<TA> builder = XStreamXmlSerializerBuilder.newForgivingXmlSerializerBuilder(TA.class);
-
-        this.xStreamXmlSerializer = builder.build();
+    @Test
+    public void save() throws Exception {
+        KeyStore ks = new KeyStore(Env.development());
+//        ks.encode();
     }
 
-    public String serialize(final TA ta) {
-        return this.xStreamXmlSerializer.serialize(ta);
+    @Test
+    public void open() throws Exception {
     }
 
-    public TA deserialize(final String xml) {
-        return this.xStreamXmlSerializer.deserialize(xml);
-    }
 }
