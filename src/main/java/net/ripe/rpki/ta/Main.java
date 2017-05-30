@@ -36,13 +36,14 @@ package net.ripe.rpki.ta;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.Serializer;
 import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 
 public class Main {
     public static void main(String[] args) {
-        try {
+        try {   
             final ProgramOptions clOptions = new ProgramOptions(args);
             if (!clOptions.hasAnyMeaningfulOption()) {
                 System.err.println(clOptions.getUsageString());
@@ -51,7 +52,8 @@ public class Main {
             final Config config = Env.config(clOptions.getEnv());
             if (clOptions.hasInitialise()) {
                 final TA ta = new TA(config);
-                TA.serialize(ta.initialiseTaState());
+                final String xml = TA.serialize(ta.initialiseTaState());
+                new TAPersistence(config).save(xml);
             }
 
         } catch (Exception e) {
