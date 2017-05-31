@@ -53,8 +53,9 @@ LIB_DIR="lib"
 TA_CONF=${CONF_DIR}/ta-${APPLICATION_ENVIRONMENT}.properties
 CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
 CARDSET="TA"
+MAIN_CLASS="net.ripe.rpki.ta.Main"
 
-TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} --env=${APPLICATION_ENVIRONMENT} $@"
+TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
   #
