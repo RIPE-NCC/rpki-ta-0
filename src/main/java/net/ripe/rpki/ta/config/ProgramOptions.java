@@ -50,12 +50,12 @@ public class ProgramOptions {
 
     public ProgramOptions(String[] args) throws ParseException {
         final Options options = new Options();
-        options.addOption(Option.builder().longOpt( "env" ).
+        options.addOption(Option.builder().longOpt( ENV_OPT ).
                 hasArg().
                 desc( "Must be one of 'production' or 'development'" ).
                 build());
 
-        options.addOption(Option.builder().longOpt( "initialise" ).
+        options.addOption(Option.builder().longOpt( INITIALISE_OPT ).
                 hasArg(false).
                 desc( "Initialise the trust anchor and persist it's state" ).
                 build());
