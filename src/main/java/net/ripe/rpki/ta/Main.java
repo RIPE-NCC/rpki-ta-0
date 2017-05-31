@@ -55,7 +55,7 @@ public class Main {
                 ta.persist(ta.initialiseTaState());
             }
         } catch (Exception e) {
-            System.err.println("The following problem occurred: " + e.getMessage());
+            System.err.println("The following problem occurred: " + e.getMessage() + "\n");
             e.printStackTrace(System.err);
             System.exit(2);
         }
