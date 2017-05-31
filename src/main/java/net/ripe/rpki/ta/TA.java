@@ -82,14 +82,54 @@ public class TA implements Serializable {
         final KeyPair rootKeyPair = generateRootKeyPair();
         final X509ResourceCertificate rootTaCertificate = issueRootCertificate(rootKeyPair);
 
-        byte[] encoded = new KeyStore(config).encode(rootKeyPair, rootTaCertificate);
+        final byte[] encoded = new KeyStore(config).encode(rootKeyPair, rootTaCertificate);
 
         final TAState taState = new TAState();
+        /* TODO Add more stuff here:
+
+         Old TrustAnchor class contains:
+            private transient KeyPair caKeyPair;
+
+            private URI taCertificatePublicationUri;
+            private URI taProductsPublicationUri;
+
+            private X500Principal caName;
+            private X509Crl crl;
+            private BigInteger lastCrlNumber;
+
+            private String signatureProvider;
+            private transient KeyPairFactory keyPairFactory;
+
+            private TrustAnchorKeyStore trustAnchorKeyStore;
+            private transient X509ResourceCertificate currentTaCertificate;
+            private List<SignedResourceCertificate> previousTaCertificates = new ArrayList<SignedResourceCertificate>();
+            private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
+
+            private List<SignedManifest> signedManifests = new ArrayList<SignedManifest>();
+            private ManifestCms manifest;
+
+            private BigInteger lastManifestNumber = BigInteger.ZERO;
+
+            private BigInteger lastIssuedCertificateSerial;
+            private Long lastProcessedRequestTimestamp = 0L;
+          */
         taState.setConfig(config);
         taState.setEncoded(encoded);
         return taState;
     }
 
+    static String serialize(final TAState taState) {
+        return new TAStateSerializer().serialize(taState);
+    }
+
+    public void persist(TAState taState) throws IOException {
+        new TAPersistence(config).save(serialize(taState));
+    }
+
+    public TAState load() throws Exception {
+        final String xml = new TAPersistence(config).load();
+        return new TAStateSerializer().deserialize(xml);
+    }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
             X509CertificateInformationAccessDescriptor... siaDescriptors) {
@@ -140,21 +180,6 @@ public class TA implements Serializable {
 
     private KeyPair generateRootKeyPair() {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
-    }
-
-    static String serialize(TAState taState) {
-        final TAStateSerializer serializer = new TAStateSerializer();
-        return serializer.serialize(taState);
-    }
-
-    public void persist(TAState taState) throws IOException {
-        new TAPersistence(config).save(serialize(taState));
-    }
-
-    public TAState load() throws Exception {
-        final String xml = new TAPersistence(config).load();
-        final TAStateSerializer serializer = new TAStateSerializer();
-        return serializer.deserialize(xml);
     }
 
 }
