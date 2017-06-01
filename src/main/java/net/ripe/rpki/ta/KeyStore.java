@@ -97,7 +97,7 @@ public class KeyStore {
         }
     }
 
-    private Pair<KeyPair, X509ResourceCertificate> decodeKeyStore(byte[] encoded) throws GeneralSecurityException, IOException {
+    Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws Exception {
         final Closer closer = Closer.create();
         try {
             final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));

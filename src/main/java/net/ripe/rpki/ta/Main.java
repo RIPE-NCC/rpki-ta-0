@@ -37,9 +37,11 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.persistence.TAPersistence;
+import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.Serializer;
 import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
+import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 
 public class Main {
     public static void main(String[] args) {
@@ -53,6 +55,11 @@ public class Main {
             if (clOptions.hasInitialise()) {
                 final TA ta = new TA(config);
                 ta.persist(ta.initialiseTaState());
+            } else if (clOptions.hasInitialiseFromOld()) {
+                final TA ta = new TA(config);
+                final String legacyXml = new TAPersistence(config).load(clOptions.getOldTaFilePath());
+                final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
+                ta.persist(ta.initialiseTaState(legacyTA));
             }
         } catch (Exception e) {
             System.err.println("The following problem occurred: " + e.getMessage() + "\n");

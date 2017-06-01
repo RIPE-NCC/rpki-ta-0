@@ -77,4 +77,8 @@ public class TAPersistence {
     public String load() throws IOException {
         return Files.toString(trustAnchorFile, Charsets.UTF_8);
     }
+
+    public String load(String fileName) throws IOException {
+        return Files.toString(new File(fileName), Charsets.UTF_8);
+    }
 }

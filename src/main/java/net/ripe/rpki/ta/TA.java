@@ -37,7 +37,6 @@ import com.google.common.base.Preconditions;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
-import net.ripe.rpki.commons.crypto.util.KeyStoreException;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
@@ -45,6 +44,8 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
+import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,10 +81,19 @@ public class TA implements Serializable {
     }
 
     public TAState initialiseTaState() throws Exception {
-        final KeyPair rootKeyPair = generateRootKeyPair();
-        final X509ResourceCertificate rootTaCertificate = issueRootCertificate(rootKeyPair);
+        return createTaState(generateRootKeyPair());
+    }
 
-        final byte[] encoded = new KeyStore(config).encode(rootKeyPair, rootTaCertificate);
+    TAState initialiseTaState(final LegacyTA legacyTA) throws Exception {
+        final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
+        final KeyPair newRootKeyPair = new KeyStore(config).decode(encodedLegacy).getLeft();
+        return createTaState(newRootKeyPair);
+    }
+
+    private TAState createTaState(KeyPair newRootKeyPair) throws Exception {
+        final X509ResourceCertificate rootTaCertificate = issueRootCertificate(newRootKeyPair);
+
+        final byte[] encoded = new KeyStore(config).encode(newRootKeyPair, rootTaCertificate);
 
         final TAState taState = new TAState();
         /* TODO Add more stuff here:
@@ -181,5 +192,4 @@ public class TA implements Serializable {
     private KeyPair generateRootKeyPair() {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
     }
-
 }

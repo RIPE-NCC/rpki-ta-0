@@ -44,6 +44,7 @@ import org.apache.commons.cli.ParseException;
 public class ProgramOptions {
 
     private static final String INITIALISE_OPT = "initialise";
+    private static final String INITIALISE_FROM_OLD_OPT = "initialise-from-old";
     private static final String ENV_OPT = "env";
 
     private CommandLine commandLine;
@@ -53,6 +54,11 @@ public class ProgramOptions {
         options.addOption(Option.builder().longOpt( ENV_OPT ).
                 hasArg().
                 desc( "Must be one of 'production' or 'development'" ).
+                build());
+
+        options.addOption(Option.builder().longOpt( INITIALISE_FROM_OLD_OPT ).
+                hasArg().
+                desc( "Path to the file with old-style trust anchor serialized state" ).
                 build());
 
         options.addOption(Option.builder().longOpt( INITIALISE_OPT ).
@@ -68,7 +74,7 @@ public class ProgramOptions {
     }
 
     public boolean hasAnyMeaningfulOption() {
-        return hasInitialise();
+        return hasInitialise() || hasInitialiseFromOld();
     }
 
     public String getUsageString() {
@@ -82,4 +88,13 @@ public class ProgramOptions {
     public String getEnv() {
         return commandLine.getOptionValue(ENV_OPT);
     }
+
+    public boolean hasInitialiseFromOld() {
+        return commandLine.hasOption(INITIALISE_FROM_OLD_OPT);
+    }
+
+    public String getOldTaFilePath() {
+        return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
+    }
+
 }
