@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta.serializers.legacy;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,16 +33,28 @@ package net.ripe.rpki.ta.serializers;
  * =========================LICENSE_END==================================
  */
 
+import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
+import org.joda.time.DateTime;
 
-import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+public class SignedObjectTracker {
+    private CertificateRepositoryObject certificateRepositoryObject;
+    private String fileName;
+    private DateTime revocationTime;
+    private DateTime notValidAfter;
 
-public class TAStateSerializer extends Serializer<TAState> {
-
-    protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
-        return builder.withAliasType("TA", TAState.class);
+    public CertificateRepositoryObject getCertificateRepositoryObject() {
+        return certificateRepositoryObject;
     }
 
-    protected Class<TAState> clazz() {
-        return TAState.class;
+    public String getFileName() {
+        return fileName;
+    }
+
+    public DateTime getRevocationTime() {
+        return revocationTime;
+    }
+
+    public DateTime getNotValidAfter() {
+        return notValidAfter;
     }
 }

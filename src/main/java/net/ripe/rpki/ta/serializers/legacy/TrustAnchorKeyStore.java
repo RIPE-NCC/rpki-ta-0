@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta.serializers.legacy;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,16 +33,31 @@ package net.ripe.rpki.ta.serializers;
  * =========================LICENSE_END==================================
  */
 
+public class TrustAnchorKeyStore {
+    private byte[] encoded;
 
-import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+    private String keyStoreProvider;
+    private String keyStoreType;
+    private String signatureProvider;
+    private String keypairGeneratorProvider;
 
-public class TAStateSerializer extends Serializer<TAState> {
-
-    protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
-        return builder.withAliasType("TA", TAState.class);
+    public byte[] getEncoded() {
+        return encoded;
     }
 
-    protected Class<TAState> clazz() {
-        return TAState.class;
+    public String getKeyStoreProvider() {
+        return keyStoreProvider;
+    }
+
+    public String getKeyStoreType() {
+        return keyStoreType;
+    }
+
+    public String getSignatureProvider() {
+        return signatureProvider;
+    }
+
+    public String getKeypairGeneratorProvider() {
+        return keypairGeneratorProvider;
     }
 }

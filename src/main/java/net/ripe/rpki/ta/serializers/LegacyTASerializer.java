@@ -35,14 +35,15 @@ package net.ripe.rpki.ta.serializers;
 
 
 import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 
-public class TAStateSerializer extends Serializer<TAState> {
+public class LegacyTASerializer extends Serializer<LegacyTA> {
 
-    protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
-        return builder.withAliasType("TA", TAState.class);
+    protected XStreamXmlSerializerBuilder<LegacyTA> configureBuilder(XStreamXmlSerializerBuilder<LegacyTA> builder) {
+        return builder.withAliasType("TrustAnchor", LegacyTA.class);
     }
 
-    protected Class<TAState> clazz() {
-        return TAState.class;
+    protected Class<LegacyTA> clazz() {
+        return LegacyTA.class;
     }
 }
