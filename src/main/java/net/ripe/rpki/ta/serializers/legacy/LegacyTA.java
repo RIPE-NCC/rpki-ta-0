@@ -33,118 +33,16 @@ package net.ripe.rpki.ta.serializers.legacy;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
-import net.ripe.rpki.commons.crypto.crl.X509Crl;
-import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
-import org.joda.time.Period;
-
-import javax.security.auth.x500.X500Principal;
-import java.math.BigInteger;
-import java.net.URI;
-import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Class to read old style TA.
  */
 public class LegacyTA {
 
-    private transient KeyPair caKeyPair;
-
-    private URI taCertificatePublicationUri;
-    private URI taProductsPublicationUri;
-
-    private X500Principal caName;
-    private Period crlMinimumValidityPeriod;
-    private Period crlUpdatePeriod;
-    private X509Crl crl;
-    private BigInteger lastCrlNumber;
-
-    private String signatureProvider;
-    private transient KeyPairFactory keyPairFactory;
-
-    private TrustAnchorKeyStore trustAnchorKeyStore;
-    private List<SignedResourceCertificate> previousTaCertificates = new ArrayList<SignedResourceCertificate>();
-    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
-
-    private List<SignedManifest> signedManifests = new ArrayList<SignedManifest>();
-    private ManifestCms manifest;
-
-    private BigInteger lastManifestNumber = BigInteger.ZERO;
-
-    private BigInteger lastIssuedCertificateSerial;
-    private Long lastProcessedRequestTimestamp;
-
-    public KeyPair getCaKeyPair() {
-        return caKeyPair;
-    }
-
-    public URI getTaCertificatePublicationUri() {
-        return taCertificatePublicationUri;
-    }
-
-    public URI getTaProductsPublicationUri() {
-        return taProductsPublicationUri;
-    }
-
-    public X500Principal getCaName() {
-        return caName;
-    }
-
-    public Period getCrlMinimumValidityPeriod() {
-        return crlMinimumValidityPeriod;
-    }
-
-    public Period getCrlUpdatePeriod() {
-        return crlUpdatePeriod;
-    }
-
-    public X509Crl getCrl() {
-        return crl;
-    }
-
-    public BigInteger getLastCrlNumber() {
-        return lastCrlNumber;
-    }
-
-    public String getSignatureProvider() {
-        return signatureProvider;
-    }
-
-    public KeyPairFactory getKeyPairFactory() {
-        return keyPairFactory;
-    }
-
     public TrustAnchorKeyStore getTrustAnchorKeyStore() {
         return trustAnchorKeyStore;
     }
 
-    public List<SignedResourceCertificate> getPreviousTaCertificates() {
-        return previousTaCertificates;
-    }
+    // We ignore everything, except for the old key pair
+    private TrustAnchorKeyStore trustAnchorKeyStore;
 
-    public List<SignedResourceCertificate> getSignedProductionCertificates() {
-        return signedProductionCertificates;
-    }
-
-    public List<SignedManifest> getSignedManifests() {
-        return signedManifests;
-    }
-
-    public ManifestCms getManifest() {
-        return manifest;
-    }
-
-    public BigInteger getLastManifestNumber() {
-        return lastManifestNumber;
-    }
-
-    public BigInteger getLastIssuedCertificateSerial() {
-        return lastIssuedCertificateSerial;
-    }
-
-    public Long getLastProcessedRequestTimestamp() {
-        return lastProcessedRequestTimestamp;
-    }
 }

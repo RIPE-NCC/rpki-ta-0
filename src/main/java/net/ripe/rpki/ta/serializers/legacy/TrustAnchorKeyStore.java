@@ -36,28 +36,7 @@ package net.ripe.rpki.ta.serializers.legacy;
 public class TrustAnchorKeyStore {
     private byte[] encoded;
 
-    private String keyStoreProvider;
-    private String keyStoreType;
-    private String signatureProvider;
-    private String keypairGeneratorProvider;
-
     public byte[] getEncoded() {
         return encoded;
-    }
-
-    public String getKeyStoreProvider() {
-        return keyStoreProvider;
-    }
-
-    public String getKeyStoreType() {
-        return keyStoreType;
-    }
-
-    public String getSignatureProvider() {
-        return signatureProvider;
-    }
-
-    public String getKeypairGeneratorProvider() {
-        return keypairGeneratorProvider;
     }
 }
