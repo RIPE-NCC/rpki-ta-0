@@ -64,7 +64,7 @@ import java.util.Map;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
 
-public class TA implements Serializable {
+public class TA {
 
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 5;
 
@@ -85,7 +85,7 @@ public class TA implements Serializable {
         return createTaState(generateRootKeyPair());
     }
 
-    TAState initialiseTaState(final LegacyTA legacyTA) throws Exception {
+    private TAState initialiseTaState(final LegacyTA legacyTA) throws Exception {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
         final KeyPair newRootKeyPair = new KeyStore(config).decode(encodedLegacy).getLeft();
         return createTaState(newRootKeyPair);
