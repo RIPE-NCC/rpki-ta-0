@@ -5,6 +5,7 @@ import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.serializers.TAState;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertNotNull;
  * =========================LICENSE_END==================================
  */
 
+@Ignore
 public class LegacyTATest {
 
     private static final String STORAGE_DIR = "src/test/resources/tmp";
