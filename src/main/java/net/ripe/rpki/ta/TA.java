@@ -42,6 +42,7 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.persistence.TAPersistence;
+import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
@@ -88,6 +89,12 @@ public class TA implements Serializable {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
         final KeyPair newRootKeyPair = new KeyStore(config).decode(encodedLegacy).getLeft();
         return createTaState(newRootKeyPair);
+    }
+
+    TAState initialiseTaState(final String oldTaFilePath) throws Exception {
+        final String legacyXml = new TAPersistence(config).load(oldTaFilePath);
+        final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
+        return initialiseTaState(legacyTA);
     }
 
     private TAState createTaState(KeyPair newRootKeyPair) throws Exception {

@@ -52,14 +52,11 @@ public class Main {
                 System.exit(1);
             }
             final Config config = Env.config(clOptions.getEnv());
+            final TA ta = new TA(config);
             if (clOptions.hasInitialise()) {
-                final TA ta = new TA(config);
                 ta.persist(ta.initialiseTaState());
             } else if (clOptions.hasInitialiseFromOld()) {
-                final TA ta = new TA(config);
-                final String legacyXml = new TAPersistence(config).load(clOptions.getOldTaFilePath());
-                final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
-                ta.persist(ta.initialiseTaState(legacyTA));
+                ta.persist(ta.initialiseTaState(clOptions.getOldTaFilePath()));
             }
         } catch (Exception e) {
             System.err.println("The following problem occurred: " + e.getMessage() + "\n");

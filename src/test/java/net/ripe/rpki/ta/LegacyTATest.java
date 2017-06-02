@@ -1,6 +1,5 @@
-package net.ripe.rpki.ta.persistence;
+package net.ripe.rpki.ta;
 
-import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.serializers.TAState;
@@ -11,7 +10,8 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /*-
  * ========================LICENSE_START=================================
@@ -46,9 +46,10 @@ import static org.junit.Assert.*;
  * =========================LICENSE_END==================================
  */
 
-public class TAPersistenceTest {
+public class LegacyTATest {
 
     private static final String STORAGE_DIR = "src/test/resources/tmp";
+    private static final String LEGACY_TA_PATH = "src/test/resources/ta-legacy.xml";
 
     @Before
     public void setUp() throws Exception {
@@ -61,27 +62,15 @@ public class TAPersistenceTest {
     }
 
     @Test
-    public void saveAndLoad() throws Exception {
+    public void loadLegacyTA() throws Exception {
         final Config testConfig = Env.development();
         testConfig.setPersistentStorageDir(STORAGE_DIR);
 
         final TA ta = new TA(testConfig);
-        final TAState taState = ta.initialiseTaState();
-        ta.persist(taState);
-
-        assertEquals(taState, ta.load());
+        TAState taState = ta.initialiseTaState(LEGACY_TA_PATH);
+        assertNotNull(taState);
     }
 
-    @Test(expected = IOException.class)
-    public void cantSaveTwice() throws Exception {
-        final Config testConfig = Env.development();
-        testConfig.setPersistentStorageDir(STORAGE_DIR);
-
-        final TA ta = new TA(testConfig);
-        TAState taState = ta.initialiseTaState();
-        ta.persist(taState);
-        ta.persist(taState);
-    }
 
     private void cleanTaXml() {
         new File(STORAGE_DIR + "/ta.xml").delete();
