@@ -41,6 +41,7 @@ import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDes
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAState;
@@ -53,10 +54,8 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.URI;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,26 +80,34 @@ public class TA {
         this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
     }
 
+    public TAState initialiseTaState(boolean generateRootCertificate) throws Exception {
+        return createTaState(generateRootKeyPair(), generateRootCertificate);
+    }
+
     public TAState initialiseTaState() throws Exception {
-        return createTaState(generateRootKeyPair());
+        return createTaState(generateRootKeyPair(), true);
     }
 
-    private TAState initialiseTaState(final LegacyTA legacyTA) throws Exception {
+    private TAState migrateTaState(final LegacyTA legacyTA) throws Exception {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
-        final KeyPair newRootKeyPair = new KeyStore(config).decode(encodedLegacy).getLeft();
-        return createTaState(newRootKeyPair);
+        final KeyPair newRootKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
+        return createTaState(newRootKeyPair, true);
     }
 
-    TAState initialiseTaState(final String oldTaFilePath) throws Exception {
+    TAState migrateTaState(final String oldTaFilePath) throws Exception {
         final String legacyXml = new TAPersistence(config).load(oldTaFilePath);
         final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
-        return initialiseTaState(legacyTA);
+        return migrateTaState(legacyTA);
     }
 
-    private TAState createTaState(KeyPair newRootKeyPair) throws Exception {
-        final X509ResourceCertificate rootTaCertificate = issueRootCertificate(newRootKeyPair);
-
-        final byte[] encoded = new KeyStore(config).encode(newRootKeyPair, rootTaCertificate);
+    private TAState createTaState(KeyPair newRootKeyPair, boolean generateRootCertificate) throws Exception {
+        final byte[] encoded;
+        if (generateRootCertificate) {
+            final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
+            encoded = KeyStore.of(config).encode(newRootKeyPair, issueRootCertificate(newRootKeyPair, descriptors));
+        } else {
+            encoded = KeyStore.of(config).encode(newRootKeyPair);
+        }
 
         final TAState taState = new TAState();
         /* TODO Add more stuff here:
@@ -168,7 +175,7 @@ public class TA {
         return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[descriptorsMap.size()]);
     }
 
-    private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair) {
+    private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair, final X509CertificateInformationAccessDescriptor[] descriptors) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
 
         taBuilder.withCa(true);
@@ -186,7 +193,7 @@ public class TA {
         final DateTime now = new DateTime(DateTimeZone.UTC);
         taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
-        taBuilder.withSubjectInformationAccess(generateSiaDescriptors(config.getTaProductsPublicationUri()));
+        taBuilder.withSubjectInformationAccess(descriptors);
 
         return taBuilder.build();
     }
@@ -199,4 +206,33 @@ public class TA {
     private KeyPair generateRootKeyPair() {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
     }
+
+    TAState createNewTAState(final ProgramOptions programOptions) throws Exception {
+        if (programOptions.hasInitialise()) {
+            return initialiseTaState(programOptions.hasGenerateTACertificate());
+        }
+
+        if (programOptions.hasInitialiseFromOld()) {
+            return migrateTaState(programOptions.getOldTaFilePath());
+        }
+
+        // there is no '--initialise' but there is '--generate-ta-certificate'
+        if (programOptions.hasGenerateTACertificate()) {
+            // try to read and decode existing state
+            final TAState taState = load();
+            final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(config).decode(taState.getEncoded());
+
+            // re-issue the certificate
+
+
+            return initialiseTaState();
+        }
+
+        throw new Exception("The program options are inconsistent: " + programOptions.getUsageString());
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
 }

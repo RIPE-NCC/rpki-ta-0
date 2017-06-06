@@ -2,17 +2,21 @@ package net.ripe.rpki.ta;
 
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
+import net.ripe.rpki.ta.persistence.TAPersistence;
+import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAState;
+import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /*-
  * ========================LICENSE_START=================================
@@ -69,8 +73,16 @@ public class LegacyTATest {
         testConfig.setPersistentStorageDir(STORAGE_DIR);
 
         final TA ta = new TA(testConfig);
-        TAState taState = ta.initialiseTaState(LEGACY_TA_PATH);
+        TAState taState = ta.migrateTaState(LEGACY_TA_PATH);
+
+        final String legacyXml = new TAPersistence(testConfig).load(LEGACY_TA_PATH);
+        final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
+
+        byte[] encoded = taState.getEncoded();
+        byte[] encoded1 = legacyTA.getTrustAnchorKeyStore().getEncoded();
+
         assertNotNull(taState);
+        assertTrue(Arrays.equals(encoded, encoded1));
     }
 
 

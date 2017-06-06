@@ -43,27 +43,33 @@ import org.apache.commons.cli.ParseException;
 
 public class ProgramOptions {
 
+    private static final String ENV_OPT = "env";
     private static final String INITIALISE_OPT = "initialise";
     private static final String INITIALISE_FROM_OLD_OPT = "initialise-from-old";
-    private static final String ENV_OPT = "env";
+    private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
 
     private CommandLine commandLine;
 
     public ProgramOptions(String[] args) throws ParseException {
         final Options options = new Options();
-        options.addOption(Option.builder().longOpt( ENV_OPT ).
+        options.addOption(Option.builder().longOpt(ENV_OPT).
                 hasArg().
-                desc( "Must be one of 'production' or 'development'" ).
+                desc("Must be one of 'production' or 'development'").
                 build());
 
-        options.addOption(Option.builder().longOpt( INITIALISE_FROM_OLD_OPT ).
+        options.addOption(Option.builder().longOpt(INITIALISE_FROM_OLD_OPT).
                 hasArg().
-                desc( "Path to the file with old-style trust anchor serialized state" ).
+                desc("Path to the file with old-style trust anchor serialized state").
                 build());
 
-        options.addOption(Option.builder().longOpt( INITIALISE_OPT ).
+        options.addOption(Option.builder().longOpt(INITIALISE_OPT).
                 hasArg(false).
-                desc( "Initialise the trust anchor and persist it's state" ).
+                desc("Initialise the trust anchor key pair and persist its state").
+                build());
+
+        options.addOption(Option.builder().longOpt(GENERATE_TA_CERTIFICATE_OPT).
+                hasArg(false).
+                desc("Generate trust anchor certificate and persist its state").
                 build());
 
         commandLine = new DefaultParser().parse(options, args);
@@ -74,7 +80,7 @@ public class ProgramOptions {
     }
 
     public boolean hasAnyMeaningfulOption() {
-        return hasInitialise() || hasInitialiseFromOld();
+        return hasInitialise() || hasInitialiseFromOld() || hasGenerateTACertificate();
     }
 
     public String getUsageString() {
@@ -93,8 +99,18 @@ public class ProgramOptions {
         return commandLine.hasOption(INITIALISE_FROM_OLD_OPT);
     }
 
+    public boolean hasGenerateTACertificate() {
+        return commandLine.hasOption(GENERATE_TA_CERTIFICATE_OPT);
+    }
+
     public String getOldTaFilePath() {
         return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
     }
 
+    @Override
+    public String toString() {
+        return "ProgramOptions{" +
+                "commandLine=" + commandLine +
+                '}';
+    }
 }
