@@ -38,6 +38,8 @@ package net.ripe.rpki.ta.serializers.legacy;
  */
 public class LegacyTA {
 
+    public static final String KEY_STORE_ALIAS = "RTA";
+
     public TrustAnchorKeyStore getTrustAnchorKeyStore() {
         return trustAnchorKeyStore;
     }

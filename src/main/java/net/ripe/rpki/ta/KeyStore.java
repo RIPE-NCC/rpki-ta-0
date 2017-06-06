@@ -38,6 +38,7 @@ import net.ripe.rpki.commons.crypto.util.KeyStoreException;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateParser;
 import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,12 +55,17 @@ import java.security.cert.Certificate;
 public class KeyStore {
 
     private final char[] keyStorePassphrase = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
-    private final String keyStoreKeyAlias = "RTA";
+    private final String keyStoreKeyAlias;
 
     private final Config config;
 
-    KeyStore(Config config) {
+    KeyStore(Config config, String keyStoreKeyAlias) {
         this.config = config;
+        this.keyStoreKeyAlias = keyStoreKeyAlias;
+    }
+
+    byte[] encode(final KeyPair keyPair) throws Exception {
+        return encodeKeyStore(createKeyStore(keyPair, null));
     }
 
     byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws Exception {
@@ -68,8 +74,11 @@ public class KeyStore {
 
     private java.security.KeyStore createKeyStore(final KeyPair keyPair, final X509ResourceCertificate taCertificate) {
         try {
-            final java.security.KeyStore ks = loadKeyStore(null, keyStorePassphrase); // empty, initialized key store
-            ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassphrase, new Certificate[] { taCertificate.getCertificate() });
+            final java.security.KeyStore ks = loadKeyStore(null, keyStorePassphrase);
+            final Certificate[] certificates = taCertificate == null ?
+                    new Certificate[] {} :
+                    new Certificate[] { taCertificate.getCertificate() };
+            ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassphrase, certificates);
             return ks;
         } catch (GeneralSecurityException e) {
             throw new KeyStoreException(e);
@@ -119,5 +128,12 @@ public class KeyStore {
         }
     }
 
+    static KeyStore of(final Config config) {
+        return new KeyStore(config, "NEWTA");
+    }
+
+    static KeyStore legacy(final Config config) {
+        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS);
+    }
 
 }
