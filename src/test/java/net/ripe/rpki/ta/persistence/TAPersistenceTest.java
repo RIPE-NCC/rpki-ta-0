@@ -69,7 +69,7 @@ public class TAPersistenceTest {
         final TAState taState = ta.initialiseTaState();
         ta.persist(taState);
 
-        assertEquals(taState, ta.load());
+        assertEquals(taState, ta.loadTAState());
     }
 
     @Test(expected = IOException.class)
