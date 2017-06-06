@@ -39,6 +39,7 @@ package net.ripe.rpki.ta.serializers.legacy;
 public class LegacyTA {
 
     public static final String KEY_STORE_ALIAS = "RTA";
+    public final static char[] KEY_STORE_PASSPHRASE = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
 
     public TrustAnchorKeyStore getTrustAnchorKeyStore() {
         return trustAnchorKeyStore;

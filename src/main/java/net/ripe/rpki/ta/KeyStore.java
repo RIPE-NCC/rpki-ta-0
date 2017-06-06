@@ -52,20 +52,20 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 
-public class KeyStore {
+class KeyStore {
 
-    private final char[] keyStorePassphrase = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
+    private static final String KEY_STORE_KEY_ALIAS = "RTA2";
+    private static final char[] KEY_STORE_PASS_PHRASE = "2fe5a028-861a-47a0-a27f-7c657ea6ed49".toCharArray();
+
     private final String keyStoreKeyAlias;
+    private final char[] keyStorePassPhrase;
 
     private final Config config;
 
-    KeyStore(Config config, String keyStoreKeyAlias) {
+    KeyStore(Config config, String keyStoreKeyAlias, char[] keyStorePassPhrase) {
         this.config = config;
         this.keyStoreKeyAlias = keyStoreKeyAlias;
-    }
-
-    byte[] encode(final KeyPair keyPair) throws Exception {
-        return encodeKeyStore(createKeyStore(keyPair, null));
+        this.keyStorePassPhrase = keyStorePassPhrase;
     }
 
     byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws Exception {
@@ -74,11 +74,11 @@ public class KeyStore {
 
     private java.security.KeyStore createKeyStore(final KeyPair keyPair, final X509ResourceCertificate taCertificate) {
         try {
-            final java.security.KeyStore ks = loadKeyStore(null, keyStorePassphrase);
+            final java.security.KeyStore ks = loadKeyStore(null, keyStorePassPhrase);
             final Certificate[] certificates = taCertificate == null ?
                     new Certificate[] {} :
                     new Certificate[] { taCertificate.getCertificate() };
-            ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassphrase, certificates);
+            ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassPhrase, certificates);
             return ks;
         } catch (GeneralSecurityException e) {
             throw new KeyStoreException(e);
@@ -97,7 +97,7 @@ public class KeyStore {
         final Closer closer = Closer.create();
         try {
             final ByteArrayOutputStream output = closer.register(new ByteArrayOutputStream());
-            keyStore.store(output, keyStorePassphrase);
+            keyStore.store(output, LegacyTA.KEY_STORE_PASSPHRASE);
             return output.toByteArray();
         } catch (final Throwable t) {
             throw closer.rethrow(t, GeneralSecurityException.class);
@@ -110,8 +110,8 @@ public class KeyStore {
         final Closer closer = Closer.create();
         try {
             final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));
-            final java.security.KeyStore keyStore = loadKeyStore(input, keyStorePassphrase);
-            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, keyStorePassphrase);
+            final java.security.KeyStore keyStore = loadKeyStore(input, LegacyTA.KEY_STORE_PASSPHRASE);
+            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, LegacyTA.KEY_STORE_PASSPHRASE);
             Validate.notNull(privateKey, "private key is null");
             final Certificate certificate = keyStore.getCertificateChain(keyStoreKeyAlias)[0];
             final X509ResourceCertificateParser parser = new X509ResourceCertificateParser();
@@ -129,11 +129,11 @@ public class KeyStore {
     }
 
     static KeyStore of(final Config config) {
-        return new KeyStore(config, "NEWTA");
+        return new KeyStore(config, KEY_STORE_KEY_ALIAS, KEY_STORE_PASS_PHRASE);
     }
 
     static KeyStore legacy(final Config config) {
-        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS);
+        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.KEY_STORE_PASSPHRASE);
     }
 
 }
