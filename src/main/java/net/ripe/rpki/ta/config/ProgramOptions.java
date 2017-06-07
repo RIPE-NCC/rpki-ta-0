@@ -36,10 +36,14 @@ package net.ripe.rpki.ta.config;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class ProgramOptions {
 
@@ -47,11 +51,14 @@ public class ProgramOptions {
     private static final String INITIALISE_OPT = "initialise";
     private static final String INITIALISE_FROM_OLD_OPT = "initialise-from-old";
     private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
+    private static final String PRINT_TA_CERTIFICATE_OPT = "print-ta-certificate";
+    private static final String PRINT_TAL_OPT = "print-tal";
 
-    private CommandLine commandLine;
+    private final CommandLine commandLine;
+    private final Options options;
 
     public ProgramOptions(String[] args) throws ParseException {
-        final Options options = new Options();
+        options = new Options();
         options.addOption(Option.builder().longOpt(ENV_OPT).
                 hasArg().
                 desc("Must be one of 'production' or 'development'").
@@ -72,6 +79,16 @@ public class ProgramOptions {
                 desc("Generate trust anchor certificate and persist its state").
                 build());
 
+        options.addOption(Option.builder().longOpt(PRINT_TA_CERTIFICATE_OPT).
+                hasArg(false).
+                desc("Print trust anchor certificate").
+                build());
+
+        options.addOption(Option.builder().longOpt(PRINT_TAL_OPT).
+                hasArg(false).
+                desc("Print TAL").
+                build());
+
         commandLine = new DefaultParser().parse(options, args);
     }
 
@@ -84,7 +101,11 @@ public class ProgramOptions {
     }
 
     public String getUsageString() {
-        return "Usage: ";
+        final HelpFormatter hf = new HelpFormatter();
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        hf.printHelp(pw, hf.getWidth(), "ta.sh", null, options, hf.getLeftPadding(), hf.getDescPadding(), "", false);
+        return sw.toString();
     }
 
     public boolean hasEnv() {
