@@ -1,17 +1,20 @@
 package net.ripe.rpki.ta;
 
+import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.security.KeyPair;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -75,14 +78,18 @@ public class LegacyTATest {
         final TA ta = new TA(testConfig);
         TAState taState = ta.migrateTaState(LEGACY_TA_PATH);
 
+        // do the same manually
         final String legacyXml = new TAPersistence(testConfig).load(LEGACY_TA_PATH);
         final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
 
-        byte[] encoded = taState.getEncoded();
-        byte[] encoded1 = legacyTA.getTrustAnchorKeyStore().getEncoded();
+        final byte[] encoded = taState.getEncoded();
+        final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
 
         assertNotNull(taState);
-        assertTrue(Arrays.equals(encoded, encoded1));
+        final Pair<KeyPair, X509ResourceCertificate> decodedLegacy = KeyStore.legacy(testConfig).decode(encodedLegacy);
+        final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(testConfig).decode(encoded);
+
+        assertEquals(decoded.getKey().getPublic(), decodedLegacy.getKey().getPublic());
     }
 
 

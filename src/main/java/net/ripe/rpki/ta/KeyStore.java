@@ -97,7 +97,7 @@ class KeyStore {
         final Closer closer = Closer.create();
         try {
             final ByteArrayOutputStream output = closer.register(new ByteArrayOutputStream());
-            keyStore.store(output, LegacyTA.KEY_STORE_PASSPHRASE);
+            keyStore.store(output, keyStorePassPhrase);
             return output.toByteArray();
         } catch (final Throwable t) {
             throw closer.rethrow(t, GeneralSecurityException.class);
@@ -110,8 +110,8 @@ class KeyStore {
         final Closer closer = Closer.create();
         try {
             final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));
-            final java.security.KeyStore keyStore = loadKeyStore(input, LegacyTA.KEY_STORE_PASSPHRASE);
-            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, LegacyTA.KEY_STORE_PASSPHRASE);
+            final java.security.KeyStore keyStore = loadKeyStore(input, keyStorePassPhrase);
+            final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, keyStorePassPhrase);
             Validate.notNull(privateKey, "private key is null");
             final Certificate certificate = keyStore.getCertificateChain(keyStoreKeyAlias)[0];
             final X509ResourceCertificateParser parser = new X509ResourceCertificateParser();
