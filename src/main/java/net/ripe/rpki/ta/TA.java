@@ -107,6 +107,7 @@ public class TA {
         /* TODO Add more stuff here:
 
          Old TrustAnchor class contains:
+
             private transient KeyPair caKeyPair;
 
             private URI taCertificatePublicationUri;
@@ -192,8 +193,9 @@ public class TA {
         return taBuilder.build();
     }
 
-    // TODO Implement it properly
-    private X509ResourceCertificate reIssueRootCertificate(final KeyPair rootKeyPair, final X509CertificateInformationAccessDescriptor[] descriptors) {
+    private X509ResourceCertificate reIssueRootCertificate(final KeyPair rootKeyPair,
+                                                           final X509CertificateInformationAccessDescriptor[] extraSiaDescriptors,
+                                                           final X509ResourceCertificate currentTaCertificate) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
 
         taBuilder.withCa(true);
@@ -211,9 +213,28 @@ public class TA {
         final DateTime now = new DateTime(DateTimeZone.UTC);
         taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
-        taBuilder.withSubjectInformationAccess(descriptors);
+        // TODO Normally extraSiaDescriptors come from the request
+        taBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
 
         return taBuilder.build();
+    }
+
+    private X509CertificateInformationAccessDescriptor[] merge(
+            X509CertificateInformationAccessDescriptor[] subjectInformationAccess,
+            X509CertificateInformationAccessDescriptor[] extraSiaDescriptors) {
+        if (extraSiaDescriptors == null) {
+            return subjectInformationAccess;
+        }
+
+        final HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> result = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
+
+        for (X509CertificateInformationAccessDescriptor descriptor : subjectInformationAccess) {
+            result.put(descriptor.getMethod(), descriptor);
+        }
+        for (X509CertificateInformationAccessDescriptor descriptor : extraSiaDescriptors) {
+            result.put(descriptor.getMethod(), descriptor);
+        }
+        return result.values().toArray(new X509CertificateInformationAccessDescriptor[result.size()]);
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(URI taProductsPublicationUri) {
@@ -242,12 +263,13 @@ public class TA {
 
             // re-issue the TA certificate
             final KeyPair keyPair = decoded.getLeft();
+            final X509ResourceCertificate taCertificate = decoded.getRight();
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(
-                    keyPair, generateSiaDescriptors(config.getTaProductsPublicationUri()));
+                    keyPair, generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate);
             return createTaState(keyStore.encode(keyPair, newTACertificate));
         }
 
-        throw new Exception("The program options are inconsistent: " + programOptions.getUsageString());
+        throw new Exception("The program options are inconsistent: \n" + programOptions.getUsageString());
     }
 
     public Config getConfig() {
