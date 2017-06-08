@@ -54,7 +54,6 @@ import static org.junit.Assert.assertTrue;
  * =========================LICENSE_END==================================
  */
 
-@Ignore
 public class LegacyTATest {
 
     private static final String STORAGE_DIR = "src/test/resources/tmp";
@@ -71,7 +70,7 @@ public class LegacyTATest {
     }
 
     @Test
-    public void loadLegacyTA() throws Exception {
+    public void migrateLegacyTA() throws Exception {
         final Config testConfig = Env.development();
         testConfig.setPersistentStorageDir(STORAGE_DIR);
 

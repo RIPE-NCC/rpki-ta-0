@@ -72,17 +72,6 @@ public class TAPersistenceTest {
         assertEquals(taState, ta.loadTAState());
     }
 
-    @Test(expected = IOException.class)
-    public void cantSaveTwice() throws Exception {
-        final Config testConfig = Env.development();
-        testConfig.setPersistentStorageDir(STORAGE_DIR);
-
-        final TA ta = new TA(testConfig);
-        TAState taState = ta.initialiseTaState();
-        ta.persist(taState);
-        ta.persist(taState);
-    }
-
     private void cleanTaXml() {
         new File(STORAGE_DIR + "/ta.xml").delete();
     }
