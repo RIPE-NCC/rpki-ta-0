@@ -63,6 +63,10 @@ public class TATest {
         assertTrue(xml.contains("<persistentStorageDir>/export/bad/certification/ta/data</persistentStorageDir>"));
         assertTrue(xml.contains("<minimumValidityPeriod>P1M</minimumValidityPeriod>"));
         assertTrue(xml.contains("<updatePeriod>P3M</updatePeriod>"));
+        assertTrue(xml.contains("<keyStorePassphrase>"));
+        assertTrue(xml.contains("</keyStorePassphrase>"));
+        assertTrue(xml.contains("<keyStoreKeyAlias>"));
+        assertTrue(xml.contains("</keyStoreKeyAlias>"));
         assertTrue(xml.startsWith("<TA>"));
         assertTrue(xml.endsWith("</TA>"));
     }

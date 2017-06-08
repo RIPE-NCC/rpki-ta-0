@@ -86,8 +86,8 @@ public class TA {
 
     private TAState migrateTaState(final LegacyTA legacyTA) throws Exception {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
-        final KeyPair newRootKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
-        return createTaState(newRootKeyPair);
+        final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
+        return createTaState(oldKeyPair);
     }
 
     TAState migrateTaState(final String oldTaFilePath) throws Exception {
@@ -96,13 +96,14 @@ public class TA {
         return migrateTaState(legacyTA);
     }
 
-    private TAState createTaState(KeyPair newRootKeyPair) throws Exception {
+    private TAState createTaState(KeyPair keyPair) throws Exception {
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
-        final byte[] encoded = KeyStore.of(config).encode(newRootKeyPair, issueRootCertificate(newRootKeyPair, descriptors));
-        return createTaState(encoded);
+        final KeyStore keyStore = KeyStore.of(config);
+        final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(keyPair, descriptors));
+        return createTaState(encoded, keyStore);
     }
 
-    private TAState createTaState(byte[] encoded) {
+    private TAState createTaState(byte[] encoded, final KeyStore keyStore) {
         final TAState taState = new TAState();
         /* TODO Add more stuff here:
 
@@ -135,6 +136,8 @@ public class TA {
           */
         taState.setConfig(config);
         taState.setEncoded(encoded);
+        taState.setKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
+        taState.setKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
         return taState;
     }
 
@@ -279,7 +282,7 @@ public class TA {
             final X509ResourceCertificate taCertificate = decoded.getRight();
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(
                     keyPair, generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate);
-            return createTaState(keyStore.encode(keyPair, newTACertificate));
+            return createTaState(keyStore.encode(keyPair, newTACertificate), keyStore);
         }
 
         throw new Exception("The program options are inconsistent: \n" + programOptions.getUsageString());

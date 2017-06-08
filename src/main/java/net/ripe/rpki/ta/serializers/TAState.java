@@ -44,6 +44,9 @@ public class TAState {
     private byte[] encoded;
     private Config config;
 
+    private String keyStorePassphrase;
+    private String keyStoreKeyAlias;
+
     public byte[] getEncoded() {
         return encoded;
     }
@@ -60,6 +63,22 @@ public class TAState {
         this.config = config;
     }
 
+    public String getKeyStorePassphrase() {
+        return keyStorePassphrase;
+    }
+
+    public void setKeyStorePassphrase(String keyStorePassphrase) {
+        this.keyStorePassphrase = keyStorePassphrase;
+    }
+
+    public String getKeyStoreKeyAlias() {
+        return keyStoreKeyAlias;
+    }
+
+    public void setKeyStoreKeyAlias(String keyStoreKeyAlias) {
+        this.keyStoreKeyAlias = keyStoreKeyAlias;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -71,6 +90,8 @@ public class TAState {
         return new EqualsBuilder()
                 .append(encoded, taState.encoded)
                 .append(config, taState.config)
+                .append(keyStorePassphrase, taState.keyStorePassphrase)
+                .append(keyStoreKeyAlias, taState.keyStoreKeyAlias)
                 .isEquals();
     }
 
@@ -79,6 +100,8 @@ public class TAState {
         return new HashCodeBuilder(17, 37)
                 .append(encoded)
                 .append(config)
+                .append(keyStorePassphrase)
+                .append(keyStoreKeyAlias)
                 .toHashCode();
     }
 }

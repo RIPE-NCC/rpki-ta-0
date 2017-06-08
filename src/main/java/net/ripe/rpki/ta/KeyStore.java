@@ -136,4 +136,11 @@ class KeyStore {
         return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.KEY_STORE_PASSPHRASE);
     }
 
+    public String getKeyStoreKeyAlias() {
+        return keyStoreKeyAlias;
+    }
+
+    public String getKeyStorePassPhrase() {
+        return new String(keyStorePassPhrase);
+    }
 }
