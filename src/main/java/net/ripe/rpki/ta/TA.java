@@ -246,17 +246,30 @@ public class TA {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
     }
 
+    private boolean hasState() {
+        return new TAPersistence(config).exists();
+    }
+
     TAState createNewTAState(final ProgramOptions programOptions) throws Exception {
         if (programOptions.hasInitialise()) {
+            if (hasState()) {
+                throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
+            }
             return initialiseTaState();
         }
 
         if (programOptions.hasInitialiseFromOld()) {
+            if (hasState()) {
+                throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
+            }
             return migrateTaState(programOptions.getOldTaFilePath());
         }
 
         // there is no '--initialise' but there is '--generate-ta-certificate'
         if (programOptions.hasGenerateTACertificate()) {
+            if (!hasState()) {
+                throw new Exception("No TA state found, please initialise it first.");
+            }
             // try to read and decode existing state
             final KeyStore keyStore = KeyStore.of(config);
             final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(loadTAState().getEncoded());
