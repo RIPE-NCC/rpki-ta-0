@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta;
+package net.ripe.rpki.ta.integration;
 
 /*-
  * ========================LICENSE_START=================================
@@ -8,18 +8,18 @@ package net.ripe.rpki.ta;
  * -
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of the RIPE NCC nor the names of its contributors
  *    may be used to endorse or promote products derived from this software without
  *    specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -33,41 +33,54 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.Main;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 
-public class Main {
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 
-    private static int EXIT_OK = 0;
-    private static int EXIT_ERROR_1 = 1;
-    private static int EXIT_ERROR_2 = 2;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
-    public static void main(String[] args) {
-        System.exit(run(args));
+@Ignore
+public abstract class AbstractIntegrationTest {
+
+    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
+
+    @BeforeClass
+    public static void setWorkingDirectory() throws IOException {
+        final File tempDirectory = Files.createTempDirectory("rpki-ta-0").toFile();
+        tempDirectory.deleteOnExit();
+        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
     }
 
-    public static int run(final String[] args) {
+    @AfterClass
+    public static void resetWorkingDirectory() {
+        System.setProperty("user.dir", DEFAULT_USER_DIR);
+    }
+
+    protected void run(final String args) {
+        run(args.split(" "));
+    }
+
+    protected void run(final String[] args) {
+        final int exit = new Main().run(args);
+        assertThat(exit, is(0));
+    }
+
+    protected void deleteFile(final String pathToFile) {
+        new File(pathToFile).delete();
+    }
+
+    protected String readFile(final String pathToFile) {
         try {
-            final ProgramOptions clOptions = new ProgramOptions(args);
-            if (! clOptions.hasAnyMeaningfulOption()) {
-                System.err.println(clOptions.getUsageString());
-                return EXIT_ERROR_1;
-            }
-
-            final Config config = Env.config(clOptions.getEnv());
-            final TA ta = new TA(config);
-            ta.persist(ta.createNewTAState(clOptions));
-
-            return EXIT_OK;
-
-        } catch (Exception e) {
-            System.err.println("The following problem occurred: " +
-                    e.getMessage() +
-                    "\n");
-            e.printStackTrace(System.err);
-
-            return EXIT_ERROR_2;
+            return new String(Files.readAllBytes(new File(pathToFile).toPath()), Charset.defaultCharset());
+        } catch (IOException e) {
+            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
         }
     }
 

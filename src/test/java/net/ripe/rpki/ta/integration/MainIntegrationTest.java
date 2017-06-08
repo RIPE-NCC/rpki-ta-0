@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta;
+package net.ripe.rpki.ta.integration;
 
 /*-
  * ========================LICENSE_START=================================
@@ -8,18 +8,18 @@ package net.ripe.rpki.ta;
  * -
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of the RIPE NCC nor the names of its contributors
  *    may be used to endorse or promote products derived from this software without
  *    specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -33,42 +33,30 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.config.ProgramOptions;
+import org.junit.Before;
+import org.junit.Test;
 
-public class Main {
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
 
-    private static int EXIT_OK = 0;
-    private static int EXIT_ERROR_1 = 1;
-    private static int EXIT_ERROR_2 = 2;
+public class MainIntegrationTest extends AbstractIntegrationTest {
 
-    public static void main(String[] args) {
-        System.exit(run(args));
+    private static final String TA_XML_PATH = "/export/bad/certification/ta/data/ta.xml";
+
+    @Before
+    public void setup() {
+        deleteFile(TA_XML_PATH);
     }
 
-    public static int run(final String[] args) {
-        try {
-            final ProgramOptions clOptions = new ProgramOptions(args);
-            if (! clOptions.hasAnyMeaningfulOption()) {
-                System.err.println(clOptions.getUsageString());
-                return EXIT_ERROR_1;
-            }
+    @Before public void teardown() {
+        deleteFile(TA_XML_PATH);
+    }
 
-            final Config config = Env.config(clOptions.getEnv());
-            final TA ta = new TA(config);
-            ta.persist(ta.createNewTAState(clOptions));
+    @Test
+    public void initialize_development() {
+        run("--initialise --env=development");
 
-            return EXIT_OK;
-
-        } catch (Exception e) {
-            System.err.println("The following problem occurred: " +
-                    e.getMessage() +
-                    "\n");
-            e.printStackTrace(System.err);
-
-            return EXIT_ERROR_2;
-        }
+        assertThat(readFile(TA_XML_PATH), containsString("<TA>"));
     }
 
 }
