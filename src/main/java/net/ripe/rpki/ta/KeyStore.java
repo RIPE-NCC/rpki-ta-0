@@ -75,9 +75,7 @@ class KeyStore {
     private java.security.KeyStore createKeyStore(final KeyPair keyPair, final X509ResourceCertificate taCertificate) {
         try {
             final java.security.KeyStore ks = loadKeyStore(null, keyStorePassPhrase);
-            final Certificate[] certificates = taCertificate == null ?
-                    new Certificate[] {} :
-                    new Certificate[] { taCertificate.getCertificate() };
+            final Certificate[] certificates = new Certificate[] { taCertificate.getCertificate() };
             ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassPhrase, certificates);
             return ks;
         } catch (GeneralSecurityException e) {
