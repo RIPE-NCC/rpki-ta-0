@@ -36,6 +36,11 @@ package net.ripe.rpki.ta;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.serializers.TAState;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Arrays;
 
 public class Main {
 
@@ -49,15 +54,21 @@ public class Main {
 
     public static int run(final String[] args) {
         try {
-            final ProgramOptions clOptions = new ProgramOptions(args);
-            if (! clOptions.hasAnyMeaningfulOption()) {
-                System.err.println(clOptions.getUsageString());
+            final ProgramOptions options = new ProgramOptions(args);
+            if (!options.hasAnyMeaningfulOption()) {
+                System.err.println(options.getUsageString());
                 return EXIT_ERROR_1;
             }
 
-            final Config config = Env.config(clOptions.getEnv());
+            final Config config = Env.config(options.getEnv());
             final TA ta = new TA(config);
-            ta.persist(ta.createNewTAState(clOptions));
+
+            if (options.hasPrintCertificate()) {
+                new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
+                return EXIT_OK;
+            }
+
+            ta.persist(ta.createNewTAState(options));
 
             return EXIT_OK;
 

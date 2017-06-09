@@ -154,6 +154,14 @@ public class TA {
         return new TAStateSerializer().deserialize(xml);
     }
 
+    byte[] getCertificateDER() throws Exception {
+        return getCertificateDER(loadTAState());
+    }
+
+    byte[] getCertificateDER(final TAState taState) throws Exception {
+        return KeyStore.of(config).decode(taState.getEncoded()).getRight().getEncoded();
+    }
+
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
             X509CertificateInformationAccessDescriptor... siaDescriptors) {
 

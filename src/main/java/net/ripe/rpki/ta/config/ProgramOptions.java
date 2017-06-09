@@ -80,8 +80,8 @@ public class ProgramOptions {
                 build());
 
         options.addOption(Option.builder().longOpt(PRINT_TA_CERTIFICATE_OPT).
-                hasArg(false).
-                desc("Print trust anchor certificate").
+                hasArg().
+                desc("Print trust anchor certificate to the file set as the option value").
                 build());
 
         options.addOption(Option.builder().longOpt(PRINT_TAL_OPT).
@@ -92,20 +92,28 @@ public class ProgramOptions {
         commandLine = new DefaultParser().parse(options, args);
     }
 
+    public boolean hasAnyMeaningfulOption() {
+        return hasInitialise() ||
+                hasInitialiseFromOld() ||
+                hasGenerateTACertificate() ||
+                hasPrintCertificate() ||
+                hasPrintTAL();
+    }
+
     public boolean hasInitialise() {
         return commandLine.hasOption(INITIALISE_OPT);
     }
 
-    public boolean hasAnyMeaningfulOption() {
-        return hasInitialise() || hasInitialiseFromOld() || hasGenerateTACertificate();
+    public boolean hasPrintCertificate() {
+        return commandLine.hasOption(PRINT_TA_CERTIFICATE_OPT);
     }
 
-    public String getUsageString() {
-        final HelpFormatter hf = new HelpFormatter();
-        final StringWriter sw = new StringWriter();
-        final PrintWriter pw = new PrintWriter(sw);
-        hf.printHelp(pw, hf.getWidth(), "ta.sh", null, options, hf.getLeftPadding(), hf.getDescPadding(), "", false);
-        return sw.toString();
+    public String getPrintCertificateFileName() {
+        return commandLine.getOptionValue(PRINT_TA_CERTIFICATE_OPT);
+    }
+
+    public boolean hasPrintTAL() {
+        return commandLine.hasOption(PRINT_TAL_OPT);
     }
 
     public boolean hasEnv() {
@@ -126,6 +134,14 @@ public class ProgramOptions {
 
     public String getOldTaFilePath() {
         return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
+    }
+
+    public String getUsageString() {
+        final HelpFormatter hf = new HelpFormatter();
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        hf.printHelp(pw, hf.getWidth(), "ta.sh", null, options, hf.getLeftPadding(), hf.getDescPadding(), "", false);
+        return sw.toString();
     }
 
     @Override
