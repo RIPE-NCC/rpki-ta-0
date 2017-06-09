@@ -262,14 +262,14 @@ public class TA {
     }
 
     TAState createNewTAState(final ProgramOptions programOptions) throws Exception {
-        if (programOptions.hasInitialise()) {
+        if (programOptions.hasInitialiseOption()) {
             if (hasState()) {
                 throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
             }
             return initialiseTaState();
         }
 
-        if (programOptions.hasInitialiseFromOld()) {
+        if (programOptions.hasInitialiseFromOldOption()) {
             if (hasState()) {
                 throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
             }
@@ -277,7 +277,7 @@ public class TA {
         }
 
         // there is no '--initialise' but there is '--generate-ta-certificate'
-        if (programOptions.hasGenerateTACertificate()) {
+        if (programOptions.hasGenerateTACertificateOption()) {
             if (!hasState()) {
                 throw new Exception("No TA state found, please initialise it first.");
             }

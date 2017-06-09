@@ -37,8 +37,6 @@ import net.ripe.rpki.commons.xml.XStreamXmlSerializer;
 import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
 import net.ripe.rpki.commons.xml.XmlSerializer;
 
-import java.lang.reflect.ParameterizedType;
-
 public abstract class Serializer<T> implements XmlSerializer<T> {
 
     private final XStreamXmlSerializer<T> xStreamXmlSerializer;

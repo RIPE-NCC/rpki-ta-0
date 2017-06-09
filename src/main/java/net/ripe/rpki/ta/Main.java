@@ -36,11 +36,8 @@ package net.ripe.rpki.ta;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
-import net.ripe.rpki.ta.serializers.TAState;
 
-import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Arrays;
 
 public class Main {
 
@@ -63,7 +60,7 @@ public class Main {
             final Config config = Env.config(options.getEnv());
             final TA ta = new TA(config);
 
-            if (options.hasPrintCertificate()) {
+            if (options.hasPrintCertificateOption()) {
                 new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
                 return EXIT_OK;
             }

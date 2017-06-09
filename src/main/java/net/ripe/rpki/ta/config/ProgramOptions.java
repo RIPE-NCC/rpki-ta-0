@@ -38,7 +38,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -93,18 +92,18 @@ public class ProgramOptions {
     }
 
     public boolean hasAnyMeaningfulOption() {
-        return hasInitialise() ||
-                hasInitialiseFromOld() ||
-                hasGenerateTACertificate() ||
-                hasPrintCertificate() ||
-                hasPrintTAL();
+        return hasInitialiseOption() ||
+                hasInitialiseFromOldOption() ||
+                hasGenerateTACertificateOption() ||
+                hasPrintCertificateOption() ||
+                hasPrintTALOption();
     }
 
-    public boolean hasInitialise() {
+    public boolean hasInitialiseOption() {
         return commandLine.hasOption(INITIALISE_OPT);
     }
 
-    public boolean hasPrintCertificate() {
+    public boolean hasPrintCertificateOption() {
         return commandLine.hasOption(PRINT_TA_CERTIFICATE_OPT);
     }
 
@@ -112,7 +111,7 @@ public class ProgramOptions {
         return commandLine.getOptionValue(PRINT_TA_CERTIFICATE_OPT);
     }
 
-    public boolean hasPrintTAL() {
+    public boolean hasPrintTALOption() {
         return commandLine.hasOption(PRINT_TAL_OPT);
     }
 
@@ -124,11 +123,11 @@ public class ProgramOptions {
         return commandLine.getOptionValue(ENV_OPT);
     }
 
-    public boolean hasInitialiseFromOld() {
+    public boolean hasInitialiseFromOldOption() {
         return commandLine.hasOption(INITIALISE_FROM_OLD_OPT);
     }
 
-    public boolean hasGenerateTACertificate() {
+    public boolean hasGenerateTACertificateOption() {
         return commandLine.hasOption(GENERATE_TA_CERTIFICATE_OPT);
     }
 

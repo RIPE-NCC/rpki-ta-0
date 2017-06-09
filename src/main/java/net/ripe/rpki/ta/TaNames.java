@@ -36,7 +36,6 @@ package net.ripe.rpki.ta;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import org.apache.commons.lang.StringUtils;
 
-import javax.print.URIException;
 import javax.security.auth.x500.X500Principal;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
