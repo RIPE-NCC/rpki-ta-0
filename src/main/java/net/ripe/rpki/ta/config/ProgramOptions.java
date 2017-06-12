@@ -115,8 +115,8 @@ public class ProgramOptions {
     }
 
     private void checkIncompatible(final String[] options1, final String[] options2) throws BadOptions {
-        for (String option1 : options1) {
-            for (String option2 : options2) {
+        for (final String option1 : options1) {
+            for (final String option2 : options2) {
                 if (commandLine.hasOption(option1) && commandLine.hasOption(option2)) {
                     throw new BadOptions("Cannot have both --" + option1 + " and --" + option2 + " options.");
                 }

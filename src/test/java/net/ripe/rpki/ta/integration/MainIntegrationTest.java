@@ -63,7 +63,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void check_options() {
+    public void check_options_compatibility() {
         assertThat(run("--initialise --env=development --initialise-from-old=xxx").exitCode, is(2));
         assertThat(run("--initialise --env=development --generate-ta-certificate").exitCode, is(2));
         assertThat(run("--initialise --env=development --print-ta-certificate=output.xml").exitCode, is(2));
