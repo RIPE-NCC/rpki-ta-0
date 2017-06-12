@@ -33,6 +33,7 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
+import net.ripe.rpki.ta.Main;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,19 +56,19 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void initialize_development() {
-        final int exit = run("--initialise --env=development");
-        assertThat(exit, is(0));
+        final Main.Exit exit = run("--initialise --env=development");
+        assertThat(exit.exitCode, is(0));
 
         assertThat(readFile(TA_XML_PATH), containsString("<TA>"));
     }
 
     @Test
     public void check_options() {
-        assertThat(run("--initialise --env=development --initialise-from-old=xxx"), is(2));
-        assertThat(run("--initialise --env=development --generate-ta-certificate=output.xml"), is(2));
-        assertThat(run("--initialise --env=development --print-ta-certificate=output.xml"), is(2));
-        assertThat(run("--print-tal --env=development --print-ta-certificate=output.xml"), is(2));
-        assertThat(run("--generate-ta-certificate --env=development --print-ta-certificate=output.xml"), is(2));
+        assertThat(run("--initialise --env=development --initialise-from-old=xxx").exitCode, is(2));
+        assertThat(run("--initialise --env=development --generate-ta-certificate").exitCode, is(2));
+        assertThat(run("--initialise --env=development --print-ta-certificate=output.xml").exitCode, is(2));
+        assertThat(run("--print-tal --env=development --print-ta-certificate=output.xml").exitCode, is(2));
+        assertThat(run("--generate-ta-certificate --env=development --print-ta-certificate=output.xml").exitCode, is(2));
     }
 
 }

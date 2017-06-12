@@ -33,6 +33,7 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.io.Files;
 import net.ripe.rpki.ta.Main;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -41,10 +42,6 @@ import org.junit.Ignore;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import com.google.common.io.Files;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 @Ignore
 public abstract class AbstractIntegrationTest {
@@ -63,11 +60,11 @@ public abstract class AbstractIntegrationTest {
         System.setProperty("user.dir", DEFAULT_USER_DIR);
     }
 
-    protected int run(final String args) {
+    protected Main.Exit run(final String args) {
         return run(args.split(" "));
     }
 
-    protected int run(final String[] args) {
+    protected Main.Exit run(final String[] args) {
         return new Main().run(args);
     }
 

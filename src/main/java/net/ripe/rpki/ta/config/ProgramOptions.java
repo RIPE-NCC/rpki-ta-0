@@ -118,7 +118,7 @@ public class ProgramOptions {
         for (String option1 : options1) {
             for (String option2 : options2) {
                 if (commandLine.hasOption(option1) && commandLine.hasOption(option2)) {
-                    throw new BadOptions("Cannot have both --" + option1 + " option and --" + option2);
+                    throw new BadOptions("Cannot have both --" + option1 + " and --" + option2 + " options.");
                 }
             }
         }

@@ -36,6 +36,7 @@ package net.ripe.rpki.ta;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
 
@@ -46,10 +47,14 @@ public class Main {
     private static int EXIT_ERROR_2 = 2;
 
     public static void main(String[] args) {
-        System.exit(run(args));
+        final Exit run = run(args);
+        if (StringUtils.isNotEmpty(run.stderr)) {
+            System.err.println(run.stderr);
+        }
+        System.exit(run.exitCode);
     }
 
-    public static int run(final String[] args) {
+    public static Exit run(final String[] args) {
         try {
             final ProgramOptions options = new ProgramOptions(args);
             options.validateOptions();
@@ -59,24 +64,36 @@ public class Main {
 
             if (options.hasPrintCertificateOption()) {
                 new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
-                return EXIT_OK;
+                return new Exit(EXIT_OK);
             }
 
             ta.persist(ta.createNewTAState(options));
 
-            return EXIT_OK;
+            return new Exit(EXIT_OK);
 
         } catch (BadOptions e) {
-            System.err.println(e.getMessage() + "\n");
-            System.err.println(ProgramOptions.getUsageString());
-            return EXIT_ERROR_2;
+            return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {
             System.err.println("The following problem occurred: " +
                     e.getMessage() +
                     "\n");
             e.printStackTrace(System.err);
 
-            return EXIT_ERROR_2;
+            return new Exit(EXIT_ERROR_2);
+        }
+    }
+
+    public static class Exit {
+        public final int exitCode;
+        public final String stderr;
+
+        public Exit(int exitCode) {
+            this(exitCode, "");
+        }
+
+        public Exit(int exitCode, String stderr) {
+            this.exitCode = exitCode;
+            this.stderr = stderr;
         }
     }
 
