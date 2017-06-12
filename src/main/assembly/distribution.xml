@@ -44,7 +44,6 @@
         <fileSet>
             <directory>dist/assembly/conf</directory>
             <outputDirectory>conf</outputDirectory>
-            <directoryMode>0644</directoryMode>
         </fileSet>
         <fileSet>
             <directory>src/main/scripts</directory>
