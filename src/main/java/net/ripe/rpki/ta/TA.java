@@ -65,7 +65,7 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 
 public class TA {
 
-    private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 5;
+    private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
     private static final IpResourceSet ROOT_RESOURCE_SET = IpResourceSet.parse("AS0-AS65536, 0/0, 0::/0");
 
