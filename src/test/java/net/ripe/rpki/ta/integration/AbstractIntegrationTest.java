@@ -41,7 +41,7 @@ import org.junit.Ignore;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
+import com.google.common.io.Files;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -53,7 +53,7 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeClass
     public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDirectory("rpki-ta-0").toFile();
+        final File tempDirectory = Files.createTempDir();
         tempDirectory.deleteOnExit();
         System.setProperty("user.dir", tempDirectory.getAbsolutePath());
     }
@@ -78,7 +78,7 @@ public abstract class AbstractIntegrationTest {
 
     protected String readFile(final String pathToFile) {
         try {
-            return new String(Files.readAllBytes(new File(pathToFile).toPath()), Charset.defaultCharset());
+            return Files.toString(new File(pathToFile), Charset.defaultCharset());
         } catch (IOException e) {
             throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
         }
