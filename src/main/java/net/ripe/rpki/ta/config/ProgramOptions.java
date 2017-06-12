@@ -51,7 +51,7 @@ public class ProgramOptions {
     private static final String INITIALISE_OPT = "initialise";
     private static final String INITIALISE_FROM_OLD_OPT = "initialise-from-old";
     private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
-    private static final String PRINT_TA_CERTIFICATE_OPT = "print-ta-certificate";
+    private static final String EXPORT_TA_CERTIFICATE_OPT = "export-ta-certificate";
     private static final String PRINT_TAL_OPT = "print-tal";
 
     private final CommandLine commandLine;
@@ -78,7 +78,7 @@ public class ProgramOptions {
                 desc("Generate trust anchor certificate and persist its state").
                 build());
 
-        options.addOption(Option.builder().longOpt(PRINT_TA_CERTIFICATE_OPT).
+        options.addOption(Option.builder().longOpt(EXPORT_TA_CERTIFICATE_OPT).
                 hasArg().
                 desc("Print trust anchor certificate to the file set as the option value").
                 build());
@@ -102,12 +102,12 @@ public class ProgramOptions {
         checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
 
         checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{GENERATE_TA_CERTIFICATE_OPT});
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{PRINT_TA_CERTIFICATE_OPT});
+        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{EXPORT_TA_CERTIFICATE_OPT});
         checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{PRINT_TAL_OPT});
 
         checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
-        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TA_CERTIFICATE_OPT);
-        checkIncompatible(PRINT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT);
+        checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
     }
 
     private void checkIncompatible(final String option1, final String option2) throws BadOptions {
@@ -129,11 +129,11 @@ public class ProgramOptions {
     }
 
     public boolean hasPrintCertificateOption() {
-        return commandLine.hasOption(PRINT_TA_CERTIFICATE_OPT);
+        return commandLine.hasOption(EXPORT_TA_CERTIFICATE_OPT);
     }
 
     public String getPrintCertificateFileName() {
-        return commandLine.getOptionValue(PRINT_TA_CERTIFICATE_OPT);
+        return commandLine.getOptionValue(EXPORT_TA_CERTIFICATE_OPT);
     }
 
     public boolean hasPrintTALOption() {
