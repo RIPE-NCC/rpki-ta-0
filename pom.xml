@@ -77,6 +77,11 @@
                             <mainClass>${main.class}</mainClass>
                         </manifest>
                     </archive>
+                    <archiverConfig>
+                        <directoryMode>0755</directoryMode>
+                        <defaultDirectoryMode>0755</defaultDirectoryMode>
+                        <fileMode>0644</fileMode>
+                    </archiverConfig>
                 </configuration>
                 <executions>
                     <execution>
