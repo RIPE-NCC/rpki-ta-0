@@ -52,7 +52,9 @@ public class Main {
     public static int run(final String[] args) {
         try {
             final ProgramOptions options = new ProgramOptions(args);
-            if (!options.hasAnyMeaningfulOption()) {
+            final String errorMessage = options.checkValidOptionSet();
+            if (errorMessage != null) {
+                System.err.println(errorMessage);
                 System.err.println(options.getUsageString());
                 return EXIT_ERROR_1;
             }
