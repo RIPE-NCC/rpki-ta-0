@@ -293,7 +293,7 @@ public class TA {
             return createTaState(keyStore.encode(keyPair, newTACertificate), keyStore);
         }
 
-        throw new Exception("The program options are inconsistent: \n" + programOptions.getUsageString());
+        throw new BadOptions("The program options are inconsistent.");
     }
 
     public Config getConfig() {

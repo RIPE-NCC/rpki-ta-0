@@ -63,13 +63,12 @@ public abstract class AbstractIntegrationTest {
         System.setProperty("user.dir", DEFAULT_USER_DIR);
     }
 
-    protected void run(final String args) {
-        run(args.split(" "));
+    protected int run(final String args) {
+        return run(args.split(" "));
     }
 
-    protected void run(final String[] args) {
-        final int exit = new Main().run(args);
-        assertThat(exit, is(0));
+    protected int run(final String[] args) {
+        return new Main().run(args);
     }
 
     protected void deleteFile(final String pathToFile) {

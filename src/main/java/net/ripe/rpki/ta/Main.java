@@ -52,12 +52,7 @@ public class Main {
     public static int run(final String[] args) {
         try {
             final ProgramOptions options = new ProgramOptions(args);
-            final String errorMessage = options.checkValidOptionSet();
-            if (errorMessage != null) {
-                System.err.println(errorMessage);
-                System.err.println(options.getUsageString());
-                return EXIT_ERROR_1;
-            }
+            options.validateOptions();
 
             final Config config = Env.config(options.getEnv());
             final TA ta = new TA(config);
@@ -71,6 +66,10 @@ public class Main {
 
             return EXIT_OK;
 
+        } catch (BadOptions e) {
+            System.err.println(e.getMessage() + "\n");
+            System.err.println(ProgramOptions.getUsageString());
+            return EXIT_ERROR_2;
         } catch (Exception e) {
             System.err.println("The following problem occurred: " +
                     e.getMessage() +

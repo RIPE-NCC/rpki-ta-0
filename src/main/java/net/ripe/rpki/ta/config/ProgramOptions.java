@@ -34,6 +34,7 @@ package net.ripe.rpki.ta.config;
  */
 
 
+import net.ripe.rpki.ta.BadOptions;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -54,9 +55,8 @@ public class ProgramOptions {
     private static final String PRINT_TAL_OPT = "print-tal";
 
     private final CommandLine commandLine;
-    private final Options options;
-
-    public ProgramOptions(String[] args) throws ParseException {
+    private final static Options options;
+    static {
         options = new Options();
         options.addOption(Option.builder().longOpt(ENV_OPT).
                 hasArg().
@@ -87,36 +87,38 @@ public class ProgramOptions {
                 hasArg(false).
                 desc("Print TAL").
                 build());
+    }
 
+    public ProgramOptions(String[] args) throws ParseException {
         commandLine = new DefaultParser().parse(options, args);
     }
 
-    public String checkValidOptionSet() {
-        try {
-            checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
-
-            checkIncompatible(new String[] { INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[] { GENERATE_TA_CERTIFICATE_OPT });
-            checkIncompatible(new String[] { INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[] { PRINT_TA_CERTIFICATE_OPT });
-            checkIncompatible(new String[] { INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[] { PRINT_TAL_OPT });
-
-            checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
-            checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TA_CERTIFICATE_OPT);
-            checkIncompatible(PRINT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
-        } catch (Exception e) {
-            return e.getMessage();
+    public void validateOptions() throws BadOptions {
+        if (!(hasInitialiseFromOldOption() || hasInitialiseOption() ||
+                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption())) {
+            throw new BadOptions("Doesn't have meaningful options.");
         }
-        return null;
+
+        checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+
+        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{GENERATE_TA_CERTIFICATE_OPT});
+        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{PRINT_TA_CERTIFICATE_OPT});
+        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{PRINT_TAL_OPT});
+
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TA_CERTIFICATE_OPT);
+        checkIncompatible(PRINT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
     }
 
-    private void checkIncompatible(final String option1, final String option2) throws Exception {
-        checkIncompatible(new String[] { option1 }, new String[] { option2 });
+    private void checkIncompatible(final String option1, final String option2) throws BadOptions {
+        checkIncompatible(new String[]{option1}, new String[]{option2});
     }
 
-    private void checkIncompatible(final String[] options1, final String[] options2) throws Exception {
-        for (String option1: options1) {
-            for (String option2: options2) {
+    private void checkIncompatible(final String[] options1, final String[] options2) throws BadOptions {
+        for (String option1 : options1) {
+            for (String option2 : options2) {
                 if (commandLine.hasOption(option1) && commandLine.hasOption(option2)) {
-                    throw new Exception("Cannot have both --" + option1 + " option and --" + option2);
+                    throw new BadOptions("Cannot have both --" + option1 + " option and --" + option2);
                 }
             }
         }
@@ -158,7 +160,7 @@ public class ProgramOptions {
         return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
     }
 
-    public String getUsageString() {
+    public static String getUsageString() {
         final HelpFormatter hf = new HelpFormatter();
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
