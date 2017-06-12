@@ -51,12 +51,5 @@
             <outputDirectory/>
             <fileMode>0755</fileMode>
         </fileSet>
-        <fileSet>
-            <directory>target/</directory>
-            <outputDirectory/>
-            <includes>
-                <include>rpki-ta-0-*.jar</include>
-            </includes>
-        </fileSet>
     </fileSets>
 </assembly>
