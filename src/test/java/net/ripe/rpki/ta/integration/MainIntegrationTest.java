@@ -64,10 +64,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void check_options() {
         assertThat(run("--initialise --env=development --initialise-from-old=xxx"), is(2));
-        assertThat(run("--initialise --env=development --generate-ta-certificate"), is(2));
-        assertThat(run("--initialise --env=development --print-ta-certificate"), is(2));
-        assertThat(run("--print-tal --env=development --print-ta-certificate"), is(2));
-        assertThat(run("--generate-ta-certificate --env=development --print-ta-certificate"), is(2));
+        assertThat(run("--initialise --env=development --generate-ta-certificate=output.xml"), is(2));
+        assertThat(run("--initialise --env=development --print-ta-certificate=output.xml"), is(2));
+        assertThat(run("--print-tal --env=development --print-ta-certificate=output.xml"), is(2));
+        assertThat(run("--generate-ta-certificate --env=development --print-ta-certificate=output.xml"), is(2));
     }
 
 }
