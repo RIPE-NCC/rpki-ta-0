@@ -34,6 +34,7 @@ package net.ripe.rpki.ta.config;
  */
 
 
+import net.ripe.rpki.ta.BadOptions;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Period;
@@ -43,13 +44,13 @@ import java.net.URI;
 
 public class Env {
 
-    public static Config config(String envName) throws Exception {
+    public static Config config(String envName) throws BadOptions {
         if (envName == null || "development".equals(envName)) {
             return development();
         } else if ("production".equals(envName)) {
             return production();
         } else {
-            throw new Exception("Unknown environment name: " + envName);
+            throw new BadOptions("Unknown environment name: " + envName);
         }
     }
 

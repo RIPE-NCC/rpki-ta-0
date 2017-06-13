@@ -89,8 +89,12 @@ public class ProgramOptions {
                 build());
     }
 
-    public ProgramOptions(String[] args) throws ParseException {
-        commandLine = new DefaultParser().parse(options, args);
+    public ProgramOptions(String[] args) throws BadOptions {
+        try {
+            commandLine = new DefaultParser().parse(options, args);
+        } catch (ParseException e) {
+            throw new BadOptions(e);
+        }
     }
 
     public void validateOptions() throws BadOptions {

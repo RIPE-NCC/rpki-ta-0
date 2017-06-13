@@ -39,6 +39,8 @@ import net.ripe.rpki.ta.config.ProgramOptions;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class Main {
 
@@ -54,33 +56,39 @@ public class Main {
         System.exit(run.exitCode);
     }
 
-    public static Exit run(final String[] args) {
+    public static Exit run(final String... args) {
         try {
             final ProgramOptions options = new ProgramOptions(args);
-            options.validateOptions();
-
-            final Config config = Env.config(options.getEnv());
-            final TA ta = new TA(config);
-
-            if (options.hasPrintCertificateOption()) {
-                new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
-                return new Exit(EXIT_OK);
-            }
-
-            ta.persist(ta.createNewTAState(options));
-
-            return new Exit(EXIT_OK);
-
+            return run(Env.config(options.getEnv()), options, args);
         } catch (BadOptions e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {
-            System.err.println("The following problem occurred: " +
-                    e.getMessage() +
-                    "\n");
-            e.printStackTrace(System.err);
-
-            return new Exit(EXIT_ERROR_2);
+            return Exit.of(e);
         }
+    }
+
+    public static Exit run(final Config config, final String... args) {
+        try {
+            return run(config, new ProgramOptions(args), args);
+        } catch (BadOptions e) {
+            return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
+        } catch (Exception e) {
+            return Exit.of(e);
+        }
+    }
+
+    private static Exit run(final Config config, final ProgramOptions options, final String... args) throws Exception {
+        options.validateOptions();
+        final TA ta = new TA(config);
+
+        if (options.hasPrintCertificateOption()) {
+            new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
+            return new Exit(EXIT_OK);
+        }
+
+        ta.persist(ta.createNewTAState(options));
+
+        return new Exit(EXIT_OK);
     }
 
     public static class Exit {
@@ -94,6 +102,13 @@ public class Main {
         public Exit(int exitCode, String stderr) {
             this.exitCode = exitCode;
             this.stderr = stderr;
+        }
+
+        static Exit of(Exception e) {
+            final StringWriter sw = new StringWriter();
+            sw.append("The following problem occurred: ").append(e.getMessage()).append("\n");
+            e.printStackTrace(new PrintWriter(sw));
+            return new Exit(EXIT_ERROR_2, sw.toString());
         }
     }
 
