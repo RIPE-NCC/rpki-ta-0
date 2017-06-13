@@ -33,6 +33,8 @@ package net.ripe.rpki.ta.serializers.legacy;
  * =========================LICENSE_END==================================
  */
 
+import java.math.BigInteger;
+
 /**
  * Class to read old style TA.
  */
@@ -49,4 +51,5 @@ public class LegacyTA {
     // We ignore everything, except for the old key pair
     private TrustAnchorKeyStore trustAnchorKeyStore;
 
+    public BigInteger lastIssuedCertificateSerial;
 }

@@ -34,11 +34,17 @@ package net.ripe.rpki.ta.integration;
  */
 
 import net.ripe.rpki.ta.Main;
+import net.ripe.rpki.ta.TA;
+import net.ripe.rpki.ta.config.Env;
+import net.ripe.rpki.ta.serializers.TAState;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigInteger;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class MainIntegrationTest extends AbstractIntegrationTest {
@@ -56,8 +62,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void initialize_development() {
-        final Main.Exit exit = run("--initialise --env=development");
-        assertThat(exit.exitCode, is(0));
+        assertThat(run("--initialise --env=development").exitCode, is(0));
 
         assertThat(readFile(TA_XML_PATH), containsString("<TA>"));
     }
@@ -70,5 +75,15 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertThat(run("--print-tal --env=development --export-ta-certificate=output.xml").exitCode, is(2));
         assertThat(run("--generate-ta-certificate --env=development --export-ta-certificate=output.xml").exitCode, is(2));
     }
+
+    @Test
+    public void generate_ta_certificate() throws Exception {
+        final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml");
+        assertEquals(0, exit.exitCode);
+
+        final TAState taState = new TA(Env.development()).loadTAState();
+        assertEquals(BigInteger.valueOf(29L), taState.getLastIssuedCertificateSerial());
+    }
+
 
 }

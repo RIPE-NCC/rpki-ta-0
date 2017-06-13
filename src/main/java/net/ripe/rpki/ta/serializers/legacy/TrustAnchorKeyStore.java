@@ -40,7 +40,7 @@ public class TrustAnchorKeyStore {
 
     private String keyStorePassphrase;
     private String keyStoreKeyAlias;
-    private BigInteger lastIssuedCertificateSerial;
+
 
     public byte[] getEncoded() {
         return encoded;
@@ -52,9 +52,5 @@ public class TrustAnchorKeyStore {
 
     public String getKeyStoreKeyAlias() {
         return keyStoreKeyAlias;
-    }
-
-    public BigInteger getLastIssuedCertificateSerial() {
-        return lastIssuedCertificateSerial;
     }
 }

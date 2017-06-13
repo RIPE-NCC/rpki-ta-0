@@ -73,7 +73,7 @@ public class TA {
     private final transient KeyPairFactory keyPairFactory;
 
     // TODO We should also support other values taken from the serialized TA
-    private BigInteger serial = BigInteger.ONE;
+//    private BigInteger serial = BigInteger.ONE;
 
     public TA(Config config) {
         this.config = config;
@@ -81,13 +81,7 @@ public class TA {
     }
 
     public TAState initialiseTaState() throws Exception {
-        return createTaState(generateRootKeyPair());
-    }
-
-    private TAState migrateTaState(final LegacyTA legacyTA) throws Exception {
-        final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
-        final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
-        return createTaState(oldKeyPair);
+        return createTaState(generateRootKeyPair(), BigInteger.ONE);
     }
 
     TAState migrateTaState(final String oldTaFilePath) throws Exception {
@@ -96,14 +90,21 @@ public class TA {
         return migrateTaState(legacyTA);
     }
 
-    private TAState createTaState(KeyPair keyPair) throws Exception {
-        final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
-        final KeyStore keyStore = KeyStore.of(config);
-        final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(keyPair, descriptors));
-        return createTaState(encoded, keyStore);
+    private TAState migrateTaState(final LegacyTA legacyTA) throws Exception {
+        final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
+        final BigInteger lastIssuedCertificateSerial = legacyTA.lastIssuedCertificateSerial;
+        final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
+        return createTaState(oldKeyPair, next(lastIssuedCertificateSerial));
     }
 
-    private TAState createTaState(byte[] encoded, final KeyStore keyStore) {
+    private TAState createTaState(KeyPair keyPair, final BigInteger serial) throws Exception {
+        final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
+        final KeyStore keyStore = KeyStore.of(config);
+        final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(keyPair, descriptors, serial));
+        return createTaState(encoded, keyStore, serial);
+    }
+
+    private TAState createTaState(byte[] encoded, final KeyStore keyStore, final BigInteger serial) {
         final TAState taState = new TAState();
         /* TODO Add more stuff here:
 
@@ -138,7 +139,12 @@ public class TA {
         taState.setEncoded(encoded);
         taState.setKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
         taState.setKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
+        taState.setLastIssuedCertificateSerial(serial);
         return taState;
+    }
+
+    private static BigInteger next(final BigInteger serial) {
+        return serial == null ? BigInteger.ONE : serial.add(BigInteger.ONE);
     }
 
     static String serialize(final TAState taState) {
@@ -155,11 +161,7 @@ public class TA {
     }
 
     byte[] getCertificateDER() throws Exception {
-        return getCertificateDER(loadTAState());
-    }
-
-    byte[] getCertificateDER(final TAState taState) throws Exception {
-        return KeyStore.of(config).decode(taState.getEncoded()).getRight().getEncoded();
+        return KeyStore.of(config).decode(loadTAState().getEncoded()).getRight().getEncoded();
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
@@ -181,7 +183,9 @@ public class TA {
         return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[descriptorsMap.size()]);
     }
 
-    private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair, final X509CertificateInformationAccessDescriptor[] descriptors) {
+    private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair,
+                                                         final X509CertificateInformationAccessDescriptor[] descriptors,
+                                                         final BigInteger serial) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
 
         taBuilder.withCa(true);
@@ -206,7 +210,8 @@ public class TA {
 
     private X509ResourceCertificate reIssueRootCertificate(final KeyPair rootKeyPair,
                                                            final X509CertificateInformationAccessDescriptor[] extraSiaDescriptors,
-                                                           final X509ResourceCertificate currentTaCertificate) {
+                                                           final X509ResourceCertificate currentTaCertificate,
+                                                           final BigInteger serial) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
 
         taBuilder.withCa(true);
@@ -283,14 +288,16 @@ public class TA {
             }
             // try to read and decode existing state
             final KeyStore keyStore = KeyStore.of(config);
-            final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(loadTAState().getEncoded());
+            final TAState taState = loadTAState();
+            final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(taState.getEncoded());
 
             // re-issue the TA certificate
             final KeyPair keyPair = decoded.getLeft();
             final X509ResourceCertificate taCertificate = decoded.getRight();
-            final X509ResourceCertificate newTACertificate = reIssueRootCertificate(
-                    keyPair, generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate);
-            return createTaState(keyStore.encode(keyPair, newTACertificate), keyStore);
+            final BigInteger nextSerial = next(taState.getLastIssuedCertificateSerial());
+            final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
+                    generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate, nextSerial);
+            return createTaState(keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
         }
 
         throw new BadOptions("The program options are inconsistent.");

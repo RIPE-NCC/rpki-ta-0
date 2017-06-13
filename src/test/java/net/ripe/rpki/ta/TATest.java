@@ -45,14 +45,14 @@ import static org.junit.Assert.assertTrue;
 public class TATest {
 
     @Test
-    public void initialiseTa() throws Exception {
+    public void initialise_ta() throws Exception {
         final TAState taState = new TA(Env.development()).initialiseTaState();
         assertEquals(Env.development(), taState.getConfig());
         assertNotNull(taState.getEncoded());
     }
 
     @Test
-    public void serializeTa() throws Exception {
+    public void serialize_ta() throws Exception {
         final String xml = TA.serialize(new TA(Env.development()).initialiseTaState());
         assertTrue(xml.contains("<taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>"));
         assertTrue(xml.contains("<taProductsPublicationUri>rsync://localhost:10873/online/</taProductsPublicationUri>"));
@@ -70,4 +70,5 @@ public class TATest {
         assertTrue(xml.startsWith("<TA>"));
         assertTrue(xml.endsWith("</TA>"));
     }
+
 }
