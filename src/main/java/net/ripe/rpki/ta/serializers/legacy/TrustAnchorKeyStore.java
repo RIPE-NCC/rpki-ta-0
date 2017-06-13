@@ -33,11 +33,14 @@ package net.ripe.rpki.ta.serializers.legacy;
  * =========================LICENSE_END==================================
  */
 
+import java.math.BigInteger;
+
 public class TrustAnchorKeyStore {
     private byte[] encoded;
 
     private String keyStorePassphrase;
     private String keyStoreKeyAlias;
+    private BigInteger lastIssuedCertificateSerial;
 
     public byte[] getEncoded() {
         return encoded;
@@ -49,5 +52,9 @@ public class TrustAnchorKeyStore {
 
     public String getKeyStoreKeyAlias() {
         return keyStoreKeyAlias;
+    }
+
+    public BigInteger getLastIssuedCertificateSerial() {
+        return lastIssuedCertificateSerial;
     }
 }

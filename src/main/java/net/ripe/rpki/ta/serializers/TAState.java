@@ -4,6 +4,8 @@ import net.ripe.rpki.ta.config.Config;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.math.BigInteger;
+
 /*-
  * ========================LICENSE_START=================================
  * RIPE NCC Trust Anchor
@@ -47,6 +49,8 @@ public class TAState {
     private String keyStorePassphrase;
     private String keyStoreKeyAlias;
 
+    private BigInteger lastIssuedCertificateSerial;
+
     public byte[] getEncoded() {
         return encoded;
     }
@@ -79,6 +83,14 @@ public class TAState {
         this.keyStoreKeyAlias = keyStoreKeyAlias;
     }
 
+    public BigInteger getLastIssuedCertificateSerial() {
+        return lastIssuedCertificateSerial;
+    }
+
+    public void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
+        this.lastIssuedCertificateSerial = lastIssuedCertificateSerial;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -92,6 +104,7 @@ public class TAState {
                 .append(config, taState.config)
                 .append(keyStorePassphrase, taState.keyStorePassphrase)
                 .append(keyStoreKeyAlias, taState.keyStoreKeyAlias)
+                .append(lastIssuedCertificateSerial, taState.lastIssuedCertificateSerial)
                 .isEquals();
     }
 
@@ -102,6 +115,7 @@ public class TAState {
                 .append(config)
                 .append(keyStorePassphrase)
                 .append(keyStoreKeyAlias)
+                .append(lastIssuedCertificateSerial)
                 .toHashCode();
     }
 }
