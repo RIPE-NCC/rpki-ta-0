@@ -4,12 +4,14 @@ import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.serializers.TAState;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 
 import static org.junit.Assert.*;
 
@@ -48,10 +50,11 @@ import static org.junit.Assert.*;
 
 public class TAPersistenceTest {
 
-    private static final String STORAGE_DIR = "src/test/resources/tmp";
+    private static final String STORAGE_DIR = "target/test/resources/tmp";
 
     @Before
     public void setUp() throws Exception {
+        FileUtils.forceMkdir(new File(STORAGE_DIR));
         cleanTaXml();
     }
 
@@ -70,6 +73,9 @@ public class TAPersistenceTest {
         ta.persist(taState);
 
         assertEquals(taState, ta.loadTAState());
+
+        // TA serial should be set to 1 upon initialisation:
+        assertEquals(BigInteger.ONE, taState.getLastIssuedCertificateSerial());
     }
 
     private void cleanTaXml() {

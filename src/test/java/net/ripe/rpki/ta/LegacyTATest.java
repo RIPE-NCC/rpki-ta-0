@@ -14,12 +14,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /*-
  * ========================LICENSE_START=================================
@@ -89,6 +88,9 @@ public class LegacyTATest {
         final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(testConfig).decode(encoded);
 
         assertEquals(decoded.getKey().getPublic(), decodedLegacy.getKey().getPublic());
+
+        // TA last serial should be legacy TA serial + 1:
+        assertEquals(legacyTA.lastIssuedCertificateSerial.add(BigInteger.ONE), taState.getLastIssuedCertificateSerial());
     }
 
 
