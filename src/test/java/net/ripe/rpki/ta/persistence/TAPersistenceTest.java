@@ -4,14 +4,13 @@ import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.serializers.TAState;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.IOException;
+import java.math.BigInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /*-
  * ========================LICENSE_START=================================
@@ -48,32 +47,22 @@ import static org.junit.Assert.*;
 
 public class TAPersistenceTest {
 
-    private static final String STORAGE_DIR = "src/test/resources/tmp";
-
-    @Before
-    public void setUp() throws Exception {
-        cleanTaXml();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        cleanTaXml();
-    }
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void saveAndLoad() throws Exception {
         final Config testConfig = Env.development();
-        testConfig.setPersistentStorageDir(STORAGE_DIR);
+        testConfig.setPersistentStorageDir(tempFolder.getRoot().getAbsolutePath());
 
         final TA ta = new TA(testConfig);
         final TAState taState = ta.initialiseTaState();
         ta.persist(taState);
 
         assertEquals(taState, ta.loadTAState());
-    }
 
-    private void cleanTaXml() {
-        new File(STORAGE_DIR + "/ta.xml").delete();
+        // TA serial should be set to 1 upon initialisation:
+        assertEquals(BigInteger.ONE, taState.getLastIssuedCertificateSerial());
     }
 
 }
