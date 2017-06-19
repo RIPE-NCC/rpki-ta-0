@@ -123,7 +123,7 @@ public class TA {
                 SignedResourceCertificate signedResourceCertificate = new SignedResourceCertificate();
 
                 signedResourceCertificate.setSerial(certificate.getSerialNumber());
-                signedResourceCertificate.setExpiryDate(new DateTime(src.getCertificateRepositoryObject().getCertificate().getNotAfter()));
+                signedResourceCertificate.setNotValidAfter(new DateTime(src.getCertificateRepositoryObject().getCertificate().getNotAfter()));
 
                 signedResourceCertificates.add(signedResourceCertificate);
             }

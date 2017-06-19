@@ -35,9 +35,6 @@ package net.ripe.rpki.ta.serializers.legacy;
 
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 
-/**
- * Created by sbuskens on 19/06/2017.
- */
 public class SignedResourceCertificate {
 
     private X509ResourceCertificate certificateRepositoryObject;

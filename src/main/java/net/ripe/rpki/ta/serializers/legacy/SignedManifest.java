@@ -35,9 +35,6 @@ package net.ripe.rpki.ta.serializers.legacy;
 
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 
-/**
- * Created by sbuskens on 19/06/2017.
- */
 public class SignedManifest {
 
     private ManifestCms certificateRepositoryObject;

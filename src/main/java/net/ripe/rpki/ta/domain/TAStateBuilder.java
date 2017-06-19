@@ -38,9 +38,6 @@ import net.ripe.rpki.ta.config.Config;
 import java.math.BigInteger;
 import java.util.List;
 
-/**
- * Created by sbuskens on 19/06/2017.
- */
 public class TAStateBuilder {
 
     private final TAState taState;

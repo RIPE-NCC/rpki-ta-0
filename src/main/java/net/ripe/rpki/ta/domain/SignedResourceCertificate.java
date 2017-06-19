@@ -37,13 +37,10 @@ import org.joda.time.DateTime;
 
 import java.math.BigInteger;
 
-/**
- * Created by sbuskens on 19/06/2017.
- */
 public class SignedResourceCertificate {
 
     private BigInteger serial;
-    private DateTime expiryDate;
+    private DateTime notValidAfter;
 
     public BigInteger getSerial() {
         return serial;
@@ -53,11 +50,11 @@ public class SignedResourceCertificate {
         this.serial = serial;
     }
 
-    public DateTime getExpiryDate() {
-        return expiryDate;
+    public DateTime getNotValidAfter() {
+        return notValidAfter;
     }
 
-    public void setExpiryDate(DateTime expiryDate) {
-        this.expiryDate = expiryDate;
+    public void setNotValidAfter(DateTime notValidAfter) {
+        this.notValidAfter = notValidAfter;
     }
 }

@@ -37,9 +37,6 @@ import org.joda.time.DateTime;
 
 import java.math.BigInteger;
 
-/**
- * Created by sbuskens on 19/06/2017.
- */
 public class SignedManifest {
 
     private BigInteger serial;
