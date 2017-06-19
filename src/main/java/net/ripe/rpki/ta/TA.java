@@ -42,6 +42,7 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.domain.SignedResourceCertificate;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAState;
@@ -52,18 +53,25 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
 
 public class TA {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(TA.class);
 
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
@@ -97,6 +105,29 @@ public class TA {
         return createTaState(oldKeyPair, next(lastIssuedCertificateSerial));
     }
 
+    private List<SignedResourceCertificate> importPreviousSignedResourceCertificates(final LegacyTA legacyTA) {
+        List<SignedResourceCertificate> signedResourceCertificates = new ArrayList<SignedResourceCertificate>();
+
+        for (net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate src : legacyTA.getSignedProductionCertificates()) {
+            X509Certificate certificate = src.getCertificateRepositoryObject().getCertificate();
+
+            if (src.getCertificateRepositoryObject().isPastValidityTime()) {
+                LOGGER.info("Certificate with serial {} expired on {}, *not* migrating this certificate",
+                        certificate.getSerialNumber(),
+                        src.getCertificateRepositoryObject().getCertificate().getNotAfter());
+            } else {
+                SignedResourceCertificate signedResourceCertificate = new SignedResourceCertificate();
+
+                signedResourceCertificate.setSerial(certificate.getSerialNumber());
+                signedResourceCertificate.setExpiryDate(new DateTime(src.getCertificateRepositoryObject().getCertificate().getNotAfter()));
+
+                signedResourceCertificates.add(signedResourceCertificate);
+            }
+        }
+
+        return signedResourceCertificates;
+    }
+
     private TAState createTaState(KeyPair keyPair, final BigInteger serial) throws Exception {
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
         final KeyStore keyStore = KeyStore.of(config);
@@ -116,7 +147,6 @@ public class TA {
             private URI taProductsPublicationUri;
 
             private X500Principal caName;
-            private X509Crl crl;
             private BigInteger lastCrlNumber;
 
             private String signatureProvider;
@@ -140,6 +170,7 @@ public class TA {
         taState.setKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
         taState.setKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
         taState.setLastIssuedCertificateSerial(serial);
+
         return taState;
     }
 

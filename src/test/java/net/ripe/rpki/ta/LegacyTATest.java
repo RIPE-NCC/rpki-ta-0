@@ -10,15 +10,14 @@ import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.math.BigInteger;
 import java.security.KeyPair;
-import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /*-
  * ========================LICENSE_START=================================
@@ -91,6 +90,9 @@ public class LegacyTATest {
 
         // TA last serial should be legacy TA serial + 1:
         assertEquals(legacyTA.lastIssuedCertificateSerial.add(BigInteger.ONE), taState.getLastIssuedCertificateSerial());
+
+        // The CRL should have been copied from the legacy TA:
+        assertEquals(legacyTA.getCrl(), taState.getCrl());
     }
 
 

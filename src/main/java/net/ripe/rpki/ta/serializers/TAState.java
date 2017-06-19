@@ -1,10 +1,14 @@
 package net.ripe.rpki.ta.serializers;
 
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.domain.SignedResourceCertificate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /*-
  * ========================LICENSE_START=================================
@@ -43,13 +47,43 @@ import java.math.BigInteger;
  * TA state to be serialized to ta.xml
  */
 public class TAState {
+
     private byte[] encoded;
     private Config config;
+    private X509Crl crl;
 
     private String keyStorePassphrase;
     private String keyStoreKeyAlias;
 
     private BigInteger lastIssuedCertificateSerial;
+
+    private BigInteger lastIssuedCrlAndManifestNumber;
+
+    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
+
+    public List<SignedResourceCertificate> getSignedProductionCertificates() {
+        return signedProductionCertificates;
+    }
+
+    public void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
+        this.signedProductionCertificates = signedProductionCertificates;
+    }
+
+    public BigInteger getLastIssuedCrlAndManifestNumber() {
+        return lastIssuedCrlAndManifestNumber;
+    }
+
+    public void setLastIssuedCrlAndManifestNumber(BigInteger lastIssuedCrlAndManifestNumber) {
+        this.lastIssuedCrlAndManifestNumber = lastIssuedCrlAndManifestNumber;
+    }
+
+    public X509Crl getCrl() {
+        return crl;
+    }
+
+    public void setCrl(X509Crl crl) {
+        this.crl = crl;
+    }
 
     public byte[] getEncoded() {
         return encoded;
@@ -100,6 +134,7 @@ public class TAState {
         TAState taState = (TAState) o;
 
         return new EqualsBuilder()
+                .append(crl, taState.crl)
                 .append(encoded, taState.encoded)
                 .append(config, taState.config)
                 .append(keyStorePassphrase, taState.keyStorePassphrase)
@@ -111,6 +146,7 @@ public class TAState {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
+                .append(crl)
                 .append(encoded)
                 .append(config)
                 .append(keyStorePassphrase)

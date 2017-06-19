@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.serializers.legacy;
+package net.ripe.rpki.ta.domain;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,67 +33,31 @@ package net.ripe.rpki.ta.serializers.legacy;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.crypto.crl.X509Crl;
+import org.joda.time.DateTime;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Class to read old style TA.
+ * Created by sbuskens on 19/06/2017.
  */
-public class LegacyTA {
+public class SignedResourceCertificate {
 
-    // TODO Move this ones to ta.xml
-    public static final String KEY_STORE_ALIAS = "RTA";
-    public final static char[] KEY_STORE_PASSPHRASE = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
+    private BigInteger serial;
+    private DateTime expiryDate;
 
-    public TrustAnchorKeyStore getTrustAnchorKeyStore() {
-        return trustAnchorKeyStore;
+    public BigInteger getSerial() {
+        return serial;
     }
 
-    // We ignore everything, except for the old key pair
-    private TrustAnchorKeyStore trustAnchorKeyStore;
-
-    public BigInteger lastIssuedCertificateSerial;
-
-    private BigInteger lastCrlNumber;
-
-    private BigInteger lastManifestNumber;
-
-    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
-
-    public BigInteger getLastManifestNumber() {
-        return lastManifestNumber;
+    public void setSerial(BigInteger serial) {
+        this.serial = serial;
     }
 
-    public void setLastManifestNumber(BigInteger lastManifestNumber) {
-        this.lastManifestNumber = lastManifestNumber;
+    public DateTime getExpiryDate() {
+        return expiryDate;
     }
 
-    public BigInteger getLastCrlNumber() {
-        return lastCrlNumber;
-    }
-
-    public void setLastCrlNumber(BigInteger lastCrlNumber) {
-        this.lastCrlNumber = lastCrlNumber;
-    }
-
-    private X509Crl crl;
-
-    public X509Crl getCrl() {
-        return crl;
-    }
-
-    public void setCrl(X509Crl crl) {
-        this.crl = crl;
-    }
-
-    public List<SignedResourceCertificate> getSignedProductionCertificates() {
-        return signedProductionCertificates;
-    }
-
-    public void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
-        this.signedProductionCertificates = signedProductionCertificates;
+    public void setExpiryDate(DateTime expiryDate) {
+        this.expiryDate = expiryDate;
     }
 }
