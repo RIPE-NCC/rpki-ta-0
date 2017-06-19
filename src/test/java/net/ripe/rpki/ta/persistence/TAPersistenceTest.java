@@ -3,7 +3,7 @@ package net.ripe.rpki.ta.persistence;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.serializers.TAState;
+import net.ripe.rpki.ta.domain.TAState;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

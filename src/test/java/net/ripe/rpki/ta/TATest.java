@@ -34,7 +34,7 @@ package net.ripe.rpki.ta;
  */
 
 import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.serializers.TAState;
+import net.ripe.rpki.ta.domain.TAState;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

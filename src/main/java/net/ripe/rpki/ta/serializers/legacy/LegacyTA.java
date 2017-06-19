@@ -63,6 +63,8 @@ public class LegacyTA {
 
     private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
 
+    private List<SignedManifest> signedManifests;
+
     public BigInteger getLastManifestNumber() {
         return lastManifestNumber;
     }
@@ -95,5 +97,13 @@ public class LegacyTA {
 
     public void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
         this.signedProductionCertificates = signedProductionCertificates;
+    }
+
+    public List<SignedManifest> getSignedManifests() {
+        return signedManifests;
+    }
+
+    public void setSignedManifests(List<SignedManifest> signedManifests) {
+        this.signedManifests = signedManifests;
     }
 }

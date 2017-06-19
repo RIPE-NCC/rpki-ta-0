@@ -42,10 +42,12 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.domain.SignedManifest;
 import net.ripe.rpki.ta.domain.SignedResourceCertificate;
+import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.domain.TAStateBuilder;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
-import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,17 +81,16 @@ public class TA {
 
     private final Config config;
     private final transient KeyPairFactory keyPairFactory;
-
-    // TODO We should also support other values taken from the serialized TA
-//    private BigInteger serial = BigInteger.ONE;
+    private final TAStateBuilder taStateBuilder;
 
     public TA(Config config) {
         this.config = config;
         this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
+        this.taStateBuilder = new TAStateBuilder(config);
     }
 
     public TAState initialiseTaState() throws Exception {
-        return createTaState(generateRootKeyPair(), BigInteger.ONE);
+        return createTaState(taStateBuilder, generateRootKeyPair(), BigInteger.ONE);
     }
 
     TAState migrateTaState(final String oldTaFilePath) throws Exception {
@@ -102,20 +103,23 @@ public class TA {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
         final BigInteger lastIssuedCertificateSerial = legacyTA.lastIssuedCertificateSerial;
         final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
-        return createTaState(oldKeyPair, next(lastIssuedCertificateSerial));
+
+        taStateBuilder.withSignedProductionCertificates(importSignedResourceCertificates(legacyTA));
+        taStateBuilder.withSignedManifests(importSignedManifests(legacyTA));
+        // the last issued crl and/or manifest number are identical so we pick the crl one:
+        taStateBuilder.withLastCrlAndManifestNumber(legacyTA.getLastCrlNumber());
+
+        return createTaState(taStateBuilder, oldKeyPair, next(lastIssuedCertificateSerial));
     }
 
-    private List<SignedResourceCertificate> importPreviousSignedResourceCertificates(final LegacyTA legacyTA) {
+    private List<SignedResourceCertificate> importSignedResourceCertificates(final LegacyTA legacyTA) {
         List<SignedResourceCertificate> signedResourceCertificates = new ArrayList<SignedResourceCertificate>();
 
         for (net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate src : legacyTA.getSignedProductionCertificates()) {
             X509Certificate certificate = src.getCertificateRepositoryObject().getCertificate();
 
-            if (src.getCertificateRepositoryObject().isPastValidityTime()) {
-                LOGGER.info("Certificate with serial {} expired on {}, *not* migrating this certificate",
-                        certificate.getSerialNumber(),
-                        src.getCertificateRepositoryObject().getCertificate().getNotAfter());
-            } else {
+            // only import certificates that have not yet expired:
+            if (!src.getCertificateRepositoryObject().isPastValidityTime()) {
                 SignedResourceCertificate signedResourceCertificate = new SignedResourceCertificate();
 
                 signedResourceCertificate.setSerial(certificate.getSerialNumber());
@@ -128,15 +132,46 @@ public class TA {
         return signedResourceCertificates;
     }
 
-    private TAState createTaState(KeyPair keyPair, final BigInteger serial) throws Exception {
+    private List<SignedManifest> importSignedManifests(final LegacyTA legacyTA) {
+        List<SignedManifest> signedManifests = new ArrayList<SignedManifest>();
+
+        for (net.ripe.rpki.ta.serializers.legacy.SignedManifest signedManifest : legacyTA.getSignedManifests()) {
+            if (!signedManifest.getCertificateRepositoryObject().isPastValidityTime()) {
+                SignedManifest manifest = new SignedManifest();
+
+                manifest.setSerial(signedManifest.getCertificateRepositoryObject().getCertificate().getSerialNumber());
+                manifest.setNotValidAfter(signedManifest.getCertificateRepositoryObject().getCertificate().getValidityPeriod().getNotValidAfter());
+
+                signedManifests.add(manifest);
+            }
+        }
+
+        return signedManifests;
+    }
+
+    private TAState createTaState(TAStateBuilder taStateBuilder, KeyPair keyPair, final BigInteger serial) throws Exception {
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
         final KeyStore keyStore = KeyStore.of(config);
         final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(keyPair, descriptors, serial));
-        return createTaState(encoded, keyStore, serial);
+
+        taStateBuilder.withEncoded(encoded);
+        taStateBuilder.withKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
+        taStateBuilder.withKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
+        taStateBuilder.withLastIssuedCertificateSerial(serial);
+
+        return createTaState(taStateBuilder, encoded, keyStore, serial);
     }
 
-    private TAState createTaState(byte[] encoded, final KeyStore keyStore, final BigInteger serial) {
-        final TAState taState = new TAState();
+    private TAState createTaState(TAStateBuilder taStateBuilder, byte[] encoded, KeyStore keyStore, final BigInteger serial) throws Exception {
+        taStateBuilder.withEncoded(encoded);
+        taStateBuilder.withKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
+        taStateBuilder.withKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
+        taStateBuilder.withLastIssuedCertificateSerial(serial);
+
+        return createTaState(taStateBuilder);
+    }
+
+    private TAState createTaState(final TAStateBuilder taStateBuilder) {
         /* TODO Add more stuff here:
 
          Old TrustAnchor class contains:
@@ -165,13 +200,8 @@ public class TA {
             private BigInteger lastIssuedCertificateSerial;
             private Long lastProcessedRequestTimestamp = 0L;
           */
-        taState.setConfig(config);
-        taState.setEncoded(encoded);
-        taState.setKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
-        taState.setKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
-        taState.setLastIssuedCertificateSerial(serial);
 
-        return taState;
+        return taStateBuilder.build();
     }
 
     private static BigInteger next(final BigInteger serial) {
@@ -328,7 +358,7 @@ public class TA {
             final BigInteger nextSerial = next(taState.getLastIssuedCertificateSerial());
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
                     generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate, nextSerial);
-            return createTaState(keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
+            return createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
         }
 
         throw new BadOptions("The program options are inconsistent.");

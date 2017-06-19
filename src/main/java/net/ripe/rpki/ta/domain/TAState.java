@@ -1,13 +1,11 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta.domain;
 
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.domain.SignedResourceCertificate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 /*-
@@ -57,31 +55,32 @@ public class TAState {
 
     private BigInteger lastIssuedCertificateSerial;
 
-    private BigInteger lastIssuedCrlAndManifestNumber;
+    private BigInteger lastCrlAndManifestNumber;
 
-    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
+    private List<SignedResourceCertificate> signedProductionCertificates;
+    private List<SignedManifest> signedManifests;
 
     public List<SignedResourceCertificate> getSignedProductionCertificates() {
         return signedProductionCertificates;
     }
 
-    public void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
+    void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
         this.signedProductionCertificates = signedProductionCertificates;
     }
 
-    public BigInteger getLastIssuedCrlAndManifestNumber() {
-        return lastIssuedCrlAndManifestNumber;
+    public BigInteger getLastCrlAndManifestNumber() {
+        return lastCrlAndManifestNumber;
     }
 
-    public void setLastIssuedCrlAndManifestNumber(BigInteger lastIssuedCrlAndManifestNumber) {
-        this.lastIssuedCrlAndManifestNumber = lastIssuedCrlAndManifestNumber;
+    void setLastCrlAndManifestNumber(BigInteger lastCrlAndManifestNumber) {
+        this.lastCrlAndManifestNumber = lastCrlAndManifestNumber;
     }
 
     public X509Crl getCrl() {
         return crl;
     }
 
-    public void setCrl(X509Crl crl) {
+    void setCrl(X509Crl crl) {
         this.crl = crl;
     }
 
@@ -89,7 +88,7 @@ public class TAState {
         return encoded;
     }
 
-    public void setEncoded(byte[] encoded) {
+    void setEncoded(byte[] encoded) {
         this.encoded = encoded;
     }
 
@@ -97,7 +96,7 @@ public class TAState {
         return config;
     }
 
-    public void setConfig(Config config) {
+    void setConfig(Config config) {
         this.config = config;
     }
 
@@ -105,7 +104,7 @@ public class TAState {
         return keyStorePassphrase;
     }
 
-    public void setKeyStorePassphrase(String keyStorePassphrase) {
+    void setKeyStorePassphrase(String keyStorePassphrase) {
         this.keyStorePassphrase = keyStorePassphrase;
     }
 
@@ -113,7 +112,7 @@ public class TAState {
         return keyStoreKeyAlias;
     }
 
-    public void setKeyStoreKeyAlias(String keyStoreKeyAlias) {
+    void setKeyStoreKeyAlias(String keyStoreKeyAlias) {
         this.keyStoreKeyAlias = keyStoreKeyAlias;
     }
 
@@ -121,8 +120,16 @@ public class TAState {
         return lastIssuedCertificateSerial;
     }
 
-    public void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
+    void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
         this.lastIssuedCertificateSerial = lastIssuedCertificateSerial;
+    }
+
+    public List<SignedManifest> getSignedManifests() {
+        return signedManifests;
+    }
+
+    public void setSignedManifests(List<SignedManifest> signedManifests) {
+        this.signedManifests = signedManifests;
     }
 
     @Override
@@ -139,7 +146,10 @@ public class TAState {
                 .append(config, taState.config)
                 .append(keyStorePassphrase, taState.keyStorePassphrase)
                 .append(keyStoreKeyAlias, taState.keyStoreKeyAlias)
+                .append(lastCrlAndManifestNumber, taState.lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial, taState.lastIssuedCertificateSerial)
+                .append(signedProductionCertificates, taState.signedProductionCertificates)
+                .append(signedManifests, taState.signedManifests)
                 .isEquals();
     }
 
@@ -151,7 +161,11 @@ public class TAState {
                 .append(config)
                 .append(keyStorePassphrase)
                 .append(keyStoreKeyAlias)
+                .append(lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial)
+                .append(signedProductionCertificates)
+                .append(signedManifests)
                 .toHashCode();
     }
+
 }

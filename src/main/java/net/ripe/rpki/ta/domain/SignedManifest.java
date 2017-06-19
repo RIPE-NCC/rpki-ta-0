@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta.domain;
 
 /*-
  * ========================LICENSE_START=================================
@@ -8,18 +8,18 @@ package net.ripe.rpki.ta.serializers;
  * -
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of the RIPE NCC nor the names of its contributors
  *    may be used to endorse or promote products derived from this software without
  *    specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -33,22 +33,31 @@ package net.ripe.rpki.ta.serializers;
  * =========================LICENSE_END==================================
  */
 
+import org.joda.time.DateTime;
 
-import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
-import net.ripe.rpki.ta.domain.SignedManifest;
-import net.ripe.rpki.ta.domain.SignedResourceCertificate;
-import net.ripe.rpki.ta.domain.TAState;
+import java.math.BigInteger;
 
-public class TAStateSerializer extends Serializer<TAState> {
+/**
+ * Created by sbuskens on 19/06/2017.
+ */
+public class SignedManifest {
 
-    protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
-        builder.withAliasType("TA", TAState.class);
-        builder.withAliasType("SignedResourceCertificate", SignedResourceCertificate.class);
-        builder.withAliasType("SignedManifest", SignedManifest.class);
-        return builder;
+    private BigInteger serial;
+    private DateTime notValidAfter;
+
+    public BigInteger getSerial() {
+        return serial;
     }
 
-    protected Class<TAState> clazz() {
-        return TAState.class;
+    public void setSerial(BigInteger serial) {
+        this.serial = serial;
+    }
+
+    public DateTime getNotValidAfter() {
+        return notValidAfter;
+    }
+
+    public void setNotValidAfter(DateTime notValidAfter) {
+        this.notValidAfter = notValidAfter;
     }
 }
