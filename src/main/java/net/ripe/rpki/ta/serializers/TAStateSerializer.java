@@ -35,16 +35,14 @@ package net.ripe.rpki.ta.serializers;
 
 
 import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
-import net.ripe.rpki.ta.domain.SignedManifest;
-import net.ripe.rpki.ta.domain.SignedResourceCertificate;
+import net.ripe.rpki.ta.domain.Revocation;
 import net.ripe.rpki.ta.domain.TAState;
 
 public class TAStateSerializer extends Serializer<TAState> {
 
     protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
         builder.withAliasType("TA", TAState.class);
-        builder.withAliasType("SignedResourceCertificate", SignedResourceCertificate.class);
-        builder.withAliasType("SignedManifest", SignedManifest.class);
+        builder.withAliasType("revocation", Revocation.class);
         return builder;
     }
 

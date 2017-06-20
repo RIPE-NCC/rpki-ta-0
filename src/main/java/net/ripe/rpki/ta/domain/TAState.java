@@ -57,15 +57,22 @@ public class TAState {
 
     private BigInteger lastCrlAndManifestNumber;
 
-    private List<SignedResourceCertificate> signedProductionCertificates;
-    private List<SignedManifest> signedManifests;
+    private List<Revocation> revocations;
 
-    public List<SignedResourceCertificate> getSignedProductionCertificates() {
-        return signedProductionCertificates;
+    public List<Revocation> getRevocations() {
+        return revocations;
     }
 
-    void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
-        this.signedProductionCertificates = signedProductionCertificates;
+    TAState() {
+        // package protected constructor so XStream can instantiate this object
+    }
+
+    public TAState(Config config) {
+        this.config = config;
+    }
+
+    void setRevocations(List<Revocation> revocations) {
+        this.revocations = revocations;
     }
 
     public BigInteger getLastCrlAndManifestNumber() {
@@ -124,14 +131,6 @@ public class TAState {
         this.lastIssuedCertificateSerial = lastIssuedCertificateSerial;
     }
 
-    public List<SignedManifest> getSignedManifests() {
-        return signedManifests;
-    }
-
-    public void setSignedManifests(List<SignedManifest> signedManifests) {
-        this.signedManifests = signedManifests;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -148,8 +147,7 @@ public class TAState {
                 .append(keyStoreKeyAlias, taState.keyStoreKeyAlias)
                 .append(lastCrlAndManifestNumber, taState.lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial, taState.lastIssuedCertificateSerial)
-                .append(signedProductionCertificates, taState.signedProductionCertificates)
-                .append(signedManifests, taState.signedManifests)
+                .append(revocations, taState.revocations)
                 .isEquals();
     }
 
@@ -163,8 +161,7 @@ public class TAState {
                 .append(keyStoreKeyAlias)
                 .append(lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial)
-                .append(signedProductionCertificates)
-                .append(signedManifests)
+                .append(revocations)
                 .toHashCode();
     }
 

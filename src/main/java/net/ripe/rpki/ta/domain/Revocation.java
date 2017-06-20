@@ -37,7 +37,7 @@ import org.joda.time.DateTime;
 
 import java.math.BigInteger;
 
-public class SignedResourceCertificate {
+public class Revocation {
 
     private BigInteger serial;
     private DateTime notValidAfter;

@@ -33,28 +33,48 @@ package net.ripe.rpki.ta.domain;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.collect.Lists;
+import net.ripe.rpki.ta.config.Env;
 import org.joda.time.DateTime;
+import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.List;
 
-public class SignedManifest {
+import static org.junit.Assert.assertEquals;
 
-    private BigInteger serial;
-    private DateTime notValidAfter;
+public class TAStateBuilderTest {
 
-    public BigInteger getSerial() {
-        return serial;
+    @Test
+    public void testWithRevocations() {
+        TAStateBuilder taStateBuilder = new TAStateBuilder(Env.development());
+
+        List<Revocation> revocations = Lists.newArrayList();
+
+        revocations.add(revocation("1", new DateTime().plusYears(1)));
+        revocations.add(revocation("2", new DateTime().plusYears(2)));
+
+        TAState taState = taStateBuilder.withRevocations(revocations).build();
+        assertEquals(2, taState.getRevocations().size());
     }
 
-    public void setSerial(BigInteger serial) {
-        this.serial = serial;
+    @Test
+    public void testWithRevocations_oneRevocationInThePast() {
+        TAStateBuilder taStateBuilder = new TAStateBuilder(Env.development());
+
+        List<Revocation> revocations = Lists.newArrayList();
+
+        revocations.add(revocation("1", new DateTime().plusYears(1)));
+        revocations.add(revocation("2", new DateTime().minusYears(2)));
+
+        TAState taState = taStateBuilder.withRevocations(revocations).build();
+        assertEquals(1, taState.getRevocations().size());
     }
 
-    public DateTime getNotValidAfter() {
-        return notValidAfter;
-    }
-
-    public void setNotValidAfter(DateTime notValidAfter) {
-        this.notValidAfter = notValidAfter;
+    private Revocation revocation(String serial, DateTime notValidAfter) {
+        Revocation revocation = new Revocation();
+        revocation.setSerial(new BigInteger(serial));
+        revocation.setNotValidAfter(notValidAfter);
+        return revocation;
     }
 }

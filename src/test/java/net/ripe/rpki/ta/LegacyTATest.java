@@ -84,11 +84,8 @@ public class LegacyTATest {
         // TA last serial should be legacy TA serial + 1:
         assertEquals(legacyTA.lastIssuedCertificateSerial.add(BigInteger.ONE), taState.getLastIssuedCertificateSerial());
 
-        // 9 issued production certificates should have been migrated:
-        assertEquals(9, taState.getSignedProductionCertificates().size());
-
-        // 5 signed manifests should have been migrated:
-        assertEquals(5, taState.getSignedManifests().size());
+        // 9 issued production certificates and 5 signed manifests should have been migrated:
+        assertEquals(9 + 5, taState.getRevocations().size());
 
         // last crl and manifest number should be set to same value as imported crl / manifest number:
         assertEquals(legacyTA.getLastCrlNumber(), taState.getLastCrlAndManifestNumber());

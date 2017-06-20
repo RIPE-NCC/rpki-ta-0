@@ -36,6 +36,9 @@ package net.ripe.rpki.ta.domain;
 import net.ripe.rpki.ta.config.Config;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 public class TAStateBuilder {
@@ -67,13 +70,25 @@ public class TAStateBuilder {
         return this;
     }
 
-    public TAStateBuilder withSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
-        taState.setSignedProductionCertificates(signedProductionCertificates);
-        return this;
-    }
+    public TAStateBuilder withRevocations(List<Revocation> revocations) {
+        // remove revocations that have already expired:
+        for (Iterator<Revocation>iter = revocations.iterator(); iter.hasNext();) {
+            Revocation revocation = iter.next();
+            if (revocation.getNotValidAfter().isBeforeNow()) {
+                iter.remove();
+            }
+        }
 
-    public TAStateBuilder withSignedManifests(List<SignedManifest> signedManifests) {
-        taState.setSignedManifests(signedManifests);
+        // sort ascending by serial:
+        Collections.sort(revocations, new Comparator<Revocation>() {
+            @Override
+            public int compare(Revocation lhs, Revocation rhs) {
+                return lhs.getSerial().compareTo(rhs.getSerial());
+            }
+        });
+
+        taState.setRevocations(revocations);
+
         return this;
     }
 
