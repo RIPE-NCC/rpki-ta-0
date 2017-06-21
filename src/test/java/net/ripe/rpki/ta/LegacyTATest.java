@@ -3,22 +3,21 @@ package net.ripe.rpki.ta;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
+import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
-import net.ripe.rpki.ta.serializers.TAState;
+import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
 import java.math.BigInteger;
 import java.security.KeyPair;
-import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /*-
  * ========================LICENSE_START=================================
@@ -55,26 +54,19 @@ import static org.junit.Assert.*;
 
 public class LegacyTATest {
 
-    private static final String STORAGE_DIR = "src/test/resources/tmp";
     private static final String LEGACY_TA_PATH = "src/test/resources/ta-legacy.xml";
 
-    @Before
-    public void setUp() throws Exception {
-        cleanTaXml();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        cleanTaXml();
-    }
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void migrateLegacyTA() throws Exception {
         final Config testConfig = Env.development();
-        testConfig.setPersistentStorageDir(STORAGE_DIR);
+        testConfig.setPersistentStorageDir(tempFolder.getRoot().getAbsolutePath());
 
         final TA ta = new TA(testConfig);
         TAState taState = ta.migrateTaState(LEGACY_TA_PATH);
+        new TAPersistence(testConfig).save(new TAStateSerializer().serialize(taState));
 
         // do the same manually
         final String legacyXml = new TAPersistence(testConfig).load(LEGACY_TA_PATH);
@@ -91,11 +83,13 @@ public class LegacyTATest {
 
         // TA last serial should be legacy TA serial + 1:
         assertEquals(legacyTA.lastIssuedCertificateSerial.add(BigInteger.ONE), taState.getLastIssuedCertificateSerial());
-    }
 
+        // 9 issued production certificates and 5 signed manifests should have been migrated:
+        assertEquals(9 + 5, taState.getRevocations().size());
 
-    private void cleanTaXml() {
-        new File(STORAGE_DIR + "/ta.xml").delete();
+        // last crl and manifest number should be set to same value as imported crl / manifest number:
+        assertEquals(legacyTA.getLastCrlNumber(), taState.getLastCrlAndManifestNumber());
+        assertEquals(legacyTA.getLastManifestNumber(), taState.getLastCrlAndManifestNumber());
     }
 
 }

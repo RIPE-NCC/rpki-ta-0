@@ -1,16 +1,4 @@
-package net.ripe.rpki.ta.persistence;
-
-import net.ripe.rpki.ta.TA;
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.domain.TAState;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import java.math.BigInteger;
-
-import static org.junit.Assert.assertEquals;
+package net.ripe.rpki.ta.domain;
 
 /*-
  * ========================LICENSE_START=================================
@@ -20,18 +8,18 @@ import static org.junit.Assert.assertEquals;
  * -
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- *
+ * 
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * 3. Neither the name of the RIPE NCC nor the names of its contributors
  *    may be used to endorse or promote products derived from this software without
  *    specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -45,24 +33,48 @@ import static org.junit.Assert.assertEquals;
  * =========================LICENSE_END==================================
  */
 
-public class TAPersistenceTest {
+import com.google.common.collect.Lists;
+import net.ripe.rpki.ta.config.Env;
+import org.joda.time.DateTime;
+import org.junit.Test;
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+import java.math.BigInteger;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+
+public class TAStateBuilderTest {
 
     @Test
-    public void saveAndLoad() throws Exception {
-        final Config testConfig = Env.development();
-        testConfig.setPersistentStorageDir(tempFolder.getRoot().getAbsolutePath());
+    public void testWithRevocations() {
+        TAStateBuilder taStateBuilder = new TAStateBuilder(Env.development());
 
-        final TA ta = new TA(testConfig);
-        final TAState taState = ta.initialiseTaState();
-        ta.persist(taState);
+        List<Revocation> revocations = Lists.newArrayList();
 
-        assertEquals(taState, ta.loadTAState());
+        revocations.add(revocation("1", new DateTime().plusYears(1)));
+        revocations.add(revocation("2", new DateTime().plusYears(2)));
 
-        // TA serial should be set to 1 upon initialisation:
-        assertEquals(BigInteger.ONE, taState.getLastIssuedCertificateSerial());
+        TAState taState = taStateBuilder.withRevocations(revocations).build();
+        assertEquals(2, taState.getRevocations().size());
     }
 
+    @Test
+    public void testWithRevocations_oneRevocationInThePast() {
+        TAStateBuilder taStateBuilder = new TAStateBuilder(Env.development());
+
+        List<Revocation> revocations = Lists.newArrayList();
+
+        revocations.add(revocation("1", new DateTime().plusYears(1)));
+        revocations.add(revocation("2", new DateTime().minusYears(2)));
+
+        TAState taState = taStateBuilder.withRevocations(revocations).build();
+        assertEquals(1, taState.getRevocations().size());
+    }
+
+    private Revocation revocation(String serial, DateTime notValidAfter) {
+        Revocation revocation = new Revocation();
+        revocation.setSerial(new BigInteger(serial));
+        revocation.setNotValidAfter(notValidAfter);
+        return revocation;
+    }
 }

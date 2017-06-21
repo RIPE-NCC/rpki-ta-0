@@ -35,11 +35,15 @@ package net.ripe.rpki.ta.serializers;
 
 
 import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.ta.domain.Revocation;
+import net.ripe.rpki.ta.domain.TAState;
 
 public class TAStateSerializer extends Serializer<TAState> {
 
     protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
-        return builder.withAliasType("TA", TAState.class);
+        builder.withAliasType("TA", TAState.class);
+        builder.withAliasType("revocation", Revocation.class);
+        return builder;
     }
 
     protected Class<TAState> clazz() {

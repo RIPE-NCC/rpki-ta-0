@@ -34,6 +34,7 @@ package net.ripe.rpki.ta;
  */
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
@@ -42,28 +43,38 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.domain.Revocation;
+import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.domain.TAStateBuilder;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
-import net.ripe.rpki.ta.serializers.TAState;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
+import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
+import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
 
 public class TA {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(TA.class);
 
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
@@ -72,16 +83,13 @@ public class TA {
     private final Config config;
     private final transient KeyPairFactory keyPairFactory;
 
-    // TODO We should also support other values taken from the serialized TA
-//    private BigInteger serial = BigInteger.ONE;
-
     public TA(Config config) {
         this.config = config;
         this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
     }
 
     public TAState initialiseTaState() throws Exception {
-        return createTaState(generateRootKeyPair(), BigInteger.ONE);
+        return createTaState(new TAStateBuilder(config), generateRootKeyPair(), BigInteger.ONE);
     }
 
     TAState migrateTaState(final String oldTaFilePath) throws Exception {
@@ -94,18 +102,60 @@ public class TA {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
         final BigInteger lastIssuedCertificateSerial = legacyTA.lastIssuedCertificateSerial;
         final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
-        return createTaState(oldKeyPair, next(lastIssuedCertificateSerial));
+
+        TAStateBuilder taStateBuilder = new TAStateBuilder(config);
+
+        taStateBuilder.withRevocations(importRevocations(legacyTA));
+
+        // the last issued crl and/or manifest number are identical so we pick the crl one:
+        taStateBuilder.withLastCrlAndManifestNumber(legacyTA.getLastCrlNumber());
+
+        return createTaState(taStateBuilder, oldKeyPair, next(lastIssuedCertificateSerial));
     }
 
-    private TAState createTaState(KeyPair keyPair, final BigInteger serial) throws Exception {
+    private List<Revocation> importRevocations(final LegacyTA legacyTA) {
+        List<Revocation> revocations = Lists.newArrayList();
+
+        for (SignedResourceCertificate src : legacyTA.getSignedProductionCertificates()) {
+            X509Certificate certificate = src.getCertificateRepositoryObject().getCertificate();
+                Revocation revocation = new Revocation();
+
+                revocation.setSerial(certificate.getSerialNumber());
+                revocation.setNotValidAfter(new DateTime(src.getCertificateRepositoryObject().getCertificate().getNotAfter()));
+
+                revocations.add(revocation);
+        }
+
+        for (SignedManifest signedManifest : legacyTA.getSignedManifests()) {
+                Revocation revocation = new Revocation();
+
+                revocation.setSerial(signedManifest.getCertificateRepositoryObject().getCertificate().getSerialNumber());
+                revocation.setNotValidAfter(signedManifest.getCertificateRepositoryObject().getCertificate().getValidityPeriod().getNotValidAfter());
+
+                revocations.add(revocation);
+        }
+
+        return revocations;
+    }
+
+    private TAState createTaState(TAStateBuilder taStateBuilder, KeyPair keyPair, final BigInteger serial) throws Exception {
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
         final KeyStore keyStore = KeyStore.of(config);
         final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(keyPair, descriptors, serial));
-        return createTaState(encoded, keyStore, serial);
+
+        return createTaState(taStateBuilder, encoded, keyStore, serial);
     }
 
-    private TAState createTaState(byte[] encoded, final KeyStore keyStore, final BigInteger serial) {
-        final TAState taState = new TAState();
+    private TAState createTaState(TAStateBuilder taStateBuilder, byte[] encoded, KeyStore keyStore, final BigInteger serial) throws Exception {
+        taStateBuilder.withEncoded(encoded);
+        taStateBuilder.withKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
+        taStateBuilder.withKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
+        taStateBuilder.withLastIssuedCertificateSerial(serial);
+
+        return createTaState(taStateBuilder);
+    }
+
+    private TAState createTaState(final TAStateBuilder taStateBuilder) {
         /* TODO Add more stuff here:
 
          Old TrustAnchor class contains:
@@ -116,7 +166,6 @@ public class TA {
             private URI taProductsPublicationUri;
 
             private X500Principal caName;
-            private X509Crl crl;
             private BigInteger lastCrlNumber;
 
             private String signatureProvider;
@@ -135,12 +184,8 @@ public class TA {
             private BigInteger lastIssuedCertificateSerial;
             private Long lastProcessedRequestTimestamp = 0L;
           */
-        taState.setConfig(config);
-        taState.setEncoded(encoded);
-        taState.setKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
-        taState.setKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
-        taState.setLastIssuedCertificateSerial(serial);
-        return taState;
+
+        return taStateBuilder.build();
     }
 
     private static BigInteger next(final BigInteger serial) {
@@ -297,7 +342,11 @@ public class TA {
             final BigInteger nextSerial = next(taState.getLastIssuedCertificateSerial());
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
                     generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate, nextSerial);
-            return createTaState(keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
+
+            final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
+            taStateBuilder.withRevocations(taState.getRevocations());
+
+            return createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
         }
 
         throw new BadOptions("The program options are inconsistent.");

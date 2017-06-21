@@ -1,10 +1,12 @@
-package net.ripe.rpki.ta.serializers;
+package net.ripe.rpki.ta.domain;
 
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.ta.config.Config;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.math.BigInteger;
+import java.util.List;
 
 /*-
  * ========================LICENSE_START=================================
@@ -43,19 +45,57 @@ import java.math.BigInteger;
  * TA state to be serialized to ta.xml
  */
 public class TAState {
+
     private byte[] encoded;
     private Config config;
+    private X509Crl crl;
 
     private String keyStorePassphrase;
     private String keyStoreKeyAlias;
 
     private BigInteger lastIssuedCertificateSerial;
 
+    private BigInteger lastCrlAndManifestNumber;
+
+    private List<Revocation> revocations;
+
+    public List<Revocation> getRevocations() {
+        return revocations;
+    }
+
+    TAState() {
+        // package protected constructor so XStream can instantiate this object
+    }
+
+    public TAState(Config config) {
+        this.config = config;
+    }
+
+    void setRevocations(List<Revocation> revocations) {
+        this.revocations = revocations;
+    }
+
+    public BigInteger getLastCrlAndManifestNumber() {
+        return lastCrlAndManifestNumber;
+    }
+
+    void setLastCrlAndManifestNumber(BigInteger lastCrlAndManifestNumber) {
+        this.lastCrlAndManifestNumber = lastCrlAndManifestNumber;
+    }
+
+    public X509Crl getCrl() {
+        return crl;
+    }
+
+    void setCrl(X509Crl crl) {
+        this.crl = crl;
+    }
+
     public byte[] getEncoded() {
         return encoded;
     }
 
-    public void setEncoded(byte[] encoded) {
+    void setEncoded(byte[] encoded) {
         this.encoded = encoded;
     }
 
@@ -63,7 +103,7 @@ public class TAState {
         return config;
     }
 
-    public void setConfig(Config config) {
+    void setConfig(Config config) {
         this.config = config;
     }
 
@@ -71,7 +111,7 @@ public class TAState {
         return keyStorePassphrase;
     }
 
-    public void setKeyStorePassphrase(String keyStorePassphrase) {
+    void setKeyStorePassphrase(String keyStorePassphrase) {
         this.keyStorePassphrase = keyStorePassphrase;
     }
 
@@ -79,7 +119,7 @@ public class TAState {
         return keyStoreKeyAlias;
     }
 
-    public void setKeyStoreKeyAlias(String keyStoreKeyAlias) {
+    void setKeyStoreKeyAlias(String keyStoreKeyAlias) {
         this.keyStoreKeyAlias = keyStoreKeyAlias;
     }
 
@@ -87,7 +127,7 @@ public class TAState {
         return lastIssuedCertificateSerial;
     }
 
-    public void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
+    void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
         this.lastIssuedCertificateSerial = lastIssuedCertificateSerial;
     }
 
@@ -100,22 +140,29 @@ public class TAState {
         TAState taState = (TAState) o;
 
         return new EqualsBuilder()
+                .append(crl, taState.crl)
                 .append(encoded, taState.encoded)
                 .append(config, taState.config)
                 .append(keyStorePassphrase, taState.keyStorePassphrase)
                 .append(keyStoreKeyAlias, taState.keyStoreKeyAlias)
+                .append(lastCrlAndManifestNumber, taState.lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial, taState.lastIssuedCertificateSerial)
+                .append(revocations, taState.revocations)
                 .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
+                .append(crl)
                 .append(encoded)
                 .append(config)
                 .append(keyStorePassphrase)
                 .append(keyStoreKeyAlias)
+                .append(lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial)
+                .append(revocations)
                 .toHashCode();
     }
+
 }

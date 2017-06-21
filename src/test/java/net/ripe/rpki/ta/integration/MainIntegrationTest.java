@@ -36,7 +36,7 @@ package net.ripe.rpki.ta.integration;
 import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Env;
-import net.ripe.rpki.ta.serializers.TAState;
+import net.ripe.rpki.ta.domain.TAState;
 import org.junit.Before;
 import org.junit.Test;
 

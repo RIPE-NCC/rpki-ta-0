@@ -33,7 +33,11 @@ package net.ripe.rpki.ta.serializers.legacy;
  * =========================LICENSE_END==================================
  */
 
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class to read old style TA.
@@ -52,4 +56,54 @@ public class LegacyTA {
     private TrustAnchorKeyStore trustAnchorKeyStore;
 
     public BigInteger lastIssuedCertificateSerial;
+
+    private BigInteger lastCrlNumber;
+
+    private BigInteger lastManifestNumber;
+
+    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
+
+    private List<SignedManifest> signedManifests;
+
+    public BigInteger getLastManifestNumber() {
+        return lastManifestNumber;
+    }
+
+    public void setLastManifestNumber(BigInteger lastManifestNumber) {
+        this.lastManifestNumber = lastManifestNumber;
+    }
+
+    public BigInteger getLastCrlNumber() {
+        return lastCrlNumber;
+    }
+
+    public void setLastCrlNumber(BigInteger lastCrlNumber) {
+        this.lastCrlNumber = lastCrlNumber;
+    }
+
+    private X509Crl crl;
+
+    public X509Crl getCrl() {
+        return crl;
+    }
+
+    public void setCrl(X509Crl crl) {
+        this.crl = crl;
+    }
+
+    public List<SignedResourceCertificate> getSignedProductionCertificates() {
+        return signedProductionCertificates;
+    }
+
+    public void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
+        this.signedProductionCertificates = signedProductionCertificates;
+    }
+
+    public List<SignedManifest> getSignedManifests() {
+        return signedManifests;
+    }
+
+    public void setSignedManifests(List<SignedManifest> signedManifests) {
+        this.signedManifests = signedManifests;
+    }
 }
