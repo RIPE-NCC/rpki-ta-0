@@ -71,23 +71,25 @@ public class TAStateBuilder {
     }
 
     public TAStateBuilder withRevocations(List<Revocation> revocations) {
-        // remove revocations that have already expired:
-        for (Iterator<Revocation>iter = revocations.iterator(); iter.hasNext();) {
-            Revocation revocation = iter.next();
-            if (revocation.getNotValidAfter().isBeforeNow()) {
-                iter.remove();
+        if (revocations != null) {
+            // remove revocations that have already expired:
+            for (Iterator<Revocation> iter = revocations.iterator(); iter.hasNext(); ) {
+                Revocation revocation = iter.next();
+                if (revocation.getNotValidAfter().isBeforeNow()) {
+                    iter.remove();
+                }
             }
+
+            // sort ascending by serial:
+            Collections.sort(revocations, new Comparator<Revocation>() {
+                @Override
+                public int compare(Revocation lhs, Revocation rhs) {
+                    return lhs.getSerial().compareTo(rhs.getSerial());
+                }
+            });
+
+            taState.setRevocations(revocations);
         }
-
-        // sort ascending by serial:
-        Collections.sort(revocations, new Comparator<Revocation>() {
-            @Override
-            public int compare(Revocation lhs, Revocation rhs) {
-                return lhs.getSerial().compareTo(rhs.getSerial());
-            }
-        });
-
-        taState.setRevocations(revocations);
 
         return this;
     }
