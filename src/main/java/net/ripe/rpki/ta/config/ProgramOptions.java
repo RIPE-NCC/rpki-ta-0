@@ -53,6 +53,7 @@ public class ProgramOptions {
     private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
     private static final String EXPORT_TA_CERTIFICATE_OPT = "export-ta-certificate";
     private static final String PRINT_TAL_OPT = "print-tal";
+    private static final String PROCESS_OPT= "process";
 
     private final CommandLine commandLine;
     private final static Options options;
@@ -87,9 +88,14 @@ public class ProgramOptions {
                 hasArg(false).
                 desc("Print TAL").
                 build());
+
+        options.addOption(Option.builder().longOpt(PROCESS_OPT).
+                hasArg().
+                desc("Path to the request file to be processed").
+                build());
     }
 
-    public ProgramOptions(String[] args) throws BadOptions {
+    public ProgramOptions(String ... args) throws BadOptions {
         try {
             commandLine = new DefaultParser().parse(options, args);
         } catch (ParseException e) {
@@ -98,32 +104,37 @@ public class ProgramOptions {
     }
 
     public void validateOptions() throws BadOptions {
-        if (!(hasInitialiseFromOldOption() || hasInitialiseOption() ||
-                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption())) {
+        final boolean b = hasEnv();
+        final boolean b1 = hasInitialiseFromOldOption();
+        final boolean b2 = hasInitialiseOption();
+        final boolean b3 = hasGenerateTACertificateOption();
+        final boolean b4 = hasPrintCertificateOption();
+        final boolean b5 = hasPrintTALOption();
+        final boolean b6 = hasProcessOption();
+
+
+        if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
+                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption() || hasProcessOption())) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
 
         checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
 
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{GENERATE_TA_CERTIFICATE_OPT});
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{EXPORT_TA_CERTIFICATE_OPT});
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{PRINT_TAL_OPT});
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, PRINT_TAL_OPT, EXPORT_TA_CERTIFICATE_OPT);
 
-        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
-        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT);
+        checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+
+        checkIncompatible(PRINT_TAL_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+
+        checkIncompatible(PROCESS_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+
         checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
     }
 
-    private void checkIncompatible(final String option1, final String option2) throws BadOptions {
-        checkIncompatible(new String[]{option1}, new String[]{option2});
-    }
-
-    private void checkIncompatible(final String[] options1, final String[] options2) throws BadOptions {
-        for (final String option1 : options1) {
-            for (final String option2 : options2) {
-                if (commandLine.hasOption(option1) && commandLine.hasOption(option2)) {
-                    throw new BadOptions("Cannot have both --" + option1 + " and --" + option2 + " options.");
-                }
+    private void checkIncompatible(final String option, final String ... incompatibleList) throws BadOptions {
+        for (final String incompatibleOption : incompatibleList) {
+            if (commandLine.hasOption(option) && commandLine.hasOption(incompatibleOption)) {
+                throw new BadOptions("Cannot have both --" + option + " and --" + incompatibleOption + " options.");
             }
         }
     }
@@ -142,6 +153,10 @@ public class ProgramOptions {
 
     public boolean hasPrintTALOption() {
         return commandLine.hasOption(PRINT_TAL_OPT);
+    }
+
+    public boolean hasProcessOption() {
+        return commandLine.hasOption(PROCESS_OPT);
     }
 
     public boolean hasEnv() {
