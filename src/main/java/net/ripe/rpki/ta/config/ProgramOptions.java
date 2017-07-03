@@ -53,7 +53,8 @@ public class ProgramOptions {
     private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
     private static final String EXPORT_TA_CERTIFICATE_OPT = "export-ta-certificate";
     private static final String PRINT_TAL_OPT = "print-tal";
-    private static final String PROCESS_OPT= "process";
+    private static final String REQUEST_OPT = "request";
+    private static final String RESPONSE_OPT = "response";
 
     private final CommandLine commandLine;
     private final static Options options;
@@ -89,9 +90,14 @@ public class ProgramOptions {
                 desc("Print TAL").
                 build());
 
-        options.addOption(Option.builder().longOpt(PROCESS_OPT).
+        options.addOption(Option.builder().longOpt(REQUEST_OPT).
                 hasArg().
                 desc("Path to the request file to be processed").
+                build());
+
+        options.addOption(Option.builder().longOpt(RESPONSE_OPT).
+                hasArg().
+                desc("Path to the response file that was processed").
                 build());
     }
 
@@ -104,17 +110,8 @@ public class ProgramOptions {
     }
 
     public void validateOptions() throws BadOptions {
-        final boolean b = hasEnv();
-        final boolean b1 = hasInitialiseFromOldOption();
-        final boolean b2 = hasInitialiseOption();
-        final boolean b3 = hasGenerateTACertificateOption();
-        final boolean b4 = hasPrintCertificateOption();
-        final boolean b5 = hasPrintTALOption();
-        final boolean b6 = hasProcessOption();
-
-
         if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
-                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption() || hasProcessOption())) {
+                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
 
@@ -126,9 +123,21 @@ public class ProgramOptions {
 
         checkIncompatible(PRINT_TAL_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
 
-        checkIncompatible(PROCESS_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+        checkIncompatible(REQUEST_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
 
         checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+
+        checkDependency(REQUEST_OPT, RESPONSE_OPT);
+
+        checkDependency(RESPONSE_OPT, REQUEST_OPT);
+    }
+
+    private void checkDependency(final String option, final String ... dependencies) throws BadOptions {
+        for (final String dependency  : dependencies) {
+            if (commandLine.hasOption(option) && !commandLine.hasOption(dependency)) {
+                throw new BadOptions("Doesn't have meaningful options.");
+            }
+        }
     }
 
     private void checkIncompatible(final String option, final String ... incompatibleList) throws BadOptions {
@@ -155,8 +164,12 @@ public class ProgramOptions {
         return commandLine.hasOption(PRINT_TAL_OPT);
     }
 
-    public boolean hasProcessOption() {
-        return commandLine.hasOption(PROCESS_OPT);
+    public boolean hasRequestOption() {
+        return commandLine.hasOption(REQUEST_OPT);
+    }
+
+    public boolean hasResponseOption() {
+        return commandLine.hasOption(RESPONSE_OPT);
     }
 
     public boolean hasEnv() {
