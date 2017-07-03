@@ -78,7 +78,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void generate_ta_certificate() throws Exception {
-        final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml");
+        final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=development");
         assertEquals(0, exit.exitCode);
 
         final TAState taState = new TA(Env.development()).loadTAState();

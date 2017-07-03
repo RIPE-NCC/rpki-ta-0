@@ -53,6 +53,8 @@ public class ProgramOptions {
     private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
     private static final String EXPORT_TA_CERTIFICATE_OPT = "export-ta-certificate";
     private static final String PRINT_TAL_OPT = "print-tal";
+    private static final String REQUEST_OPT = "request";
+    private static final String RESPONSE_OPT = "response";
 
     private final CommandLine commandLine;
     private final static Options options;
@@ -87,9 +89,19 @@ public class ProgramOptions {
                 hasArg(false).
                 desc("Print TAL").
                 build());
+
+        options.addOption(Option.builder().longOpt(REQUEST_OPT).
+                hasArg().
+                desc("Path to the request file to be processed").
+                build());
+
+        options.addOption(Option.builder().longOpt(RESPONSE_OPT).
+                hasArg().
+                desc("Path to the response file that was processed").
+                build());
     }
 
-    public ProgramOptions(String[] args) throws BadOptions {
+    public ProgramOptions(String ... args) throws BadOptions {
         try {
             commandLine = new DefaultParser().parse(options, args);
         } catch (ParseException e) {
@@ -98,32 +110,40 @@ public class ProgramOptions {
     }
 
     public void validateOptions() throws BadOptions {
-        if (!(hasInitialiseFromOldOption() || hasInitialiseOption() ||
-                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption())) {
+        if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
+                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
 
         checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
 
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{GENERATE_TA_CERTIFICATE_OPT});
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{EXPORT_TA_CERTIFICATE_OPT});
-        checkIncompatible(new String[]{INITIALISE_OPT, INITIALISE_FROM_OLD_OPT}, new String[]{PRINT_TAL_OPT});
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, PRINT_TAL_OPT, EXPORT_TA_CERTIFICATE_OPT);
 
-        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
-        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT);
+        checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+
+        checkIncompatible(PRINT_TAL_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+
+        checkIncompatible(REQUEST_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+
         checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+
+        checkDependency(REQUEST_OPT, RESPONSE_OPT);
+
+        checkDependency(RESPONSE_OPT, REQUEST_OPT);
     }
 
-    private void checkIncompatible(final String option1, final String option2) throws BadOptions {
-        checkIncompatible(new String[]{option1}, new String[]{option2});
+    private void checkDependency(final String option, final String ... dependencies) throws BadOptions {
+        for (final String dependency  : dependencies) {
+            if (commandLine.hasOption(option) && !commandLine.hasOption(dependency)) {
+                throw new BadOptions("Doesn't have meaningful options.");
+            }
+        }
     }
 
-    private void checkIncompatible(final String[] options1, final String[] options2) throws BadOptions {
-        for (final String option1 : options1) {
-            for (final String option2 : options2) {
-                if (commandLine.hasOption(option1) && commandLine.hasOption(option2)) {
-                    throw new BadOptions("Cannot have both --" + option1 + " and --" + option2 + " options.");
-                }
+    private void checkIncompatible(final String option, final String ... incompatibleList) throws BadOptions {
+        for (final String incompatibleOption : incompatibleList) {
+            if (commandLine.hasOption(option) && commandLine.hasOption(incompatibleOption)) {
+                throw new BadOptions("Cannot have both --" + option + " and --" + incompatibleOption + " options.");
             }
         }
     }
@@ -142,6 +162,14 @@ public class ProgramOptions {
 
     public boolean hasPrintTALOption() {
         return commandLine.hasOption(PRINT_TAL_OPT);
+    }
+
+    public boolean hasRequestOption() {
+        return commandLine.hasOption(REQUEST_OPT);
+    }
+
+    public boolean hasResponseOption() {
+        return commandLine.hasOption(RESPONSE_OPT);
     }
 
     public boolean hasEnv() {
