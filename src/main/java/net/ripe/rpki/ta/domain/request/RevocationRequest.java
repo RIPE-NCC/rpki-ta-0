@@ -33,22 +33,26 @@ package net.ripe.rpki.ta.domain.request;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.util.EqualsSupport;
-
-import java.io.Serializable;
-import java.util.UUID;
-
-public abstract class TaRequest extends EqualsSupport implements Serializable {
+/**
+ * Ask Trust Anchor to revoke all certificates that use the provided public key.
+ */
+public class RevocationRequest extends TaRequest {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID requestId;
+    private final String resourceClassName;
+    private final String encodedPublicKey;
 
-    public TaRequest() {
-        this.requestId = UUID.randomUUID();
+    public RevocationRequest(String resourceClassName, String encodedPublicKey) {
+        this.resourceClassName = resourceClassName;
+        this.encodedPublicKey = encodedPublicKey;
     }
 
-    public UUID getRequestId() {
-        return requestId;
+    public String getEncodedPublicKey() {
+        return encodedPublicKey;
+    }
+
+    public String getResourceClassName() {
+        return resourceClassName;
     }
 }

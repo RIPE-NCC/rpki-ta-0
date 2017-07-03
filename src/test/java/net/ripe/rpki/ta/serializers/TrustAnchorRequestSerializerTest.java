@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.domain.request;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,22 +33,35 @@ package net.ripe.rpki.ta.domain.request;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.util.EqualsSupport;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import net.ripe.rpki.ta.domain.request.SigningRequest;
+import net.ripe.rpki.ta.domain.request.TrustAnchorRequest;
+import org.junit.Test;
 
-import java.io.Serializable;
-import java.util.UUID;
+import java.io.File;
+import java.io.IOException;
 
-public abstract class TaRequest extends EqualsSupport implements Serializable {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-    private static final long serialVersionUID = 1L;
+public class TrustAnchorRequestSerializerTest {
 
-    private UUID requestId;
+    private static final String TA_P_REQUEST_PATH = "src/test/resources/ta-request.xml";
 
-    public TaRequest() {
-        this.requestId = UUID.randomUUID();
-    }
+    @Test
+    public void shouldReadTestTaRequest() throws IOException {
+        final String requestXml = Files.toString(new File(TA_P_REQUEST_PATH), Charsets.UTF_8);
+        final TrustAnchorRequest trustAnchorRequest = new TrustAnchorRequestSerializer().deserialize(requestXml);
+        assertNotNull(trustAnchorRequest);
 
-    public UUID getRequestId() {
-        return requestId;
+        final SigningRequest taRequest = (SigningRequest) trustAnchorRequest.getTaRequests().get(0);
+        assertEquals("6f164750-b184-44ed-aa75-f2eaf4a598c7", taRequest.getRequestId().toString());
+        assertEquals("DEFAULT", taRequest.getResourceCertificateRequest().getResourceClassName());
+        assertEquals(3, taRequest.getResourceCertificateRequest().getSubjectInformationAccess().length);
+        assertEquals(2, trustAnchorRequest.getSiaDescriptors().length);
+        assertEquals("1.3.6.1.5.5.7.48.13", trustAnchorRequest.getSiaDescriptors()[0].getMethod().toString());
+        assertEquals("http://localhost:7788/notification.xml", trustAnchorRequest.getSiaDescriptors()[0].getLocation().toString());
+
     }
 }

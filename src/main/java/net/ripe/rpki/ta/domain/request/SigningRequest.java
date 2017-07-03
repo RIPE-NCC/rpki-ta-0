@@ -33,22 +33,21 @@ package net.ripe.rpki.ta.domain.request;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.util.EqualsSupport;
 
-import java.io.Serializable;
-import java.util.UUID;
+import org.apache.commons.lang.Validate;
 
-public abstract class TaRequest extends EqualsSupport implements Serializable {
+public class SigningRequest extends TaRequest {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID requestId;
+    private final ResourceCertificateRequestData resourceCertificateRequest;
 
-    public TaRequest() {
-        this.requestId = UUID.randomUUID();
+    public SigningRequest(ResourceCertificateRequestData resourceCertificateRequest) {
+        Validate.notNull(resourceCertificateRequest, "resourceCertificateRequest is required");
+        this.resourceCertificateRequest = resourceCertificateRequest;
     }
 
-    public UUID getRequestId() {
-        return requestId;
+    public ResourceCertificateRequestData getResourceCertificateRequest() {
+        return resourceCertificateRequest;
     }
 }

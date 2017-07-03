@@ -33,22 +33,50 @@ package net.ripe.rpki.ta.domain.request;
  * =========================LICENSE_END==================================
  */
 
+import net.ripe.ipresource.IpResourceSet;
+import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.util.EqualsSupport;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.Serializable;
-import java.util.UUID;
+import java.security.PublicKey;
 
-public abstract class TaRequest extends EqualsSupport implements Serializable {
+public class ResourceCertificateRequestData extends EqualsSupport implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID requestId;
+    private final String resourceClassName;
+    private final X500Principal subjectDN;
+    private final X509CertificateInformationAccessDescriptor[] subjectInformationAccess;
+    private final byte[] encodedSubjectPublicKey;
 
-    public TaRequest() {
-        this.requestId = UUID.randomUUID();
+
+    public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, PublicKey subjectPublicKey,
+                                          X509CertificateInformationAccessDescriptor[] subjectInformationAccess, IpResourceSet ipResourceSet) {
+        this(resourceClassName, subjectDN, subjectPublicKey.getEncoded(), subjectInformationAccess, ipResourceSet);
     }
 
-    public UUID getRequestId() {
-        return requestId;
+    public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, byte[] encodedSubjectPublicKey, //NOPMD - ArrayIsStoredDirectly
+                                          X509CertificateInformationAccessDescriptor[] subjectInformationAccess, IpResourceSet ipResourceSet) { //NOPMD - ArrayIsStoredDirectly
+        this.resourceClassName = resourceClassName;
+        this.subjectDN = subjectDN;
+        this.encodedSubjectPublicKey = encodedSubjectPublicKey;
+        this.subjectInformationAccess = subjectInformationAccess;
+    }
+
+    public String getResourceClassName() {
+        return resourceClassName;
+    }
+
+    public X500Principal getSubjectDN() {
+        return subjectDN;
+    }
+
+    public byte[] getEncodedSubjectPublicKey() {
+        return encodedSubjectPublicKey;
+    }
+
+    public X509CertificateInformationAccessDescriptor[] getSubjectInformationAccess() {
+        return subjectInformationAccess;
     }
 }

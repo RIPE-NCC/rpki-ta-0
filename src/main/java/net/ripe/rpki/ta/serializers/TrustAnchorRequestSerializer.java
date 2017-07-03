@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.domain.request;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,22 +33,18 @@ package net.ripe.rpki.ta.domain.request;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.util.EqualsSupport;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.ta.domain.request.TrustAnchorRequest;
 
-import java.io.Serializable;
-import java.util.UUID;
+public class TrustAnchorRequestSerializer extends Serializer<TrustAnchorRequest> {
 
-public abstract class TaRequest extends EqualsSupport implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private UUID requestId;
-
-    public TaRequest() {
-        this.requestId = UUID.randomUUID();
+    protected XStreamXmlSerializerBuilder<TrustAnchorRequest> configureBuilder(XStreamXmlSerializerBuilder<TrustAnchorRequest> builder) {
+        builder.withAliasPackage("requests", TrustAnchorRequest.class.getPackage().getName());
+        return builder;
     }
 
-    public UUID getRequestId() {
-        return requestId;
+    protected Class<TrustAnchorRequest> clazz() {
+        return TrustAnchorRequest.class;
     }
+
 }
