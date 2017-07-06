@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.serializers.legacy;
+package net.ripe.rpki.ta.processing;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,26 +33,16 @@ package net.ripe.rpki.ta.serializers.legacy;
  * =========================LICENSE_END==================================
  */
 
-import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
-
-import java.math.BigInteger;
-
-public class SignedResourceCertificate extends SignedObjectTracker {
+public class RequestProcessorException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
 
-    public SignedResourceCertificate(String fileName, X509ResourceCertificate resourceCertificate) {
-        super(fileName, resourceCertificate, resourceCertificate.getValidityPeriod().getNotValidAfter());
+    public RequestProcessorException(Throwable cause) {
+        super(cause);
     }
 
-    public X509ResourceCertificate getResourceCertificate() {
-        return (X509ResourceCertificate) getCertificateRepositoryObject();
-    }
-
-    @Override
-    public BigInteger getCertificateSerial() {
-        X509ResourceCertificate resourceCertificate = (X509ResourceCertificate) getCertificateRepositoryObject();
-        return resourceCertificate.getSerialNumber();
+    public RequestProcessorException(String message) {
+        super(message);
     }
 }

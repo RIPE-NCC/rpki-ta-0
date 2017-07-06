@@ -62,6 +62,5 @@ public class TrustAnchorRequestSerializerTest {
         assertEquals(2, trustAnchorRequest.getSiaDescriptors().length);
         assertEquals("1.3.6.1.5.5.7.48.13", trustAnchorRequest.getSiaDescriptors()[0].getMethod().toString());
         assertEquals("http://localhost:7788/notification.xml", trustAnchorRequest.getSiaDescriptors()[0].getLocation().toString());
-
     }
 }

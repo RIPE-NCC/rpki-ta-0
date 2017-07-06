@@ -35,15 +35,21 @@ package net.ripe.rpki.ta.serializers.legacy;
 
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 
-public class SignedManifest {
+import java.math.BigInteger;
 
-    private ManifestCms certificateRepositoryObject;
+public class SignedManifest extends SignedObjectTracker {
 
-    public ManifestCms getCertificateRepositoryObject() {
-        return certificateRepositoryObject;
+    public SignedManifest(ManifestCms manifestCms) {
+        super(manifestCms, manifestCms.getValidityPeriod().getNotValidAfter());
     }
 
-    public void setCertificateRepositoryObject(ManifestCms certificateRepositoryObject) {
-        this.certificateRepositoryObject = certificateRepositoryObject;
+    public ManifestCms getManifest() {
+        return (ManifestCms) getCertificateRepositoryObject();
+    }
+
+    @Override
+    public BigInteger getCertificateSerial() {
+        ManifestCms manifest = (ManifestCms) getCertificateRepositoryObject();
+        return manifest.getCertificate().getSerialNumber();
     }
 }

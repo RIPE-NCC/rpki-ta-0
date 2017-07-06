@@ -88,8 +88,8 @@ public class LegacyTATest {
         assertEquals(9 + 5, taState.getRevocations().size());
 
         // last crl and manifest number should be set to same value as imported crl / manifest number:
-        assertEquals(legacyTA.getLastCrlNumber(), taState.getLastCrlAndManifestNumber());
-        assertEquals(legacyTA.getLastManifestNumber(), taState.getLastCrlAndManifestNumber());
+        assertEquals(legacyTA.getLastCrlNumber(), taState.getLastCrlSerial());
+        assertEquals(legacyTA.getLastManifestNumber(), taState.getLastMftSerial());
     }
 
 }

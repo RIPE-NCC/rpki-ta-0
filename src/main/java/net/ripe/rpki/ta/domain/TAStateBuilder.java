@@ -82,7 +82,6 @@ public class TAStateBuilder {
 
             // sort ascending by serial:
             Collections.sort(revocations, new Comparator<Revocation>() {
-                @Override
                 public int compare(Revocation lhs, Revocation rhs) {
                     return lhs.getSerial().compareTo(rhs.getSerial());
                 }
@@ -94,10 +93,16 @@ public class TAStateBuilder {
         return this;
     }
 
-    public TAStateBuilder withLastCrlAndManifestNumber(BigInteger lastCrlAndManifestNumber) {
-        taState.setLastCrlAndManifestNumber(lastCrlAndManifestNumber);
+    public TAStateBuilder withLastCrlSerial(BigInteger lastCrlSerial) {
+        taState.setLastCrlSerial(lastCrlSerial);
         return this;
     }
+
+    public TAStateBuilder withLastMftSerial(BigInteger lastMftSerial) {
+        taState.setLastMftSerial(lastMftSerial);
+        return this;
+    }
+
 
     public TAState build() {
         return taState;

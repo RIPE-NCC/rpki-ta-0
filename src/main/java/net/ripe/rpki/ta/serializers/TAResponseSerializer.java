@@ -42,13 +42,13 @@ import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
 import net.ripe.rpki.ta.domain.response.ErrorResponse;
 import net.ripe.rpki.ta.domain.response.RevocationResponse;
 import net.ripe.rpki.ta.domain.response.SigningResponse;
-import net.ripe.rpki.ta.domain.response.TaResponse;
+import net.ripe.rpki.ta.domain.response.TrustAnchorResponse;
 
 
-public class TAResponseSerializer extends Serializer<TaResponse> {
+public class TAResponseSerializer extends Serializer<TrustAnchorResponse> {
 
-    protected XStreamXmlSerializerBuilder<TaResponse> configureBuilder(XStreamXmlSerializerBuilder<TaResponse> builder) {
-        builder.withAliasType("TrustAnchorResponse", TaResponse.class);
+    protected XStreamXmlSerializerBuilder<TrustAnchorResponse> configureBuilder(XStreamXmlSerializerBuilder<TrustAnchorResponse> builder) {
+        builder.withAliasType("TrustAnchorResponse", TrustAnchorResponse.class);
         builder.withAliasType("SigningResponse", SigningResponse.class);
         builder.withAliasType("RevocationResponse", RevocationResponse.class);
         builder.withAliasType("ErrorResponse", ErrorResponse.class);
@@ -61,8 +61,8 @@ public class TAResponseSerializer extends Serializer<TaResponse> {
         return builder;
     }
 
-    protected Class<TaResponse> clazz() {
-        return TaResponse.class;
+    protected Class<TrustAnchorResponse> clazz() {
+        return TrustAnchorResponse.class;
     }
 
 
