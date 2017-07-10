@@ -137,31 +137,6 @@ public class TA {
         return createTaState(taStateBuilder, oldKeyPair, next(legacyTA.lastIssuedCertificateSerial));
     }
 
-    private List<Revocation> importRevocations(final LegacyTA legacyTA) {
-        List<Revocation> revocations = Lists.newArrayList();
-
-        for (SignedResourceCertificate src : legacyTA.getSignedProductionCertificates()) {
-            X509Certificate certificate = src.getResourceCertificate().getCertificate();
-            Revocation revocation = new Revocation();
-
-            revocation.setSerial(certificate.getSerialNumber());
-            revocation.setNotValidAfter(new DateTime(src.getResourceCertificate().getCertificate().getNotAfter()));
-
-            revocations.add(revocation);
-        }
-
-        for (SignedManifest signedManifest : legacyTA.getSignedManifests()) {
-            Revocation revocation = new Revocation();
-
-            revocation.setSerial(signedManifest.getManifest().getCertificate().getSerialNumber());
-            revocation.setNotValidAfter(signedManifest.getManifest().getCertificate().getValidityPeriod().getNotValidAfter());
-
-            revocations.add(revocation);
-        }
-
-        return revocations;
-    }
-
     private TAState createTaState(final TAStateBuilder taStateBuilder, KeyPair keyPair, final BigInteger serial) throws Exception {
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
         final KeyStore keyStore = KeyStore.of(config);
@@ -279,10 +254,10 @@ public class TA {
 
         final HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> result = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
 
-        for (X509CertificateInformationAccessDescriptor descriptor : subjectInformationAccess) {
+        for (final X509CertificateInformationAccessDescriptor descriptor : subjectInformationAccess) {
             result.put(descriptor.getMethod(), descriptor);
         }
-        for (X509CertificateInformationAccessDescriptor descriptor : extraSiaDescriptors) {
+        for (final X509CertificateInformationAccessDescriptor descriptor : extraSiaDescriptors) {
             result.put(descriptor.getMethod(), descriptor);
         }
         return result.values().toArray(new X509CertificateInformationAccessDescriptor[result.size()]);
@@ -295,6 +270,31 @@ public class TA {
 
     private KeyPair generateRootKeyPair() {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
+    }
+
+    private List<Revocation> importRevocations(final LegacyTA legacyTA) {
+        final List<Revocation> revocations = Lists.newArrayList();
+
+        for (final SignedResourceCertificate src : legacyTA.getSignedProductionCertificates()) {
+            final X509Certificate certificate = src.getResourceCertificate().getCertificate();
+            final Revocation revocation = new Revocation();
+
+            revocation.setSerial(certificate.getSerialNumber());
+            revocation.setNotValidAfter(new DateTime(src.getResourceCertificate().getCertificate().getNotAfter()));
+
+            revocations.add(revocation);
+        }
+
+        for (final SignedManifest signedManifest : legacyTA.getSignedManifests()) {
+            final Revocation revocation = new Revocation();
+
+            revocation.setSerial(signedManifest.getManifest().getCertificate().getSerialNumber());
+            revocation.setNotValidAfter(signedManifest.getManifest().getCertificate().getValidityPeriod().getNotValidAfter());
+
+            revocations.add(revocation);
+        }
+
+        return revocations;
     }
 
     private boolean hasState() {
@@ -508,7 +508,8 @@ public class TA {
         builder.withIssuerDN(issuer);
         builder.withSubjectDN(request.getSubjectDN());
         // TODO Check it
-        builder.withSerial(next(signCtx.taState.getLastIssuedCertificateSerial()));
+//        builder.withSerial(next(signCtx.taState.getLastIssuedCertificateSerial()));
+        builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(new EncodedPublicKey(request.getEncodedSubjectPublicKey()));
         builder.withSigningKeyPair(signCtx.keyPair);
         builder.withValidityPeriod(new ValidityPeriod(signCtx.now, signCtx.now.plus(getConfig().getMinimumValidityPeriod())));
@@ -535,7 +536,8 @@ public class TA {
         final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
-        builder.withSerial(next(signCtx.taState.getLastIssuedCertificateSerial()));
+//        builder.withSerial(next(signCtx.taState.getLastIssuedCertificateSerial()));
+        builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(eeKeyPair.getPublic());
         builder.withSigningKeyPair(signCtx.keyPair);
         builder.withValidityPeriod(validityPeriod);

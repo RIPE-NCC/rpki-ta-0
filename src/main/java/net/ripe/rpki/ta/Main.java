@@ -33,11 +33,20 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.domain.request.TrustAnchorRequest;
+import net.ripe.rpki.ta.domain.response.TrustAnchorResponse;
+import net.ripe.rpki.ta.serializers.TrustAnchorRequestSerializer;
+import net.ripe.rpki.ta.serializers.TrustAnchorResponseSerializer;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -86,7 +95,16 @@ public class Main {
             return new Exit(EXIT_OK);
         }
 
-        ta.persist(ta.createNewTAState(options));
+        if (options.hasRequestOption() && options.hasResponseOption()) {
+            final String requestXml = Files.toString(new File(options.getRequestFile()), Charsets.UTF_8);
+            final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
+            final Pair<TrustAnchorResponse, TAState> p = ta.processRequest(request);
+            final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
+            Files.write(response, new File(options.getResponseFile()), Charsets.UTF_8);
+            ta.persist(p.getRight());
+        } else {
+            ta.persist(ta.createNewTAState(options));
+        }
 
         return new Exit(EXIT_OK);
     }

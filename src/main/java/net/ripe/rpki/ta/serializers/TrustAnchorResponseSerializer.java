@@ -45,7 +45,7 @@ import net.ripe.rpki.ta.domain.response.SigningResponse;
 import net.ripe.rpki.ta.domain.response.TrustAnchorResponse;
 
 
-public class TAResponseSerializer extends Serializer<TrustAnchorResponse> {
+public class TrustAnchorResponseSerializer extends Serializer<TrustAnchorResponse> {
 
     protected XStreamXmlSerializerBuilder<TrustAnchorResponse> configureBuilder(XStreamXmlSerializerBuilder<TrustAnchorResponse> builder) {
         builder.withAliasType("TrustAnchorResponse", TrustAnchorResponse.class);
