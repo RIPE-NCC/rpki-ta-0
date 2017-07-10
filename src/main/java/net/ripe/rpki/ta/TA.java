@@ -389,7 +389,7 @@ public class TA {
         }
 
         // TODO use proper requestCreationTimestamp
-        final TrustAnchorResponse response = new TrustAnchorResponse(null, getObjectsToBePublished(signCtx), taResponses);
+        final TrustAnchorResponse response = new TrustAnchorResponse(request.getCreationTimestamp(), getObjectsToBePublished(signCtx), taResponses);
 
         // TODO Serials increment in newTAState somehow
         return Pair.of(response, newTAState);
@@ -458,7 +458,9 @@ public class TA {
 
         final Map<URI, CertificateRepositoryObject> result = new HashMap<URI, CertificateRepositoryObject>();
         result.put(publicationUri.resolve(TaNames.certificateFileName(signCtx.certificate.getSubject())), signCtx.certificate);
-        result.put(publicationUri.resolve(TaNames.crlFileName(signCtx.certificate.getSubject())), createNewCrl(signCtx));
+        final X509Crl newCrl = createNewCrl(signCtx);
+        signCtx.taState.setCrl(newCrl);
+        result.put(publicationUri.resolve(TaNames.crlFileName(signCtx.certificate.getSubject())), newCrl);
         result.put(publicationUri.resolve(TaNames.manifestFileName(signCtx.certificate.getSubject())), createNewManifest(signCtx));
         for (final SignedResourceCertificate cert : signCtx.taState.getSignedProductionCertificates()) {
             if (cert.isPublishable()) {

@@ -53,7 +53,7 @@ public class TrustAnchorResponse extends EqualsSupport implements Serializable {
     private List<TaResponse> taResponses;
     private final Map<URI, CertificateRepositoryObject> publishedObjects;
 
-    public TrustAnchorResponse(Long requestCreationTimestamp, Map<URI, CertificateRepositoryObject> publishedObjects, List<TaResponse> taResponses) {
+    public TrustAnchorResponse(final Long requestCreationTimestamp, final Map<URI, CertificateRepositoryObject> publishedObjects, final List<TaResponse> taResponses) {
         Validate.notNull(requestCreationTimestamp, "requestCreationTimestamp is required");
         Validate.notEmpty(publishedObjects, "publishedObjects is required");
 

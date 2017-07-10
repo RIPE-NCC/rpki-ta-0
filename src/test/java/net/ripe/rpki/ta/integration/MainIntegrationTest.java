@@ -33,6 +33,7 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.io.Files;
 import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Env;
@@ -40,6 +41,7 @@ import net.ripe.rpki.ta.domain.TAState;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.math.BigInteger;
 
 import static org.hamcrest.Matchers.containsString;
@@ -56,7 +58,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         deleteFile(TA_XML_PATH);
     }
 
-    @Before public void teardown() {
+    @Before
+    public void teardown() {
         deleteFile(TA_XML_PATH);
     }
 
@@ -83,6 +86,34 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         final TAState taState = new TA(Env.development()).loadTAState();
         assertEquals(BigInteger.valueOf(29L), taState.getLastIssuedCertificateSerial());
+    }
+
+    @Test
+    public void priocess_request() throws Exception {
+        assertEquals(0, run("--initialise --env=development").exitCode);
+
+        final File tmpResponses = Files.createTempDir();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        TAState taState;
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=development").exitCode);
+        taState = new TA(Env.development()).loadTAState();
+        assertEquals(BigInteger.valueOf(3L), taState.getLastIssuedCertificateSerial());
+        assertEquals(BigInteger.valueOf(1L), taState.getLastMftSerial());
+        assertEquals(BigInteger.valueOf(1L), taState.getLastCrlSerial());
+
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=development").exitCode);
+        taState = new TA(Env.development()).loadTAState();
+        assertEquals(BigInteger.valueOf(5L), taState.getLastIssuedCertificateSerial());
+        assertEquals(BigInteger.valueOf(2L), taState.getLastMftSerial());
+        assertEquals(BigInteger.valueOf(2L), taState.getLastCrlSerial());
+
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=development").exitCode);
+        taState = new TA(Env.development()).loadTAState();
+        assertEquals(BigInteger.valueOf(7L), taState.getLastIssuedCertificateSerial());
+        assertEquals(BigInteger.valueOf(3L), taState.getLastMftSerial());
+        assertEquals(BigInteger.valueOf(3L), taState.getLastCrlSerial());
     }
 
 

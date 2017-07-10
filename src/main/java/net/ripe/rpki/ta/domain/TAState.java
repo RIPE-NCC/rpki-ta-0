@@ -92,7 +92,7 @@ public class TAState {
         return crl;
     }
 
-    void setCrl(X509Crl crl) {
+    public void setCrl(X509Crl crl) {
         this.crl = crl;
     }
 

@@ -65,7 +65,7 @@ public abstract class AbstractIntegrationTest {
     }
 
     protected Main.Exit run(final String[] args) {
-        return new Main().run(args);
+        return Main.run(args);
     }
 
     protected void deleteFile(final String pathToFile) {
