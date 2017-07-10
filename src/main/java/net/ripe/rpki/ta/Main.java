@@ -96,12 +96,7 @@ public class Main {
         }
 
         if (options.hasRequestOption() && options.hasResponseOption()) {
-            final String requestXml = Files.toString(new File(options.getRequestFile()), Charsets.UTF_8);
-            final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
-            final Pair<TrustAnchorResponse, TAState> p = ta.processRequest(request);
-            final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
-            Files.write(response, new File(options.getResponseFile()), Charsets.UTF_8);
-            ta.persist(p.getRight());
+            ta.processRequestXml(options);
         } else {
             ta.persist(ta.createNewTAState(options));
         }

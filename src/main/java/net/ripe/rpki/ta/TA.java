@@ -33,8 +33,10 @@ package net.ripe.rpki.ta;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.ipresource.IpResourceType;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
@@ -69,6 +71,8 @@ import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.processing.RequestProcessorException;
 import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
+import net.ripe.rpki.ta.serializers.TrustAnchorRequestSerializer;
+import net.ripe.rpki.ta.serializers.TrustAnchorResponseSerializer;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
@@ -82,6 +86,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
@@ -342,11 +347,24 @@ public class TA {
         throw new BadOptions("The program options are inconsistent.");
     }
 
-    public Config getConfig() {
-        return config;
+    void processRequestXml(ProgramOptions options) throws Exception {
+        final String requestXml = Files.toString(new File(options.getRequestFile()), Charsets.UTF_8);
+        final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
+        final Pair<TrustAnchorResponse, TAState> p = processRequest(request);
+        final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
+        final File responseFile = new File(options.getResponseFile());
+        Files.write(response, responseFile, Charsets.UTF_8);
+        try {
+            persist(p.getRight());
+        } catch (Exception e) {
+            if (responseFile.exists()) {
+                responseFile.delete();
+            }
+            throw e;
+        }
     }
 
-    public Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request) throws Exception {
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request) throws Exception {
         final TAState taState = loadTAState();
         validateRequestSerial(request, taState);
 
@@ -611,6 +629,10 @@ public class TA {
 
     private URI getTaProductsPublicationUri() {
         return getConfig().getTaProductsPublicationUri();
+    }
+
+    public Config getConfig() {
+        return config;
     }
 
     private class SignCtx {
