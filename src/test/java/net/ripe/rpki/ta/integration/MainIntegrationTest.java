@@ -43,10 +43,12 @@ import org.junit.Test;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.security.cert.X509CRL;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 public class MainIntegrationTest extends AbstractIntegrationTest {
@@ -103,6 +105,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(1L), taState1.getLastCrlSerial());
         assertEquals(1, taState1.getSignedProductionCertificates().size());
         assertEquals(1, taState1.getSignedManifests().size());
+        assertNull(taState1.getCrl().getCrl().getRevokedCertificates());
 
         assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=development").exitCode);
         final TAState taState2 = new TA(Env.development()).loadTAState();
@@ -111,6 +114,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(2L), taState2.getLastCrlSerial());
         assertEquals(2, taState2.getSignedProductionCertificates().size());
         assertEquals(2, taState2.getSignedManifests().size());
+        assertEquals(1, taState2.getCrl().getCrl().getRevokedCertificates().size());
 
         assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=development").exitCode);
         final TAState taState3 = new TA(Env.development()).loadTAState();
@@ -119,6 +123,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
         assertEquals(3, taState3.getSignedProductionCertificates().size());
         assertEquals(3, taState3.getSignedManifests().size());
+        assertEquals(2, taState3.getCrl().getCrl().getRevokedCertificates().size());
+
+
     }
 
 
