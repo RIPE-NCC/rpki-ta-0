@@ -133,7 +133,7 @@ public class TA {
 
         TAStateBuilder taStateBuilder = new TAStateBuilder(config);
 
-        taStateBuilder.withRevocations(importRevocations(legacyTA));
+        taStateBuilder.withCrl(legacyTA.getCrl());
 
         // the last issued crl and/or manifest number are identical so we pick the crl one:
         taStateBuilder.withLastCrlSerial(legacyTA.getLastCrlNumber());
@@ -151,11 +151,12 @@ public class TA {
     }
 
     private TAState createTaState(final TAStateBuilder taStateBuilder, byte[] encoded, KeyStore keyStore, final BigInteger serial) throws Exception {
-        taStateBuilder.withEncoded(encoded);
-        taStateBuilder.withKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias());
-        taStateBuilder.withKeyStorePassphrase(keyStore.getKeyStorePassPhrase());
-        taStateBuilder.withLastIssuedCertificateSerial(serial);
-        return taStateBuilder.build();
+        return taStateBuilder.
+                withEncoded(encoded).
+                withKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias()).
+                withKeyStorePassphrase(keyStore.getKeyStorePassPhrase()).
+                withLastIssuedCertificateSerial(serial).
+                build();
     }
 
     private static BigInteger next(final BigInteger serial) {
@@ -339,7 +340,7 @@ public class TA {
                     generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate, nextSerial);
 
             final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
-            taStateBuilder.withRevocations(taState.getRevocations());
+            taStateBuilder.withCrl(taState.getCrl());
 
             return createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
         }
@@ -471,17 +472,21 @@ public class TA {
     }
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
+        return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.certificate.getSubject(), signCtx.now);
+    }
+
+    private X509Crl createNewCrl(final KeyPair keyPair, final TAState taState, final X500Principal issuer, final  DateTime now) {
         final X509CrlBuilder builder = new X509CrlBuilder()
-                .withAuthorityKeyIdentifier(signCtx.keyPair.getPublic())
-                .withNumber(nextCrlNumber(signCtx.taState))
-                .withIssuerDN(signCtx.certificate.getSubject())
-                .withThisUpdateTime(signCtx.now)
-                .withNextUpdateTime(calculateNextUpdateTime(signCtx.now))
+                .withAuthorityKeyIdentifier(keyPair.getPublic())
+                .withNumber(nextCrlNumber(taState))
+                .withIssuerDN(issuer)
+                .withThisUpdateTime(now)
+                .withNextUpdateTime(calculateNextUpdateTime(now))
                 .withSignatureProvider(getSignatureProvider());
-        fillRevokedObjects(builder, signCtx.taState.getSignedProductionCertificates());
-        fillRevokedObjects(builder, signCtx.taState.getPreviousTaCertificates());
-        fillRevokedObjects(builder, signCtx.taState.getSignedManifests());
-        return builder.build(signCtx.keyPair.getPrivate());
+        fillRevokedObjects(builder, taState.getSignedProductionCertificates());
+        fillRevokedObjects(builder, taState.getPreviousTaCertificates());
+        fillRevokedObjects(builder, taState.getSignedManifests());
+        return builder.build(keyPair.getPrivate());
     }
 
     private void fillRevokedObjects(X509CrlBuilder builder, List<? extends SignedObjectTracker> revokedObjects) {

@@ -63,17 +63,11 @@ public class TAState {
 
     private Long lastProcessedRequestTimestamp = 0L;
 
-    private List<Revocation> revocations;
-
     private List<SignedResourceCertificate> previousTaCertificates = new ArrayList<SignedResourceCertificate>();
 
     private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
 
     private List<SignedManifest> signedManifests = new ArrayList<SignedManifest>();
-
-    public List<Revocation> getRevocations() {
-        return revocations;
-    }
 
     TAState() {
         // package protected constructor so XStream can instantiate this object
@@ -82,11 +76,6 @@ public class TAState {
     public TAState(Config config) {
         this.config = config;
     }
-
-    void setRevocations(List<Revocation> revocations) {
-        this.revocations = revocations;
-    }
-
 
     public X509Crl getCrl() {
         return crl;
@@ -202,7 +191,6 @@ public class TAState {
                 .append(lastCrlSerial, taState.lastCrlSerial)
                 .append(lastMftSerial, taState.lastMftSerial)
                 .append(lastProcessedRequestTimestamp, taState.lastProcessedRequestTimestamp)
-                .append(revocations, taState.revocations)
                 .append(previousTaCertificates, taState.previousTaCertificates)
                 .append(signedProductionCertificates, taState.signedProductionCertificates)
                 .append(signedManifests, taState.signedManifests)
@@ -221,7 +209,6 @@ public class TAState {
                 .append(lastCrlSerial)
                 .append(lastMftSerial)
                 .append(lastProcessedRequestTimestamp)
-                .append(revocations)
                 .append(previousTaCertificates)
                 .append(signedProductionCertificates)
                 .append(signedManifests)
