@@ -107,7 +107,7 @@ public class TA {
 
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
-    private static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS65536, 0/0, 0::/0");
+    private static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
 
     private final Config config;
     private final transient KeyPairFactory keyPairFactory;
@@ -276,31 +276,6 @@ public class TA {
 
     private KeyPair generateRootKeyPair() {
         return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
-    }
-
-    private List<Revocation> importRevocations(final LegacyTA legacyTA) {
-        final List<Revocation> revocations = Lists.newArrayList();
-
-        for (final SignedResourceCertificate src : legacyTA.getSignedProductionCertificates()) {
-            final X509Certificate certificate = src.getResourceCertificate().getCertificate();
-            final Revocation revocation = new Revocation();
-
-            revocation.setSerial(certificate.getSerialNumber());
-            revocation.setNotValidAfter(new DateTime(src.getResourceCertificate().getCertificate().getNotAfter()));
-
-            revocations.add(revocation);
-        }
-
-        for (final SignedManifest signedManifest : legacyTA.getSignedManifests()) {
-            final Revocation revocation = new Revocation();
-
-            revocation.setSerial(signedManifest.getManifest().getCertificate().getSerialNumber());
-            revocation.setNotValidAfter(signedManifest.getManifest().getCertificate().getValidityPeriod().getNotValidAfter());
-
-            revocations.add(revocation);
-        }
-
-        return revocations;
     }
 
     private boolean hasState() {
@@ -532,8 +507,6 @@ public class TA {
         builder.withCa(true);
         builder.withIssuerDN(issuer);
         builder.withSubjectDN(request.getSubjectDN());
-        // TODO Check it
-//        builder.withSerial(next(signCtx.taState.getLastIssuedCertificateSerial()));
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(new EncodedPublicKey(request.getEncodedSubjectPublicKey()));
         builder.withSigningKeyPair(signCtx.keyPair);
@@ -561,7 +534,6 @@ public class TA {
         final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
-//        builder.withSerial(next(signCtx.taState.getLastIssuedCertificateSerial()));
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(eeKeyPair.getPublic());
         builder.withSigningKeyPair(signCtx.keyPair);
