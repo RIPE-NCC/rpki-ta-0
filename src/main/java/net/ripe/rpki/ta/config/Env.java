@@ -78,7 +78,7 @@ public class Env {
         config.setPersistentStorageDir("/export/bad/certification/ta/data");
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
-        config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-" + new DateTime(DateTimeZone.UTC).toString("YYYY-MM-dd")));
+        config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
         return config;
