@@ -54,7 +54,6 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
-import net.ripe.rpki.ta.domain.Revocation;
 import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.TAStateBuilder;
 import net.ripe.rpki.ta.domain.request.ResourceCertificateRequestData;
@@ -92,7 +91,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -279,7 +277,7 @@ public class TA {
     }
 
     private boolean hasState() {
-        return new TAPersistence(config).exists();
+        return new TAPersistence(config).taStateExists();
     }
 
     TAState createNewTAState(final ProgramOptions programOptions) throws Exception {
@@ -344,16 +342,13 @@ public class TA {
         final TAState taState = loadTAState();
         validateRequestSerial(request, taState);
 
-        final KeyStore keyStore = KeyStore.of(config);
-        final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(taState.getEncoded());
-
+        final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(config).decode(taState.getEncoded());
         final TAState newTAState = copyTAState(taState);
 
         final SignCtx signCtx = new SignCtx(request, newTAState, new DateTime(), decoded.getRight(), decoded.getLeft());
 
         // TODO Ask Tim why do we do it
         updateUrls(request, signCtx);
-
 
         final List<TaResponse> taResponses = Lists.newArrayList();
         for (final TaRequest r : request.getTaRequests()) {
@@ -364,11 +359,7 @@ public class TA {
             }
         }
 
-        // TODO use proper requestCreationTimestamp
-        final TrustAnchorResponse response = new TrustAnchorResponse(request.getCreationTimestamp(), getObjectsToBePublished(signCtx), taResponses);
-
-        // TODO Serials increment in newTAState somehow
-        return Pair.of(response, newTAState);
+        return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), getObjectsToBePublished(signCtx), taResponses), newTAState);
     }
 
     /**
@@ -392,7 +383,6 @@ public class TA {
             throw new RequestProcessorException("Request has EXACT millisecond date as previously processed request. Response should already exist! Cowardly bailing out..");
         }
     }
-
 
     private void updateUrls(final TrustAnchorRequest taRequest, final SignCtx signCtx) {
         signCtx.taState.getConfig().setTaCertificatePublicationUri(taRequest.getTaCertificatePublicationUri());
@@ -614,6 +604,9 @@ public class TA {
         return config;
     }
 
+    /**
+     * Just an utility class to carry the environment around when doing the signing.
+     */
     private class SignCtx {
         final TrustAnchorRequest request;
         final TAState taState;
