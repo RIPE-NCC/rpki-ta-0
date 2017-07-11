@@ -82,7 +82,7 @@ public class TAPersistence {
         return Files.toString(new File(fileName), Charsets.UTF_8);
     }
 
-    public boolean exists() {
+    public boolean taStateExists() {
         return trustAnchorFile.exists();
     }
 
