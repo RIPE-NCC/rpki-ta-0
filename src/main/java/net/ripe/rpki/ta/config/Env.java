@@ -66,6 +66,7 @@ public class Env {
         config.setTrustAnchorName(new X500Principal("ripe-ncc-ta"));
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.ripe.net/repository/"));
+        config.setNotificationUri(URI.create("http://localhost:7788/notification.xml"));
         return config;
     }
 
@@ -81,6 +82,7 @@ public class Env {
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
+        config.setNotificationUri(URI.create("https://rrdp.ripe.net/notification.xml"));
         return config;
     }
 }

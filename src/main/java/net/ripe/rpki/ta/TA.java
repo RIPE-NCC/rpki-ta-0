@@ -98,6 +98,7 @@ import java.util.Map;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
+import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 
 public class TA {
 
@@ -191,8 +192,8 @@ public class TA {
 
         final URI manifestUri = TaNames.manifestPublicationUri(productsPublication.getLocation(), config.getTrustAnchorName());
 
-        descriptorsMap.put(ID_AD_RPKI_MANIFEST,
-                new X509CertificateInformationAccessDescriptor(ID_AD_RPKI_MANIFEST, manifestUri));
+        descriptorsMap.put(ID_AD_RPKI_MANIFEST, aiaDescriptor(ID_AD_RPKI_MANIFEST, manifestUri));
+        descriptorsMap.put(ID_AD_RPKI_NOTIFY, aiaDescriptor(ID_AD_RPKI_NOTIFY, getConfig().getNotificationUri()));
 
         return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[descriptorsMap.size()]);
     }
@@ -268,8 +269,7 @@ public class TA {
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(URI taProductsPublicationUri) {
-        return generateSiaDescriptors(
-                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, taProductsPublicationUri));
+        return generateSiaDescriptors(aiaDescriptor(ID_AD_CA_REPOSITORY, taProductsPublicationUri));
     }
 
     private KeyPair generateRootKeyPair() {
@@ -487,11 +487,13 @@ public class TA {
 
         final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
         final URI taProductsPublicationUri = getTaProductsPublicationUri();
-        final X509CertificateInformationAccessDescriptor[] taAIA = {new X509CertificateInformationAccessDescriptor(
-                X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS, URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer)))};
+        final X509CertificateInformationAccessDescriptor[] taAIA = { aiaDescriptor(
+                X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
+                URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer)))
+        };
 
-        final X509CertificateInformationAccessDescriptor aia = new X509CertificateInformationAccessDescriptor(
-                X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS, TaNames.certificatePublicationUri(taCertificatePublicationUri, issuer));
+        final X509CertificateInformationAccessDescriptor aia = aiaDescriptor(X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
+                TaNames.certificatePublicationUri(taCertificatePublicationUri, issuer));
 
         final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
         builder.withCa(true);
@@ -602,6 +604,10 @@ public class TA {
 
     public Config getConfig() {
         return config;
+    }
+
+    private X509CertificateInformationAccessDescriptor aiaDescriptor(ASN1ObjectIdentifier method, URI location) {
+        return new X509CertificateInformationAccessDescriptor(method, location);
     }
 
     /**
