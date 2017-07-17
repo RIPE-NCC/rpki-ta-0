@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,34 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
+import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import net.ripe.rpki.ta.domain.request.SigningRequest;
+import net.ripe.rpki.ta.domain.request.TrustAnchorRequest;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 
-@Ignore
-public abstract class AbstractIntegrationTest {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
+public class TrustAnchorRequestSerializerTest {
 
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+    private static final String TA_P_REQUEST_PATH = "src/test/resources/ta-request.xml";
+
+    @Test
+    public void shouldReadTestTaRequest() throws IOException {
+        final String requestXml = Files.toString(new File(TA_P_REQUEST_PATH), Charsets.UTF_8);
+        final TrustAnchorRequest trustAnchorRequest = new TrustAnchorRequestSerializer().deserialize(requestXml);
+        assertNotNull(trustAnchorRequest);
+
+        final SigningRequest taRequest = (SigningRequest) trustAnchorRequest.getTaRequests().get(0);
+        assertEquals("6f164750-b184-44ed-aa75-f2eaf4a598c7", taRequest.getRequestId().toString());
+        assertEquals("DEFAULT", taRequest.getResourceCertificateRequest().getResourceClassName());
+        assertEquals(3, taRequest.getResourceCertificateRequest().getSubjectInformationAccess().length);
+        assertEquals(2, trustAnchorRequest.getSiaDescriptors().length);
+        assertEquals("1.3.6.1.5.5.7.48.13", trustAnchorRequest.getSiaDescriptors()[0].getMethod().toString());
+        assertEquals("http://localhost:7788/notification.xml", trustAnchorRequest.getSiaDescriptors()[0].getLocation().toString());
     }
-
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
-    }
-
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
-    }
-
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
-    }
-
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
-    }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
 }

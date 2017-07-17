@@ -2,10 +2,13 @@ package net.ripe.rpki.ta.domain;
 
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
+import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 /*-
@@ -55,13 +58,16 @@ public class TAState {
 
     private BigInteger lastIssuedCertificateSerial;
 
-    private BigInteger lastCrlAndManifestNumber;
+    private BigInteger lastCrlSerial;
+    private BigInteger lastMftSerial;
 
-    private List<Revocation> revocations;
+    private Long lastProcessedRequestTimestamp = 0L;
 
-    public List<Revocation> getRevocations() {
-        return revocations;
-    }
+    private List<SignedResourceCertificate> previousTaCertificates = new ArrayList<SignedResourceCertificate>();
+
+    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
+
+    private List<SignedManifest> signedManifests = new ArrayList<SignedManifest>();
 
     TAState() {
         // package protected constructor so XStream can instantiate this object
@@ -71,23 +77,11 @@ public class TAState {
         this.config = config;
     }
 
-    void setRevocations(List<Revocation> revocations) {
-        this.revocations = revocations;
-    }
-
-    public BigInteger getLastCrlAndManifestNumber() {
-        return lastCrlAndManifestNumber;
-    }
-
-    void setLastCrlAndManifestNumber(BigInteger lastCrlAndManifestNumber) {
-        this.lastCrlAndManifestNumber = lastCrlAndManifestNumber;
-    }
-
     public X509Crl getCrl() {
         return crl;
     }
 
-    void setCrl(X509Crl crl) {
+    public void setCrl(X509Crl crl) {
         this.crl = crl;
     }
 
@@ -127,8 +121,56 @@ public class TAState {
         return lastIssuedCertificateSerial;
     }
 
-    void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
+    public void setLastIssuedCertificateSerial(BigInteger lastIssuedCertificateSerial) {
         this.lastIssuedCertificateSerial = lastIssuedCertificateSerial;
+    }
+
+    public Long getLastProcessedRequestTimestamp() {
+        return lastProcessedRequestTimestamp;
+    }
+
+    public void setLastProcessedRequestTimestamp(Long lastProcessedRequestTimestamp) {
+        this.lastProcessedRequestTimestamp = lastProcessedRequestTimestamp;
+    }
+
+    public List<SignedResourceCertificate> getPreviousTaCertificates() {
+        return previousTaCertificates;
+    }
+
+    public List<SignedResourceCertificate> getSignedProductionCertificates() {
+        return signedProductionCertificates;
+    }
+
+    public List<SignedManifest> getSignedManifests() {
+        return signedManifests;
+    }
+
+    public BigInteger getLastCrlSerial() {
+        return lastCrlSerial;
+    }
+
+    public void setLastCrlSerial(BigInteger lastCrlSerial) {
+        this.lastCrlSerial = lastCrlSerial;
+    }
+
+    public BigInteger getLastMftSerial() {
+        return lastMftSerial;
+    }
+
+    public void setLastMftSerial(BigInteger lastMftSerial) {
+        this.lastMftSerial = lastMftSerial;
+    }
+
+    public void setPreviousTaCertificates(List<SignedResourceCertificate> previousTaCertificates) {
+        this.previousTaCertificates = previousTaCertificates;
+    }
+
+    public void setSignedProductionCertificates(List<SignedResourceCertificate> signedProductionCertificates) {
+        this.signedProductionCertificates = signedProductionCertificates;
+    }
+
+    public void setSignedManifests(List<SignedManifest> signedManifests) {
+        this.signedManifests = signedManifests;
     }
 
     @Override
@@ -140,29 +182,36 @@ public class TAState {
         TAState taState = (TAState) o;
 
         return new EqualsBuilder()
-                .append(crl, taState.crl)
                 .append(encoded, taState.encoded)
                 .append(config, taState.config)
+                .append(crl, taState.crl)
                 .append(keyStorePassphrase, taState.keyStorePassphrase)
                 .append(keyStoreKeyAlias, taState.keyStoreKeyAlias)
-                .append(lastCrlAndManifestNumber, taState.lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial, taState.lastIssuedCertificateSerial)
-                .append(revocations, taState.revocations)
+                .append(lastCrlSerial, taState.lastCrlSerial)
+                .append(lastMftSerial, taState.lastMftSerial)
+                .append(lastProcessedRequestTimestamp, taState.lastProcessedRequestTimestamp)
+                .append(previousTaCertificates, taState.previousTaCertificates)
+                .append(signedProductionCertificates, taState.signedProductionCertificates)
+                .append(signedManifests, taState.signedManifests)
                 .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
-                .append(crl)
                 .append(encoded)
                 .append(config)
+                .append(crl)
                 .append(keyStorePassphrase)
                 .append(keyStoreKeyAlias)
-                .append(lastCrlAndManifestNumber)
                 .append(lastIssuedCertificateSerial)
-                .append(revocations)
+                .append(lastCrlSerial)
+                .append(lastMftSerial)
+                .append(lastProcessedRequestTimestamp)
+                .append(previousTaCertificates)
+                .append(signedProductionCertificates)
+                .append(signedManifests)
                 .toHashCode();
     }
-
 }

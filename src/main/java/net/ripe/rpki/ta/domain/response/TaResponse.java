@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.domain.response;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,24 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import net.ripe.rpki.commons.util.EqualsSupport;
+import org.apache.commons.lang.Validate;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.Serializable;
+import java.util.UUID;
 
-@Ignore
-public abstract class AbstractIntegrationTest {
+public abstract class TaResponse extends EqualsSupport implements Serializable {
 
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
+    private static final long serialVersionUID = 1L;
 
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+    private UUID requestId;
+
+    protected TaResponse(UUID requestId) {
+        Validate.notNull(requestId, "requestId is required");
+        this.requestId = requestId;
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
+    public UUID getRequestId() {
+        return requestId;
     }
-
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
-    }
-
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
-    }
-
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
-    }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
 }

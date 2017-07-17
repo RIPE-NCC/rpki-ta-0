@@ -62,7 +62,9 @@ public class TAPersistence {
 
     // TODO Add backing up the existing file
     public void save(String xml) throws IOException {
-        final File tempFile = File.createTempFile(Strings.padStart(TRUST_ANCHOR_FILENAME, 3, '_'), TRUST_ANCHOR_FILE_EXT, persistenceDirectory);
+        final File tempFile = File.createTempFile(
+                Strings.padStart(TRUST_ANCHOR_FILENAME, 3, '_'),
+                TRUST_ANCHOR_FILE_EXT, persistenceDirectory);
         try {
             Files.write(xml, tempFile, Charsets.UTF_8);
             Files.move(tempFile, trustAnchorFile);
@@ -80,7 +82,7 @@ public class TAPersistence {
         return Files.toString(new File(fileName), Charsets.UTF_8);
     }
 
-    public boolean exists() {
+    public boolean taStateExists() {
         return trustAnchorFile.exists();
     }
 

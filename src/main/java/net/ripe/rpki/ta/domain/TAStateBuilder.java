@@ -33,6 +33,7 @@ package net.ripe.rpki.ta.domain;
  * =========================LICENSE_END==================================
  */
 
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.ta.config.Config;
 
 import java.math.BigInteger;
@@ -70,32 +71,18 @@ public class TAStateBuilder {
         return this;
     }
 
-    public TAStateBuilder withRevocations(List<Revocation> revocations) {
-        if (revocations != null) {
-            // remove revocations that have already expired:
-            for (Iterator<Revocation> iter = revocations.iterator(); iter.hasNext(); ) {
-                Revocation revocation = iter.next();
-                if (revocation.getNotValidAfter().isBeforeNow()) {
-                    iter.remove();
-                }
-            }
-
-            // sort ascending by serial:
-            Collections.sort(revocations, new Comparator<Revocation>() {
-                @Override
-                public int compare(Revocation lhs, Revocation rhs) {
-                    return lhs.getSerial().compareTo(rhs.getSerial());
-                }
-            });
-
-            taState.setRevocations(revocations);
-        }
-
+    public TAStateBuilder withCrl(X509Crl crl) {
+        taState.setCrl(crl);
         return this;
     }
 
-    public TAStateBuilder withLastCrlAndManifestNumber(BigInteger lastCrlAndManifestNumber) {
-        taState.setLastCrlAndManifestNumber(lastCrlAndManifestNumber);
+    public TAStateBuilder withLastCrlSerial(BigInteger lastCrlSerial) {
+        taState.setLastCrlSerial(lastCrlSerial);
+        return this;
+    }
+
+    public TAStateBuilder withLastMftSerial(BigInteger lastMftSerial) {
+        taState.setLastMftSerial(lastMftSerial);
         return this;
     }
 

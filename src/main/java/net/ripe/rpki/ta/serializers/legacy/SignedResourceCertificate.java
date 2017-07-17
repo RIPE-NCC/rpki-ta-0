@@ -35,15 +35,24 @@ package net.ripe.rpki.ta.serializers.legacy;
 
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 
-public class SignedResourceCertificate {
+import java.math.BigInteger;
 
-    private X509ResourceCertificate certificateRepositoryObject;
+public class SignedResourceCertificate extends SignedObjectTracker {
 
-    public X509ResourceCertificate getCertificateRepositoryObject() {
-        return certificateRepositoryObject;
+    private static final long serialVersionUID = 1L;
+
+
+    public SignedResourceCertificate(String fileName, X509ResourceCertificate resourceCertificate) {
+        super(fileName, resourceCertificate, resourceCertificate.getValidityPeriod().getNotValidAfter());
     }
 
-    public void setCertificateRepositoryObject(X509ResourceCertificate certificateRepositoryObject) {
-        this.certificateRepositoryObject = certificateRepositoryObject;
+    public X509ResourceCertificate getResourceCertificate() {
+        return (X509ResourceCertificate) getCertificateRepositoryObject();
+    }
+
+    @Override
+    public BigInteger getCertificateSerial() {
+        X509ResourceCertificate resourceCertificate = (X509ResourceCertificate) getCertificateRepositoryObject();
+        return resourceCertificate.getSerialNumber();
     }
 }

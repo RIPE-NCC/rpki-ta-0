@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.domain;
+package net.ripe.rpki.ta.domain.response;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,48 +33,30 @@ package net.ripe.rpki.ta.domain;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.collect.Lists;
-import net.ripe.rpki.ta.config.Env;
-import org.joda.time.DateTime;
-import org.junit.Test;
+import org.apache.commons.lang.Validate;
 
-import java.math.BigInteger;
-import java.util.List;
+import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+public class RevocationResponse extends TaResponse {
 
-public class TAStateBuilderTest {
+    private static final long serialVersionUID = 1L;
 
-    @Test
-    public void testWithRevocations() {
-        TAStateBuilder taStateBuilder = new TAStateBuilder(Env.development());
+    private final String resourceClassName;
+    private final String encodedPublicKey;
 
-        List<Revocation> revocations = Lists.newArrayList();
-
-        revocations.add(revocation("1", new DateTime().plusYears(1)));
-        revocations.add(revocation("2", new DateTime().plusYears(2)));
-
-        TAState taState = taStateBuilder.withRevocations(revocations).build();
-        assertEquals(2, taState.getRevocations().size());
+    public RevocationResponse(UUID requestId, String resourceClassName, String encodedPublicKey) {
+        super(requestId);
+        Validate.notNull(resourceClassName, "resourceClassName is required");
+        Validate.notNull(encodedPublicKey, "encodedPublicKey is required");
+        this.resourceClassName = resourceClassName;
+        this.encodedPublicKey = encodedPublicKey;
     }
 
-    @Test
-    public void testWithRevocations_oneRevocationInThePast() {
-        TAStateBuilder taStateBuilder = new TAStateBuilder(Env.development());
-
-        List<Revocation> revocations = Lists.newArrayList();
-
-        revocations.add(revocation("1", new DateTime().plusYears(1)));
-        revocations.add(revocation("2", new DateTime().minusYears(2)));
-
-        TAState taState = taStateBuilder.withRevocations(revocations).build();
-        assertEquals(1, taState.getRevocations().size());
+    public String getResourceClassName() {
+        return resourceClassName;
     }
 
-    private Revocation revocation(String serial, DateTime notValidAfter) {
-        Revocation revocation = new Revocation();
-        revocation.setSerial(new BigInteger(serial));
-        revocation.setNotValidAfter(notValidAfter);
-        return revocation;
+    public String getEncodedPublicKey() {
+        return encodedPublicKey;
     }
 }

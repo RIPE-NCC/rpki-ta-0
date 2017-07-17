@@ -42,6 +42,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -58,6 +59,7 @@ public class ProgramOptions {
 
     private final CommandLine commandLine;
     private final static Options options;
+
     static {
         options = new Options();
         options.addOption(Option.builder().longOpt(ENV_OPT).
@@ -101,7 +103,7 @@ public class ProgramOptions {
                 build());
     }
 
-    public ProgramOptions(String ... args) throws BadOptions {
+    public ProgramOptions(String... args) throws BadOptions {
         try {
             commandLine = new DefaultParser().parse(options, args);
         } catch (ParseException e) {
@@ -132,15 +134,15 @@ public class ProgramOptions {
         checkDependency(RESPONSE_OPT, REQUEST_OPT);
     }
 
-    private void checkDependency(final String option, final String ... dependencies) throws BadOptions {
-        for (final String dependency  : dependencies) {
+    private void checkDependency(final String option, final String... dependencies) throws BadOptions {
+        for (final String dependency : dependencies) {
             if (commandLine.hasOption(option) && !commandLine.hasOption(dependency)) {
                 throw new BadOptions("Doesn't have meaningful options.");
             }
         }
     }
 
-    private void checkIncompatible(final String option, final String ... incompatibleList) throws BadOptions {
+    private void checkIncompatible(final String option, final String... incompatibleList) throws BadOptions {
         for (final String incompatibleOption : incompatibleList) {
             if (commandLine.hasOption(option) && commandLine.hasOption(incompatibleOption)) {
                 throw new BadOptions("Cannot have both --" + option + " and --" + incompatibleOption + " options.");
@@ -190,6 +192,14 @@ public class ProgramOptions {
 
     public String getOldTaFilePath() {
         return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
+    }
+
+    public String getRequestFile() {
+        return commandLine.getOptionValue(REQUEST_OPT);
+    }
+
+    public String getResponseFile() {
+        return commandLine.getOptionValue(RESPONSE_OPT);
     }
 
     public static String getUsageString() {
