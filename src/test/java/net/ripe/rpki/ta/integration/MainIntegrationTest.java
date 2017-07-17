@@ -67,15 +67,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertThat(readFile(TA_XML_PATH), containsString("<TA>"));
     }
 
-    @Test
-    public void check_options_compatibility() {
-        assertThat(run("--initialise --env=development --initialise-from-old=xxx").exitCode, is(2));
-        assertThat(run("--initialise --env=development --generate-ta-certificate").exitCode, is(2));
-        assertThat(run("--initialise --env=development --export-ta-certificate=output.xml").exitCode, is(2));
-        assertThat(run("--print-tal --env=development --export-ta-certificate=output.xml").exitCode, is(2));
-        assertThat(run("--generate-ta-certificate --env=development --export-ta-certificate=output.xml").exitCode, is(2));
-    }
-
+    
     @Test
     public void generate_ta_certificate() throws Exception {
         final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=development");
