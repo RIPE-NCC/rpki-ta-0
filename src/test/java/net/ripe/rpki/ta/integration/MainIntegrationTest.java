@@ -54,15 +54,18 @@ import static org.junit.Assert.*;
 public class MainIntegrationTest extends AbstractIntegrationTest {
 
     private static final String TA_XML_PATH = "/export/bad/certification/ta/data/ta.xml";
+    private static final String TAL_PATH = "/export/bad/certification/ta/data/test.tal";
 
     @Before
     public void setup() {
         deleteFile(TA_XML_PATH);
+        deleteFile(TAL_PATH);
     }
 
     @Before
     public void teardown() {
         deleteFile(TA_XML_PATH);
+        deleteFile(TAL_PATH);
     }
 
     @Test
@@ -76,19 +79,14 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     public void print_ta() {
         run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=development");
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(baos));
-        run("--print-tal --env=development");
-        System.setOut(System.out);
+        run("--print-tal="+TAL_PATH +" --env=development");
 
-        String talContent = new String(baos.toByteArray());
-
-        assertThat(talContent, equalTo(
+        assertThat(readFile(TAL_PATH), equalTo(
                 "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n"+
                         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApIXenLOBfyo7cOnm4mGKmYxsoWCp28dw3XJAoZNWPDK8i9MxYACpwfz7bj" +
                         "yGma1BWPBJuievNd6nriFI+3WG+wt2bnO2ZmiLenCwMtm8bu7BeldpWRwlAnRp4t4IL6sZ7T9bF+4sTrv1qiEANqam0mhtLtUfbWXV" +
                         "5Z4mjgnNur7fJH2lIOm7Oc2/tok1rid8WsPe18zuvgwA3M0fKQ/Oa4SMXKnHr3fg2cHAm1cfEEvhMKa3rUAvsKGVEYeTJNg6rh3IRn" +
-                        "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB\n")
+                        "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB")
         );
     }
     
