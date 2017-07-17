@@ -97,11 +97,20 @@ public class Main {
 
         if (options.hasRequestOption() && options.hasResponseOption()) {
             ta.processRequestXml(options);
-        } else {
-            ta.persist(ta.createNewTAState(options));
+            return new Exit(EXIT_OK);
         }
 
-        return new Exit(EXIT_OK);
+        if (options.hasPrintTALOption()) {
+            System.out.println(ta.getCurrentTrustAnchorLocator());
+            return new Exit(EXIT_OK);
+        }
+
+        if (options.hasInitialiseOption() || options.hasInitialiseFromOldOption()) {
+            ta.persist(ta.createNewTAState(options));
+            return new Exit(EXIT_OK);
+        }
+
+        return new Exit(EXIT_ERROR_2, ProgramOptions.getUsageString());
     }
 
     public static class Exit {
