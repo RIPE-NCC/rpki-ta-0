@@ -35,12 +35,11 @@ package net.ripe.rpki.ta.config;
 
 
 import net.ripe.rpki.ta.BadOptions;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
 import java.net.URI;
+import java.util.Arrays;
 
 public class Env {
 
@@ -64,7 +63,7 @@ public class Env {
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("ripe-ncc-ta"));
-        config.setTaCertificatePublicationUri(URI.create("rsync://rpki.ripe.net/ta/"));
+        config.setTaCertificatePublicationUris(Arrays.asList(URI.create("rsync://rpki.ripe.net/ta/")));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.ripe.net/repository/"));
         config.setNotificationUri(URI.create("http://localhost:7788/notification.xml"));
         return config;
@@ -80,7 +79,7 @@ public class Env {
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
-        config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
+        config.setTaCertificatePublicationUris(Arrays.asList(URI.create("rsync://localhost:10873/ta/"), URI.create("http://localhost:8080/ta/")));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
         config.setNotificationUri(URI.create("https://rrdp.ripe.net/notification.xml"));
         return config;

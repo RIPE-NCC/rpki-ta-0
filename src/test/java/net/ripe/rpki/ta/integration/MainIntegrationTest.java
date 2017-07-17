@@ -83,6 +83,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(readFile(TAL_PATH), equalTo(
                 "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n"+
+                        "http://localhost:8080/ta/RIPE-NCC-TA-TEST.cer\n"+
                         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApIXenLOBfyo7cOnm4mGKmYxsoWCp28dw3XJAoZNWPDK8i9MxYACpwfz7bj" +
                         "yGma1BWPBJuievNd6nriFI+3WG+wt2bnO2ZmiLenCwMtm8bu7BeldpWRwlAnRp4t4IL6sZ7T9bF+4sTrv1qiEANqam0mhtLtUfbWXV" +
                         "5Z4mjgnNur7fJH2lIOm7Oc2/tok1rid8WsPe18zuvgwA3M0fKQ/Oa4SMXKnHr3fg2cHAm1cfEEvhMKa3rUAvsKGVEYeTJNg6rh3IRn" +
