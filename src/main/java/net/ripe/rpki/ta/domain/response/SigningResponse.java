@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.domain.response;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,39 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
+import org.apache.commons.lang.Validate;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.net.URI;
+import java.util.UUID;
 
-@Ignore
-public abstract class AbstractIntegrationTest {
+public class SigningResponse extends TaResponse {
 
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
+    private static final long serialVersionUID = 1L;
 
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+    private final String resourceClassName;
+    private final URI publicationUri;
+    private final X509ResourceCertificate certificate;
+
+    public SigningResponse(UUID requestId, String resourceClassName, URI publicationUri, X509ResourceCertificate certificate) {
+        super(requestId);
+        Validate.notNull(resourceClassName, "resourceClassName is required");
+        Validate.notNull(publicationUri, "publicationUri is required");
+        Validate.notNull(certificate, "certificate is required");
+        this.resourceClassName = resourceClassName;
+        this.publicationUri = publicationUri;
+        this.certificate = certificate;
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
+    public String getResourceClassName() {
+        return resourceClassName;
     }
 
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
+    public URI getPublicationUri() {
+        return publicationUri;
     }
 
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
+    public X509ResourceCertificate getCertificate() {
+        return certificate;
     }
-
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
-    }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
 }

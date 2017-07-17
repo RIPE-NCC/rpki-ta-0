@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.domain.request;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,26 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+/**
+ * Ask Trust Anchor to revoke all certificates that use the provided public key.
+ */
+public class RevocationRequest extends TaRequest {
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
+    private static final long serialVersionUID = 1L;
 
-@Ignore
-public abstract class AbstractIntegrationTest {
+    private final String resourceClassName;
+    private final String encodedPublicKey;
 
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
-
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+    public RevocationRequest(String resourceClassName, String encodedPublicKey) {
+        this.resourceClassName = resourceClassName;
+        this.encodedPublicKey = encodedPublicKey;
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
+    public String getEncodedPublicKey() {
+        return encodedPublicKey;
     }
 
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
+    public String getResourceClassName() {
+        return resourceClassName;
     }
-
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
-    }
-
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
-    }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
 }

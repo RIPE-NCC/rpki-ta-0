@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,18 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.ta.domain.request.TrustAnchorRequest;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
+public class TrustAnchorRequestSerializer extends Serializer<TrustAnchorRequest> {
 
-@Ignore
-public abstract class AbstractIntegrationTest {
-
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
-
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+    protected XStreamXmlSerializerBuilder<TrustAnchorRequest> configureBuilder(XStreamXmlSerializerBuilder<TrustAnchorRequest> builder) {
+        builder.withAliasPackage("requests", TrustAnchorRequest.class.getPackage().getName());
+        return builder;
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
-    }
-
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
-    }
-
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
-    }
-
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
-    }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
+    protected Class<TrustAnchorRequest> clazz() {
+        return TrustAnchorRequest.class;
     }
 
 }

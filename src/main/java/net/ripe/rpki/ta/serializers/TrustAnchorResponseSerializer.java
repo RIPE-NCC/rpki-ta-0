@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.serializers;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,37 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
+import net.ripe.rpki.commons.crypto.cms.roa.RoaCms;
+import net.ripe.rpki.commons.crypto.cms.roa.RoaPrefix;
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
+import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.ta.domain.response.ErrorResponse;
+import net.ripe.rpki.ta.domain.response.RevocationResponse;
+import net.ripe.rpki.ta.domain.response.SigningResponse;
+import net.ripe.rpki.ta.domain.response.TrustAnchorResponse;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
 
-@Ignore
-public abstract class AbstractIntegrationTest {
+public class TrustAnchorResponseSerializer extends Serializer<TrustAnchorResponse> {
 
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
+    protected XStreamXmlSerializerBuilder<TrustAnchorResponse> configureBuilder(XStreamXmlSerializerBuilder<TrustAnchorResponse> builder) {
+        builder.withAliasType("TrustAnchorResponse", TrustAnchorResponse.class);
+        builder.withAliasType("SigningResponse", SigningResponse.class);
+        builder.withAliasType("RevocationResponse", RevocationResponse.class);
+        builder.withAliasType("ErrorResponse", ErrorResponse.class);
 
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+        builder.withAliasType("X509ResourceCertificate", X509ResourceCertificate.class);
+        builder.withAliasType("CRL", X509Crl.class);
+        builder.withAliasType("Manifest", ManifestCms.class);
+        builder.withAliasType("Roa", RoaCms.class);
+        builder.withAliasType("RoaPrefix", RoaPrefix.class);
+        return builder;
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
+    protected Class<TrustAnchorResponse> clazz() {
+        return TrustAnchorResponse.class;
     }
 
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
-    }
-
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
-    }
-
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
-    }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
 
 }

@@ -45,6 +45,7 @@ public class Config {
     private X500Principal trustAnchorName;
     private URI taCertificatePublicationUri;
     private URI taProductsPublicationUri;
+    private URI notificationUri;
     private String keystoreProvider;
     private String keypairGeneratorProvider;
     private String signatureProvider;
@@ -148,6 +149,7 @@ public class Config {
                 .append(trustAnchorName, config.trustAnchorName)
                 .append(taCertificatePublicationUri, config.taCertificatePublicationUri)
                 .append(taProductsPublicationUri, config.taProductsPublicationUri)
+                .append(notificationUri, config.notificationUri)
                 .append(keystoreProvider, config.keystoreProvider)
                 .append(keypairGeneratorProvider, config.keypairGeneratorProvider)
                 .append(signatureProvider, config.signatureProvider)
@@ -164,6 +166,7 @@ public class Config {
                 .append(trustAnchorName)
                 .append(taCertificatePublicationUri)
                 .append(taProductsPublicationUri)
+                .append(notificationUri)
                 .append(keystoreProvider)
                 .append(keypairGeneratorProvider)
                 .append(signatureProvider)
@@ -172,5 +175,13 @@ public class Config {
                 .append(minimumValidityPeriod)
                 .append(updatePeriod)
                 .toHashCode();
+    }
+
+    public URI getNotificationUri() {
+        return notificationUri;
+    }
+
+    public void setNotificationUri(URI notificationUri) {
+        this.notificationUri = notificationUri;
     }
 }

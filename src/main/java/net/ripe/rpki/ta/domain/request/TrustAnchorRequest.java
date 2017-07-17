@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.integration;
+package net.ripe.rpki.ta.domain.request;
 
 /*-
  * ========================LICENSE_START=================================
@@ -33,51 +33,43 @@ package net.ripe.rpki.ta.integration;
  * =========================LICENSE_END==================================
  */
 
-import com.google.common.io.Files;
-import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
+import org.joda.time.DateTimeUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-@Ignore
-public abstract class AbstractIntegrationTest {
+public class TrustAnchorRequest {
 
-    private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
+    private static final long serialVersionUID = 1L;
 
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
-        tempDirectory.deleteOnExit();
-        System.setProperty("user.dir", tempDirectory.getAbsolutePath());
+    private final Long creationTimestamp;
+    private final URI taCertificatePublicationUri;
+    private final List<TaRequest> taRequests;
+    private final X509CertificateInformationAccessDescriptor[] siaDescriptors;
+
+    public TrustAnchorRequest(URI taCertificatePublicationUri, X509CertificateInformationAccessDescriptor[] siaDescriptors, List<TaRequest> taRequests) {
+        this.creationTimestamp = DateTimeUtils.currentTimeMillis();
+        this.taCertificatePublicationUri = taCertificatePublicationUri;
+        this.taRequests = new ArrayList<TaRequest>(taRequests);
+        this.siaDescriptors = siaDescriptors;
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
-        System.setProperty("user.dir", DEFAULT_USER_DIR);
+    public Long getCreationTimestamp() {
+        return creationTimestamp;
     }
 
-    protected Main.Exit run(final String args) {
-        return run(args.split(" "));
+    public URI getTaCertificatePublicationUri() {
+        return taCertificatePublicationUri;
     }
 
-    protected Main.Exit run(final String[] args) {
-        return Main.run(args);
+    public List<TaRequest> getTaRequests() {
+        return taRequests;
     }
 
-    protected void deleteFile(final String pathToFile) {
-        new File(pathToFile).delete();
+    public X509CertificateInformationAccessDescriptor[] getSiaDescriptors() {
+        return siaDescriptors;
     }
-
-    protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
 }
