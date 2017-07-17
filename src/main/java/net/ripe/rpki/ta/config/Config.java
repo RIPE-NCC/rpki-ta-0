@@ -39,12 +39,11 @@ import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
 import java.net.URI;
-import java.util.List;
 
 public class Config {
 
     private X500Principal trustAnchorName;
-    private List<URI> taCertificatePublicationUri;
+    private URI taCertificatePublicationUri;
     private URI taProductsPublicationUri;
     private URI notificationUri;
     private String keystoreProvider;
@@ -66,11 +65,11 @@ public class Config {
         this.trustAnchorName = trustAnchorName;
     }
 
-    public List<URI> getTaCertificatePublicationUris() {
+    public URI getTaCertificatePublicationUri() {
         return taCertificatePublicationUri;
     }
 
-    public void setTaCertificatePublicationUris(List<URI> taCertificatePublicationUri) {
+    public void setTaCertificatePublicationUri(URI taCertificatePublicationUri) {
         this.taCertificatePublicationUri = taCertificatePublicationUri;
     }
 

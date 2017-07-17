@@ -88,7 +88,10 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
@@ -175,14 +178,9 @@ public class TA {
 
     String getCurrentTrustAnchorLocator() throws Exception {
         X509ResourceCertificate certificate = KeyStore.of(config).decode(loadTAState().getEncoded()).getRight();
-
-        String uris = "";
-        for(URI uri: config.getTaCertificatePublicationUris()) {
-            uris += String.valueOf(uri)
-                    + TaNames.certificateFileName(certificate.getSubject()) + "\n";
-        }
-
-        return uris + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate());
+        return String.valueOf(config.getTaCertificatePublicationUri())
+                + TaNames.certificateFileName(certificate.getSubject()) + "\n"
+                + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate());
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
@@ -391,7 +389,7 @@ public class TA {
     }
 
     private void updateUrls(final TrustAnchorRequest taRequest, final SignCtx signCtx) {
-        signCtx.taState.getConfig().setTaCertificatePublicationUris(Arrays.asList(taRequest.getTaCertificatePublicationUri()));
+        signCtx.taState.getConfig().setTaCertificatePublicationUri(taRequest.getTaCertificatePublicationUri());
         for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
             if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod())) {
                 signCtx.taState.getConfig().setTaProductsPublicationUri(descriptor.getLocation());
@@ -408,7 +406,7 @@ public class TA {
         signCtx.taState.getSignedProductionCertificates().add(new SignedResourceCertificate(
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
 
-        final URI publicationPoint = TaNames.certificatePublicationUri(getConfig().getTaCertificatePublicationUris().get(0), allResourcesCertificate.getSubject());
+        final URI publicationPoint = TaNames.certificatePublicationUri(getConfig().getTaCertificatePublicationUri(), allResourcesCertificate.getSubject());
 
         return new SigningResponse(signingRequest.getRequestId(), requestData.getResourceClassName(), publicationPoint, allResourcesCertificate);
     }
@@ -426,7 +424,7 @@ public class TA {
         for (final SignedManifest signedManifest : signCtx.taState.getSignedManifests()) {
             signedManifest.revoke();
         }
-        final URI publicationUri = config.getTaCertificatePublicationUris().get(0);
+        final URI publicationUri = config.getTaCertificatePublicationUri();
 
         final Map<URI, CertificateRepositoryObject> result = new HashMap<URI, CertificateRepositoryObject>();
         result.put(publicationUri.resolve(TaNames.certificateFileName(signCtx.certificate.getSubject())), signCtx.certificate);
@@ -491,7 +489,7 @@ public class TA {
                                                               final SignCtx signCtx) {
         final X500Principal issuer = signCtx.certificate.getSubject();
 
-        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUris().get(0);
+        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
         final URI taProductsPublicationUri = getTaProductsPublicationUri();
         final X509CertificateInformationAccessDescriptor[] taAIA = { aiaDescriptor(
                 X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
@@ -529,7 +527,7 @@ public class TA {
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
 
         final X500Principal caName = signCtx.certificate.getSubject();
-        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUris().get(0);
+        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
