@@ -48,10 +48,7 @@ import net.ripe.rpki.commons.crypto.crl.X509CrlBuilder;
 import net.ripe.rpki.commons.crypto.util.EncodedPublicKey;
 import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
 import net.ripe.rpki.commons.crypto.util.KeyPairUtil;
-import net.ripe.rpki.commons.crypto.x509cert.RpkiSignedObjectEeCertificateBuilder;
-import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
-import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
-import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
+import net.ripe.rpki.commons.crypto.x509cert.*;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.domain.TAState;
@@ -177,6 +174,13 @@ public class TA {
 
     byte[] getCertificateDER() throws Exception {
         return KeyStore.of(config).decode(loadTAState().getEncoded()).getRight().getEncoded();
+    }
+
+    String getCurrentTrustAnchorLocator() throws Exception {
+        X509ResourceCertificate certificate = KeyStore.of(config).decode(loadTAState().getEncoded()).getRight();
+        return String.valueOf(config.getTaCertificatePublicationUri())
+                + TaNames.certificateFileName(certificate.getSubject()) + "\n"
+                + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate());
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(

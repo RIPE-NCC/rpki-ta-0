@@ -41,28 +41,31 @@ import net.ripe.rpki.ta.domain.TAState;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.math.BigInteger;
-import java.security.cert.X509CRL;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class MainIntegrationTest extends AbstractIntegrationTest {
 
     private static final String TA_XML_PATH = "/export/bad/certification/ta/data/ta.xml";
+    private static final String TAL_PATH = "/export/bad/certification/ta/data/test.tal";
 
     @Before
     public void setup() {
         deleteFile(TA_XML_PATH);
+        deleteFile(TAL_PATH);
     }
 
     @Before
     public void teardown() {
         deleteFile(TA_XML_PATH);
+        deleteFile(TAL_PATH);
     }
 
     @Test
@@ -73,14 +76,20 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void check_options_compatibility() {
-        assertThat(run("--initialise --env=development --initialise-from-old=xxx").exitCode, is(2));
-        assertThat(run("--initialise --env=development --generate-ta-certificate").exitCode, is(2));
-        assertThat(run("--initialise --env=development --export-ta-certificate=output.xml").exitCode, is(2));
-        assertThat(run("--print-tal --env=development --export-ta-certificate=output.xml").exitCode, is(2));
-        assertThat(run("--generate-ta-certificate --env=development --export-ta-certificate=output.xml").exitCode, is(2));
-    }
+    public void print_ta() {
+        run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=development");
 
+        run("--print-tal="+TAL_PATH +" --env=development");
+
+        assertThat(readFile(TAL_PATH), equalTo(
+                "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n"+
+                        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApIXenLOBfyo7cOnm4mGKmYxsoWCp28dw3XJAoZNWPDK8i9MxYACpwfz7bj" +
+                        "yGma1BWPBJuievNd6nriFI+3WG+wt2bnO2ZmiLenCwMtm8bu7BeldpWRwlAnRp4t4IL6sZ7T9bF+4sTrv1qiEANqam0mhtLtUfbWXV" +
+                        "5Z4mjgnNur7fJH2lIOm7Oc2/tok1rid8WsPe18zuvgwA3M0fKQ/Oa4SMXKnHr3fg2cHAm1cfEEvhMKa3rUAvsKGVEYeTJNg6rh3IRn" +
+                        "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB")
+        );
+    }
+    
     @Test
     public void generate_ta_certificate() throws Exception {
         final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=development");

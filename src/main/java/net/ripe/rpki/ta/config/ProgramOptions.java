@@ -88,8 +88,8 @@ public class ProgramOptions {
                 build());
 
         options.addOption(Option.builder().longOpt(PRINT_TAL_OPT).
-                hasArg(false).
-                desc("Print TAL").
+                hasArg().
+                desc("Print TAL to file").
                 build());
 
         options.addOption(Option.builder().longOpt(REQUEST_OPT).
@@ -192,6 +192,10 @@ public class ProgramOptions {
 
     public String getOldTaFilePath() {
         return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
+    }
+
+    public String getTalFilePath() {
+        return commandLine.getOptionValue(PRINT_TAL_OPT);
     }
 
     public String getRequestFile() {

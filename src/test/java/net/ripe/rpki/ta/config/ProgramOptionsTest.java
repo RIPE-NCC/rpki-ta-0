@@ -52,17 +52,17 @@ public class ProgramOptionsTest {
 
         assertInvalidCombinationsOfOptions("--generate-ta-certificate --initialise --env=development", "Cannot have both --generate-ta-certificate and --initialise options.");
         assertInvalidCombinationsOfOptions("--generate-ta-certificate --initialise-from-old=./test --env=development", "Cannot have both --generate-ta-certificate and --initialise-from-old options.");
-        assertInvalidCombinationsOfOptions("--generate-ta-certificate --print-tal --env=development", "Cannot have both --generate-ta-certificate and --print-tal options.");
+        assertInvalidCombinationsOfOptions("--generate-ta-certificate --print-tal=./test.tal --env=development", "Cannot have both --generate-ta-certificate and --print-tal options.");
         assertInvalidCombinationsOfOptions("--generate-ta-certificate --export-ta-certificate=./ --env=development", "Cannot have both --generate-ta-certificate and --export-ta-certificate options.");
 
         assertInvalidCombinationsOfOptions("--export-ta-certificate=./ --initialise --env=development", "Cannot have both --export-ta-certificate and --initialise options.");
         assertInvalidCombinationsOfOptions("--export-ta-certificate=./ --initialise-from-old=./test --env=development", "Cannot have both --export-ta-certificate and --initialise-from-old options.");
-        assertInvalidCombinationsOfOptions("--export-ta-certificate=./ --print-tal --env=development", "Cannot have both --export-ta-certificate and --print-tal options.");
+        assertInvalidCombinationsOfOptions("--export-ta-certificate=./ --print-tal=./test.tal --env=development", "Cannot have both --export-ta-certificate and --print-tal options.");
 
-        assertInvalidCombinationsOfOptions("--print-tal --initialise --env=development", "Cannot have both --print-tal and --initialise options.");
-        assertInvalidCombinationsOfOptions("--print-tal --initialise-from-old=./test --env=development", "Cannot have both --print-tal and --initialise-from-old options.");
+        assertInvalidCombinationsOfOptions("--print-tal=./test.tal --initialise --env=development", "Cannot have both --print-tal and --initialise options.");
+        assertInvalidCombinationsOfOptions("--print-tal=./test.tal --initialise-from-old=./test --env=development", "Cannot have both --print-tal and --initialise-from-old options.");
 
-        assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --print-tal --env=development", "Cannot have both --request and --print-tal options.");
+        assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --print-tal=./test.tal --env=development", "Cannot have both --request and --print-tal options.");
         assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --export-ta-certificate=./ --env=development", "Cannot have both --request and --export-ta-certificate options.");
         assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --generate-ta-certificate --env=development", "Cannot have both --request and --generate-ta-certificate options.");
         assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --initialise-from-old=./test --env=development", "Cannot have both --request and --initialise-from-old options.");
