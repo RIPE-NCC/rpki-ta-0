@@ -424,17 +424,18 @@ public class TA {
         for (final SignedManifest signedManifest : signCtx.taState.getSignedManifests()) {
             signedManifest.revoke();
         }
-        final URI publicationUri = config.getTaCertificatePublicationUri();
+        final URI taProductsPublicationUri = config.getTaProductsPublicationUri();
+        final URI taCertificatePublicationUri = config.getTaCertificatePublicationUri();
 
         final Map<URI, CertificateRepositoryObject> result = new HashMap<URI, CertificateRepositoryObject>();
-        result.put(publicationUri.resolve(TaNames.certificateFileName(signCtx.certificate.getSubject())), signCtx.certificate);
+        result.put(taCertificatePublicationUri.resolve(TaNames.certificateFileName(signCtx.certificate.getSubject())), signCtx.certificate);
         final X509Crl newCrl = createNewCrl(signCtx);
         signCtx.taState.setCrl(newCrl);
-        result.put(publicationUri.resolve(TaNames.crlFileName(signCtx.certificate.getSubject())), newCrl);
-        result.put(publicationUri.resolve(TaNames.manifestFileName(signCtx.certificate.getSubject())), createNewManifest(signCtx));
+        result.put(taProductsPublicationUri.resolve(TaNames.crlFileName(signCtx.certificate.getSubject())), newCrl);
+        result.put(taProductsPublicationUri.resolve(TaNames.manifestFileName(signCtx.certificate.getSubject())), createNewManifest(signCtx));
         for (final SignedResourceCertificate cert : signCtx.taState.getSignedProductionCertificates()) {
             if (cert.isPublishable()) {
-                result.put(publicationUri.resolve(cert.getFileName()), cert.getCertificateRepositoryObject());
+                result.put(taProductsPublicationUri.resolve(cert.getFileName()), cert.getCertificateRepositoryObject());
             }
         }
         return result;
