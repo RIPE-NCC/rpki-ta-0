@@ -35,8 +35,6 @@ package net.ripe.rpki.ta.config;
 
 
 import net.ripe.rpki.ta.BadOptions;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
@@ -55,7 +53,7 @@ public class Env {
     }
 
     public static Config production() {
-        Config config = new Config();
+        final Config config = new Config();
         config.setSignatureProvider("nCipherKM");
         config.setKeystoreProvider("nCipherKM");
         config.setKeypairGeneratorProvider("nCipherKM");
@@ -71,7 +69,7 @@ public class Env {
     }
 
     public static Config development() {
-        Config config = new Config();
+        final Config config = new Config();
         config.setSignatureProvider("SunRsaSign");
         config.setKeystoreProvider("SUN");
         config.setKeypairGeneratorProvider("SunRsaSign");
