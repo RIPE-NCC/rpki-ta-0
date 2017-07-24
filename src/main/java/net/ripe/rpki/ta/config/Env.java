@@ -61,10 +61,10 @@ public class Env {
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
-        config.setTrustAnchorName(new X500Principal("ripe-ncc-ta"));
+        config.setTrustAnchorName(new X500Principal("CN=ripe-ncc-ta"));
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.ripe.net/repository/"));
-        config.setNotificationUri(URI.create("http://localhost:7788/notification.xml"));
+        config.setNotificationUri(URI.create("https://rrdp.ripe.net/notification.xml"));
         return config;
     }
 
