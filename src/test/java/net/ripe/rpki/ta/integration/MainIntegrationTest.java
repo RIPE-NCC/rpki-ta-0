@@ -100,7 +100,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void priocess_request() throws Exception {
+    public void process_request() throws Exception {
         assertEquals(0, run("--initialise --env=development").exitCode);
 
         final File tmpResponses = Files.createTempDir();
@@ -123,17 +123,19 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(2L), taState2.getLastCrlSerial());
         assertEquals(2, taState2.getSignedProductionCertificates().size());
         assertEquals(2, taState2.getSignedManifests().size());
-        assertEquals(1, taState2.getCrl().getCrl().getRevokedCertificates().size());
+        assertEquals(2, taState2.getCrl().getCrl().getRevokedCertificates().size());
 
         assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=development").exitCode);
         final TAState taState3 = new TA(Env.development()).loadTAState();
         assertEquals(BigInteger.valueOf(7L), taState3.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
+
+        // TODO only one certificate must be current
         assertEquals(3, taState3.getSignedProductionCertificates().size());
         assertEquals(3, taState3.getSignedManifests().size());
-        assertEquals(2, taState3.getCrl().getCrl().getRevokedCertificates().size());
 
+        assertEquals(4, taState3.getCrl().getCrl().getRevokedCertificates().size());
 
     }
 
