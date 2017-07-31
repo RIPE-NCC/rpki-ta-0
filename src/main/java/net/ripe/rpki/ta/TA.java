@@ -412,7 +412,7 @@ public class TA {
     }
 
     private TaResponse processRevocationRequest(final RevocationRequest revocationRequest, final SignCtx signCtx) {
-        boolean revoked = revokeAllCertificatesForKey(signCtx);
+        boolean revoked = revokeAllCertificatesForKey(revocationRequest.getEncodedPublicKey(),  signCtx.taState);
         if (revoked) {
             return new RevocationResponse(revocationRequest.getRequestId(), revocationRequest.getResourceClassName(), revocationRequest.getEncodedPublicKey());
         } else {
@@ -570,8 +570,8 @@ public class TA {
         return next;
     }
 
-    private boolean revokeAllCertificatesForKey(final SignCtx signCtx) {
-        return revokeAllCertificatesForKey(KeyPairUtil.getEncodedKeyIdentifier(signCtx.keyPair.getPublic()), signCtx.taState);
+    private boolean revokeAllCertificatesForKey(PublicKey publicKey, final TAState taState) {
+        return revokeAllCertificatesForKey(KeyPairUtil.getEncodedKeyIdentifier(publicKey), taState);
     }
 
     private boolean revokeAllCertificatesForKey(String encodedPublicKey, final TAState taState) {
