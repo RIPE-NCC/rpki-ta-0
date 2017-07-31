@@ -401,7 +401,7 @@ public class TA {
         final ResourceCertificateRequestData requestData = signingRequest.getResourceCertificateRequest();
 
         final X509ResourceCertificate allResourcesCertificate = signProductionCertificate(requestData, signCtx);
-        revokeAllCertificatesForKey(KeyPairUtil.getEncodedKeyIdentifier(allResourcesCertificate.getPublicKey()), signCtx.taState);
+        revokeAllCertificatesForKey(allResourcesCertificate.getPublicKey(), signCtx.taState);
 
         signCtx.taState.getSignedProductionCertificates().add(new SignedResourceCertificate(
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
