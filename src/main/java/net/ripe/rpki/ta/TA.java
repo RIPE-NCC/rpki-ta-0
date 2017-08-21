@@ -99,11 +99,9 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 
 public class TA {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(TA.class);
-
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
-    private static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
+    public static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
 
     private final Config config;
     private final transient KeyPairFactory keyPairFactory;
