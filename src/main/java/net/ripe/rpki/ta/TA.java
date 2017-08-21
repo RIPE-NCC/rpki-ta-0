@@ -78,8 +78,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
@@ -398,7 +396,7 @@ public class TA {
     private TaResponse processSignRequest(final SigningRequest signingRequest, final SignCtx signCtx) {
         final ResourceCertificateRequestData requestData = signingRequest.getResourceCertificateRequest();
 
-        final X509ResourceCertificate allResourcesCertificate = signProductionCertificate(requestData, signCtx);
+        final X509ResourceCertificate allResourcesCertificate = signAllResourcesCertificate(requestData, signCtx);
         revokeAllCertificatesForKey(allResourcesCertificate.getPublicKey(), signCtx.taState);
 
         signCtx.taState.getSignedProductionCertificates().add(new SignedResourceCertificate(
@@ -484,8 +482,8 @@ public class TA {
         return manifest;
     }
 
-    private X509ResourceCertificate signProductionCertificate(final ResourceCertificateRequestData request,
-                                                              final SignCtx signCtx) {
+    private X509ResourceCertificate signAllResourcesCertificate(final ResourceCertificateRequestData request,
+                                                                final SignCtx signCtx) {
         final X500Principal issuer = signCtx.certificate.getSubject();
 
         final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
@@ -505,7 +503,7 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(new EncodedPublicKey(request.getEncodedSubjectPublicKey()));
         builder.withSigningKeyPair(signCtx.keyPair);
-        builder.withValidityPeriod(new ValidityPeriod(signCtx.now, signCtx.now.plus(getConfig().getMinimumValidityPeriod())));
+        builder.withValidityPeriod(new ValidityPeriod(signCtx.now, calculateValidityNotAfter(signCtx.now)));
         builder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
         builder.withSubjectKeyIdentifier(true);
         builder.withAuthorityKeyIdentifier(true);
@@ -517,6 +515,13 @@ public class TA {
         builder.withSignatureProvider(getSignatureProvider());
         builder.withAuthorityInformationAccess(taAIA);
         return builder.build();
+    }
+
+    /**
+     * Set end of validity period to 1st of July next year.
+     */
+    private static DateTime calculateValidityNotAfter(final DateTime dateTime) {
+        return new DateTime(dateTime.getYear() + 1, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC).plusMonths(6);
     }
 
     private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair, DateTime nextUpdateTime, final SignCtx signCtx) {
