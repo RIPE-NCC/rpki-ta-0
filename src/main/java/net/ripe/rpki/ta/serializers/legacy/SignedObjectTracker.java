@@ -36,6 +36,7 @@ package net.ripe.rpki.ta.serializers.legacy;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import org.apache.commons.lang.Validate;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 
 import java.io.Serializable;
@@ -81,7 +82,7 @@ public abstract class SignedObjectTracker implements Serializable {
 
     public void revoke() {
         if (revocationTime == null) {
-            revocationTime = new DateTime(DateTimeZone.UTC);
+            revocationTime = now();
         }
     }
 
@@ -94,7 +95,11 @@ public abstract class SignedObjectTracker implements Serializable {
     }
 
     private boolean isExpired() {
-        return new DateTime(DateTimeZone.UTC).isAfter(notValidAfter);
+        return now().isAfter(notValidAfter);
+    }
+
+    private DateTime now() {
+        return new DateTime(DateTimeUtils.currentTimeMillis(), DateTimeZone.UTC);
     }
 
     public boolean isRevoked() {

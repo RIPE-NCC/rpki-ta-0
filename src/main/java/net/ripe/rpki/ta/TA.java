@@ -77,6 +77,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 
 import javax.security.auth.x500.X500Principal;
@@ -345,7 +346,8 @@ public class TA {
         final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(config).decode(taState.getEncoded());
         final TAState newTAState = copyTAState(taState);
 
-        final SignCtx signCtx = new SignCtx(request, newTAState, new DateTime(), decoded.getRight(), decoded.getLeft());
+        final SignCtx signCtx = new SignCtx(request, newTAState, new DateTime(DateTimeUtils.currentTimeMillis()),
+                decoded.getRight(), decoded.getLeft());
 
         // TODO Ask Tim why do we do it
         updateUrls(request, signCtx);
