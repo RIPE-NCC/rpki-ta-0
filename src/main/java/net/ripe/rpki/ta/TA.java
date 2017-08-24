@@ -48,7 +48,11 @@ import net.ripe.rpki.commons.crypto.crl.X509CrlBuilder;
 import net.ripe.rpki.commons.crypto.util.EncodedPublicKey;
 import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
 import net.ripe.rpki.commons.crypto.util.KeyPairUtil;
-import net.ripe.rpki.commons.crypto.x509cert.*;
+import net.ripe.rpki.commons.crypto.x509cert.RpkiSignedObjectEeCertificateBuilder;
+import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
+import net.ripe.rpki.commons.crypto.x509cert.X509CertificateUtil;
+import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
+import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.domain.TAState;
@@ -77,7 +81,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 
 import javax.security.auth.x500.X500Principal;
@@ -216,7 +219,7 @@ public class TA {
         taBuilder.withSubjectKeyIdentifier(true);
         taBuilder.withAuthorityKeyIdentifier(false);
 
-        final DateTime now = new DateTime(DateTimeZone.UTC);
+        final DateTime now = DateTime.now(DateTimeZone.UTC);
         taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
         taBuilder.withSubjectInformationAccess(descriptors);
@@ -242,7 +245,7 @@ public class TA {
         taBuilder.withSubjectKeyIdentifier(true);
         taBuilder.withAuthorityKeyIdentifier(false);
 
-        final DateTime now = new DateTime(DateTimeZone.UTC);
+        final DateTime now = DateTime.now(DateTimeZone.UTC);
         taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
         // TODO Normally extraSiaDescriptors come from the request
@@ -346,7 +349,7 @@ public class TA {
         final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(config).decode(taState.getEncoded());
         final TAState newTAState = copyTAState(taState);
 
-        final SignCtx signCtx = new SignCtx(request, newTAState, new DateTime(DateTimeUtils.currentTimeMillis()),
+        final SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
 
         // TODO Ask Tim why do we do it

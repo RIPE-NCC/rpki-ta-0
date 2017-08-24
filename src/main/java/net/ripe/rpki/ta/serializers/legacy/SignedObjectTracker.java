@@ -8,18 +8,18 @@ package net.ripe.rpki.ta.serializers.legacy;
  * -
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the RIPE NCC nor the names of its contributors
  *    may be used to endorse or promote products derived from this software without
  *    specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -36,7 +36,6 @@ package net.ripe.rpki.ta.serializers.legacy;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import org.apache.commons.lang.Validate;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 
 import java.io.Serializable;
@@ -99,7 +98,7 @@ public abstract class SignedObjectTracker implements Serializable {
     }
 
     private DateTime now() {
-        return new DateTime(DateTimeUtils.currentTimeMillis(), DateTimeZone.UTC);
+        return DateTime.now(DateTimeZone.UTC);
     }
 
     public boolean isRevoked() {
