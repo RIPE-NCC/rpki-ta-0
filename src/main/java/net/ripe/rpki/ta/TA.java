@@ -378,8 +378,8 @@ public class TA {
 
 
     private void validateRequestSerial(TrustAnchorRequest request, final TAState taState) {
-        final DateTime requestTime = new DateTime(request.getCreationTimestamp());
-        final DateTime lastRequestTime = new DateTime(taState.getLastProcessedRequestTimestamp());
+        final DateTime requestTime = new DateTime(request.getCreationTimestamp(), DateTimeZone.UTC);
+        final DateTime lastRequestTime = new DateTime(taState.getLastProcessedRequestTimestamp(), DateTimeZone.UTC);
 
         if (requestTime.isBefore(lastRequestTime)) {
             throw new RequestProcessorException("Request, dated: " + requestTime + ", is BEFORE last processed request, dated: " + lastRequestTime);
