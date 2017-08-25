@@ -61,7 +61,7 @@ public class LegacyTATest {
 
     @Test
     public void migrateLegacyTA() throws Exception {
-        final Config testConfig = Env.development();
+        final Config testConfig = Env.local();
         testConfig.setPersistentStorageDir(tempFolder.getRoot().getAbsolutePath());
 
         final TA ta = new TA(testConfig);

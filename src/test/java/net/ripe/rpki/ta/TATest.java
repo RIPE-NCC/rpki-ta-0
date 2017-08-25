@@ -46,14 +46,14 @@ public class TATest {
 
     @Test
     public void initialise_ta() throws Exception {
-        final TAState taState = new TA(Env.development()).initialiseTaState();
-        assertEquals(Env.development(), taState.getConfig());
+        final TAState taState = new TA(Env.local()).initialiseTaState();
+        assertEquals(Env.local(), taState.getConfig());
         assertNotNull(taState.getEncoded());
     }
 
     @Test
     public void serialize_ta() throws Exception {
-        final String xml = TA.serialize(new TA(Env.development()).initialiseTaState());
+        final String xml = TA.serialize(new TA(Env.local()).initialiseTaState());
         assertTrue(xml.contains("<taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>"));
         assertTrue(xml.contains("<taProductsPublicationUri>rsync://localhost:10873/online/</taProductsPublicationUri>"));
         assertTrue(xml.contains("<keystoreProvider>SUN</keystoreProvider>"));

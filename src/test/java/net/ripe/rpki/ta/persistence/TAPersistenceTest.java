@@ -52,7 +52,7 @@ public class TAPersistenceTest {
 
     @Test
     public void saveAndLoad() throws Exception {
-        final Config testConfig = Env.development();
+        final Config testConfig = Env.dev();
         testConfig.setPersistentStorageDir(tempFolder.getRoot().getAbsolutePath());
 
         final TA ta = new TA(testConfig);
