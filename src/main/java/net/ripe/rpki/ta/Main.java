@@ -81,7 +81,7 @@ public class Main {
         options.validateOptions();
         final TA ta = new TA(config);
 
-        if (options.hasPrintCertificateOption()) {
+        if (options.hasExportCertificateOption()) {
             new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
             return new Exit(EXIT_OK);
         }
@@ -96,7 +96,7 @@ public class Main {
             return new Exit(EXIT_OK);
         }
 
-        if (options.hasInitialiseOption() || options.hasInitialiseFromOldOption()) {
+        if (options.hasInitialiseOption() || options.hasInitialiseFromOldOption() || options.hasGenerateTACertificateOption()) {
             ta.persist(ta.createNewTAState(options));
             return new Exit(EXIT_OK);
         }

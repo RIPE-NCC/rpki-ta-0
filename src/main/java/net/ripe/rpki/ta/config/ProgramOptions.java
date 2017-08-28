@@ -42,7 +42,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -113,7 +112,7 @@ public class ProgramOptions {
 
     public void validateOptions() throws BadOptions {
         if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
-                hasGenerateTACertificateOption() || hasPrintCertificateOption() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
+                hasGenerateTACertificateOption() || hasExportCertificateOption() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
 
@@ -154,7 +153,7 @@ public class ProgramOptions {
         return commandLine.hasOption(INITIALISE_OPT);
     }
 
-    public boolean hasPrintCertificateOption() {
+    public boolean hasExportCertificateOption() {
         return commandLine.hasOption(EXPORT_TA_CERTIFICATE_OPT);
     }
 

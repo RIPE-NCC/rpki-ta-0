@@ -67,10 +67,18 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void initialize_local() {
+    public void initialize_local_should_write_ta_xml() {
         assertThat(run("--initialise --env=local").exitCode, is(0));
-
         assertThat(readFile(TA_XML_PATH), containsString("<TA>"));
+    }
+
+    @Test
+    public void generate_certificate_should_rewrite_state() {
+        assertThat(run("--initialise --env=local").exitCode, is(0));
+        final String taXml = readFile(TA_XML_PATH);
+        assertThat(run("--generate-ta-certificate --env=local").exitCode, is(0));
+        final String taXmlRegenerated = readFile(TA_XML_PATH);
+        assertNotEquals(taXml, taXmlRegenerated);
     }
 
     @Test
