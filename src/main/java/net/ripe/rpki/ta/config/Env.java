@@ -60,10 +60,7 @@ public class Env {
 
     public static Config production() {
         final Config config = new Config();
-        config.setSignatureProvider("nCipherKM");
-        config.setKeystoreProvider("nCipherKM");
-        config.setKeypairGeneratorProvider("nCipherKM");
-        config.setKeystoreType("ncipher.sworld");
+        nCipherConf(config);
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
@@ -83,6 +80,7 @@ public class Env {
 
     public static Config prepdev() {
         final Config config = testConfig();
+        nCipherConf(config);
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
         return config;
@@ -97,15 +95,26 @@ public class Env {
 
     private static Config testConfig() {
         final Config config = new Config();
-        config.setSignatureProvider("SunRsaSign");
-        config.setKeystoreProvider("SUN");
-        config.setKeypairGeneratorProvider("SunRsaSign");
-        config.setKeystoreType("JKS");
+        sunRsaConf(config);
         config.setPersistentStorageDir("/export/bad/certification/ta/data");
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
         config.setNotificationUri(URI.create("https://rrdp.ripe.net/notification.xml"));
         return config;
+    }
+
+    private static void nCipherConf(Config config) {
+        config.setSignatureProvider("nCipherKM");
+        config.setKeystoreProvider("nCipherKM");
+        config.setKeypairGeneratorProvider("nCipherKM");
+        config.setKeystoreType("ncipher.sworld");
+    }
+
+    private static void sunRsaConf(Config config) {
+        config.setSignatureProvider("SunRsaSign");
+        config.setKeystoreProvider("SUN");
+        config.setKeypairGeneratorProvider("SunRsaSign");
+        config.setKeystoreType("JKS");
     }
 }
