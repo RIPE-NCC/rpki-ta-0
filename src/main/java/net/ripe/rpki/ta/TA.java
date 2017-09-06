@@ -127,11 +127,9 @@ public class TA {
         final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
         final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
 
-        TAStateBuilder taStateBuilder = new TAStateBuilder(config);
+        final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
 
         taStateBuilder.withCrl(legacyTA.getCrl());
-
-        // the last issued crl and/or manifest number are identical so we pick the crl one:
         taStateBuilder.withLastCrlSerial(legacyTA.getLastCrlNumber());
         taStateBuilder.withLastMftSerial(legacyTA.getLastManifestNumber());
 
