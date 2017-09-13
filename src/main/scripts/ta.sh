@@ -41,7 +41,7 @@ cd ${EXECUTION_DIR}
 
 echo "Running mode APPLICATION_ENVIRONMENT => ${APPLICATION_ENVIRONMENT}"
 
-if [ ${APPLICATION_ENVIRONMENT} == "production" ] || [ ${APPLICATION_ENVIRONMENT} == "prepdev" ]; then
+if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
     JAVA_HOME=/export/bad/java
     NFAST_BIN=/opt/nfast/bin/
 else
@@ -56,7 +56,7 @@ MAIN_CLASS="net.ripe.rpki.ta.Main"
 
 TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
 
-if [ ${APPLICATION_ENVIRONMENT} == "production" ] || [ ${APPLICATION_ENVIRONMENT} == "prepdev" ]; then
+if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
   #
   # Use HSM =>
   #  - erase passphrase to work around bug that passphrase of last card must be empty
