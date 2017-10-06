@@ -405,7 +405,7 @@ public class TA {
         signCtx.taState.getSignedProductionCertificates().add(new SignedResourceCertificate(
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
 
-        final URI publicationPoint = TaNames.certificatePublicationUri(getConfig().getTaCertificatePublicationUri(), allResourcesCertificate.getSubject());
+        final URI publicationPoint = TaNames.certificatePublicationUri(getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
 
         return new SigningResponse(signingRequest.getRequestId(), requestData.getResourceClassName(), publicationPoint, allResourcesCertificate);
     }
@@ -496,9 +496,6 @@ public class TA {
                 URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer)))
         };
 
-        final X509CertificateInformationAccessDescriptor aia = aiaDescriptor(X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
-                TaNames.certificatePublicationUri(taCertificatePublicationUri, issuer));
-
         final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
         builder.withCa(true);
         builder.withIssuerDN(issuer);
@@ -510,7 +507,6 @@ public class TA {
         builder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
         builder.withSubjectKeyIdentifier(true);
         builder.withAuthorityKeyIdentifier(true);
-        builder.withAuthorityInformationAccess(aia);
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
         builder.withResources(ALL_RESOURCES_SET);
         builder.withSubjectInformationAccess(request.getSubjectInformationAccess());
