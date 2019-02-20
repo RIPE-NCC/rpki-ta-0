@@ -52,6 +52,9 @@ public class Env {
         if ("prepdev".equals(envName)) {
             return prepdev();
         }
+        if ("pilot".equals(envName)) {
+            return pilot();
+        }
         if ("production".equals(envName)) {
             return production();
         }
@@ -80,11 +83,19 @@ public class Env {
 
     public static Config prepdev() {
         final Config config = testConfig();
-//        nCipherConf(config);
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
-//        config.setNotificationUri(URI.create("http://pub-server.elasticbeanstalk.com/notification.xml"));
+        config.setNotificationUri(URI.create("http://pub-server.elasticbeanstalk.com/notification.xml"));
+        return config;
+    }
+
+    public static Config pilot() {
+        final Config config = testConfig();
+        config.setPersistentStorageDir("/export/bad/ta-ca/data/");
+        config.setTaCertificatePublicationUri(URI.create("rsync://localcert.ripe.net/ta/"));
+        config.setTaProductsPublicationUri(URI.create("rsync://localcert.ripe.net/repository/"));
+        config.setNotificationUri(URI.create("http://localcert.ripe.net:7788/notification.xml"));
         return config;
     }
 
