@@ -63,7 +63,7 @@ public class ProgramOptions {
         options = new Options();
         options.addOption(Option.builder().longOpt(ENV_OPT).
                 hasArg().
-                desc("Must be one of 'local', 'dev', 'prepdev' or 'production'").
+                desc("Must be one of 'local', 'dev', 'prepdev', 'pilot' or 'production'").
                 build());
 
         options.addOption(Option.builder().longOpt(INITIALISE_FROM_OLD_OPT).
