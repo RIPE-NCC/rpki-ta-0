@@ -95,7 +95,7 @@ public class Env {
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://localcert.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localcert.ripe.net/repository/"));
-        config.setNotificationUri(URI.create("http://localcert.ripe.net:7788/notification.xml"));
+        config.setNotificationUri(URI.create("https://localcert.ripe.net/rrdp/notification.xml"));
         return config;
     }
 
