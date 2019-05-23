@@ -267,7 +267,7 @@ public class TA {
         for (final X509CertificateInformationAccessDescriptor descriptor : extraSiaDescriptors) {
             result.put(descriptor.getMethod(), descriptor);
         }
-        return result.values().toArray(new X509CertificateInformationAccessDescriptor[result.size()]);
+        return result.values().toArray(new X509CertificateInformationAccessDescriptor[0]);
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(URI taProductsPublicationUri) {
