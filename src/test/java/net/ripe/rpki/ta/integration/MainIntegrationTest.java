@@ -37,9 +37,15 @@ import com.google.common.io.Files;
 import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Env;
+import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -47,47 +53,58 @@ import java.math.BigInteger;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 public class MainIntegrationTest extends AbstractIntegrationTest {
 
-    private static final String TA_XML_PATH = "/export/bad/certification/ta/data/ta.xml";
-    private static final String TAL_PATH = "/export/bad/certification/ta/data/test.tal";
+    private static String taXmlPath;
+    private static String talPath;
+
+    @Rule
+    public final TemporaryFolder tmp = new TemporaryFolder();
 
     @Before
-    public void setup() {
-        deleteFile(TA_XML_PATH);
-        deleteFile(TAL_PATH);
+    public void setUp() throws Exception {
+        final File tmpDir = tmp.newFolder();
+        EnvStub._testConfig.setPersistentStorageDir(tmpDir.getAbsolutePath());
+
+        taXmlPath = new File(tmpDir.getAbsolutePath(), "ta.xml").getAbsolutePath();
+        talPath = new File(tmpDir.getAbsolutePath(), "test.tal").getAbsolutePath();
+        deleteFile(taXmlPath);
+        deleteFile(talPath);
     }
 
-    @Before
+    @After
     public void teardown() {
-        deleteFile(TA_XML_PATH);
-        deleteFile(TAL_PATH);
+        deleteFile(taXmlPath);
+        deleteFile(talPath);
     }
 
     @Test
     public void initialize_local_should_write_ta_xml() {
-        assertThat(run("--initialise --env=local").exitCode, is(0));
-        assertThat(readFile(TA_XML_PATH), containsString("<TA>"));
+        assertThat(run("--initialise --env=test").exitCode, is(0));
+        assertThat(readFile(taXmlPath), containsString("<TA>"));
     }
 
     @Test
     public void generate_certificate_should_rewrite_state() {
-        assertThat(run("--initialise --env=local").exitCode, is(0));
-        final String taXml = readFile(TA_XML_PATH);
-        assertThat(run("--generate-ta-certificate --env=local").exitCode, is(0));
-        final String taXmlRegenerated = readFile(TA_XML_PATH);
+        assertThat(run("--initialise --env=test").exitCode, is(0));
+        final String taXml = readFile(taXmlPath);
+        assertThat(run("--generate-ta-certificate --env=test").exitCode, is(0));
+        final String taXmlRegenerated = readFile(taXmlPath);
         assertNotEquals(taXml, taXmlRegenerated);
     }
 
     @Test
     public void print_ta() {
-        run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=local");
+        run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=test");
 
-        run("--print-tal="+TAL_PATH +" --env=local");
+        run("--print-tal="+ talPath +" --env=test");
 
-        assertThat(readFile(TAL_PATH), equalTo(
+        assertThat(readFile(talPath), equalTo(
                 "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n"+
                         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApIXenLOBfyo7cOnm4mGKmYxsoWCp28dw3XJAoZNWPDK8i9MxYACpwfz7bj" +
                         "yGma1BWPBJuievNd6nriFI+3WG+wt2bnO2ZmiLenCwMtm8bu7BeldpWRwlAnRp4t4IL6sZ7T9bF+4sTrv1qiEANqam0mhtLtUfbWXV" +
@@ -98,23 +115,23 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     
     @Test
     public void generate_ta_certificate() throws Exception {
-        final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=local");
+        final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=test");
         assertEquals(0, exit.exitCode);
 
-        final TAState taState = new TA(Env.local()).loadTAState();
+        final TAState taState = reloadTaState();
         assertEquals(BigInteger.valueOf(29L), taState.getLastIssuedCertificateSerial());
     }
 
     @Test
     public void process_request() throws Exception {
-        assertEquals(0, run("--initialise --env=local").exitCode);
+        assertEquals(0, run("--initialise --env=test").exitCode);
 
         final File tmpResponses = Files.createTempDir();
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
         
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=local").exitCode);
-        final TAState taState1 = new TA(Env.local()).loadTAState();
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState taState1 = reloadTaState();
         assertEquals(BigInteger.valueOf(3L), taState1.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(1L), taState1.getLastMftSerial());
         assertEquals(BigInteger.valueOf(1L), taState1.getLastCrlSerial());
@@ -122,8 +139,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(1, taState1.getSignedManifests().size());
         assertNull(taState1.getCrl().getCrl().getRevokedCertificates());
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=local").exitCode);
-        final TAState taState2 = new TA(Env.local()).loadTAState();
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState taState2 = reloadTaState();
         assertEquals(BigInteger.valueOf(5L), taState2.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastMftSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastCrlSerial());
@@ -131,8 +148,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, taState2.getSignedManifests().size());
         assertEquals(2, taState2.getCrl().getCrl().getRevokedCertificates().size());
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=local").exitCode);
-        final TAState taState3 = new TA(Env.local()).loadTAState();
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState taState3 = reloadTaState();
         assertEquals(BigInteger.valueOf(7L), taState3.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
@@ -143,6 +160,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         assertEquals(4, taState3.getCrl().getCrl().getRevokedCertificates().size());
 
+    }
+
+    private TAState reloadTaState() throws Exception {
+        return new TA(EnvStub.test()).loadTAState();
     }
 
 

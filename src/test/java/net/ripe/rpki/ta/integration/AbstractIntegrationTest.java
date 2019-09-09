@@ -68,7 +68,7 @@ public abstract class AbstractIntegrationTest {
         return Main.run(args);
     }
 
-    protected void deleteFile(final String pathToFile) {
+    protected static void deleteFile(final String pathToFile) {
         new File(pathToFile).delete();
     }
 

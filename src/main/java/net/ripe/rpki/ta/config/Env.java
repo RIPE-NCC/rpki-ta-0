@@ -43,6 +43,9 @@ import java.net.URI;
 public class Env {
 
     public static Config config(String envName) throws BadOptions {
+        if ("test".equals(envName)) {
+            return EnvStub.test();
+        }
         if (envName == null || "local".equals(envName)) {
             return local();
         }
@@ -74,14 +77,14 @@ public class Env {
     }
 
     public static Config dev() {
-        final Config config = testConfig();
+        final Config config = EnvStub.testConfig();
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.dev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.dev.ripe.net/repository/"));
         return config;
     }
 
     public static Config prepdev() {
-        final Config config = testConfig();
+        final Config config = EnvStub.testConfig();
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
@@ -90,7 +93,7 @@ public class Env {
     }
 
     public static Config pilot() {
-        final Config config = testConfig();
+        final Config config = EnvStub.testConfig();
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://localcert.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localcert.ripe.net/repository/"));
@@ -100,19 +103,9 @@ public class Env {
     }
 
     public static Config local() {
-        final Config config = testConfig();
+        final Config config = EnvStub.testConfig();
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
-        return config;
-    }
-
-    private static Config testConfig() {
-        Config config = sunRsaConf();
-        config.setPersistentStorageDir("/export/bad/certification/ta/data");
-        config.setMinimumValidityPeriod(Period.months(1));
-        config.setUpdatePeriod(Period.months(3));
-        config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
-        config.setNotificationUri(URI.create("https://rrdp.ripe.net/notification.xml"));
         return config;
     }
 
@@ -125,7 +118,7 @@ public class Env {
         return config;
     }
 
-    private static Config sunRsaConf() {
+    static Config sunRsaConf() {
         final Config config = new Config();
         config.setSignatureProvider("SunRsaSign");
         config.setKeystoreProvider("SUN");
