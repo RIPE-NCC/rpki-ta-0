@@ -8,7 +8,6 @@ build:
   variables:
       MAVEN_OPTS: -Dmaven.repo.local=my_m2/repository
       BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_JOB_ID}
-
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
