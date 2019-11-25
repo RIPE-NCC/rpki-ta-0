@@ -10,6 +10,7 @@
     <properties>
         <main.class>net.ripe.rpki.ta.Main</main.class>
         <junit.version>4.12</junit.version>
+        <rpki.commons.version>1.6-SNAPSHOT</rpki.commons.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -24,7 +25,7 @@
         <dependency>
             <groupId>net.ripe.rpki</groupId>
             <artifactId>rpki-commons</artifactId>
-            <version>1.2</version>
+            <version>${rpki.commons.version}</version>
         </dependency>
 
         <!-- Command Line -->
@@ -44,7 +45,7 @@
         <dependency>
             <groupId>net.ripe.rpki</groupId>
             <artifactId>rpki-commons</artifactId>
-            <version>1.2</version>
+            <version>${rpki.commons.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
