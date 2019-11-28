@@ -66,6 +66,7 @@ public class TrustAnchorStateSerializerTest {
     private static final String TA_STATE_PATH = "src/test/resources/acceptance/ta.xml";
 
     private Document document;
+    private XPath xpath = XPathFactory.newInstance().newXPath();
 
     private TAState state;
 
@@ -87,9 +88,6 @@ public class TrustAnchorStateSerializerTest {
      * @throws XPathExpressionException
      */
     private String xpathQuery(String query) throws XPathExpressionException {
-        // No lambda's in Java 6 -> utility function
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
         return xpath.evaluate(query, document);
     }
 

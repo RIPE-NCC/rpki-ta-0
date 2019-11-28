@@ -68,8 +68,10 @@ public class TrustAnchorResponseSerializerTest {
     private static final String TA_RESPONSE_PATH = "src/test/resources/acceptance/response.xml";
 
     private Document document;
+    private XPath xpath = XPathFactory.newInstance().newXPath();
 
     private TrustAnchorResponse response;
+
 
     @Before
     public void loadState() throws IOException, SAXException, ParserConfigurationException, XPathExpressionException {
@@ -84,8 +86,6 @@ public class TrustAnchorResponseSerializerTest {
 
     @Test
     public void shouldMatchSimpleFields() throws XPathExpressionException {
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
         assertEquals(Long.valueOf(xpath.evaluate("/TrustAnchorResponse/requestCreationTimestamp", document)),
                      response.getRequestCreationTimestamp());
     }
@@ -94,17 +94,16 @@ public class TrustAnchorResponseSerializerTest {
     public void shouldMatchTAResponseField() throws XPathExpressionException, URISyntaxException {
         List<TaResponse> taResponses = response.getTaResponses();
 
-        XPath xpath = XPathFactory.newInstance().newXPath();
         XPathExpression query = xpath.compile("/TrustAnchorResponse/taResponses/SigningResponse");
-        NodeList list = (NodeList)query.evaluate(document, XPathConstants.NODESET);
+        NodeList nodeList = (NodeList)query.evaluate(document, XPathConstants.NODESET);
 
         // Check for equal length + identical values.
-        // implictly checks that all items are of required type.
-        assertEquals(list.getLength(), taResponses.size());
+        // Implictly checks that all items are of required type.
+        assertEquals(nodeList.getLength(), taResponses.size());
 
-        for (int i=0; i < list.getLength(); i++) {
+        for (int i=0; i < nodeList.getLength(); i++) {
             SigningResponse sr = (SigningResponse)taResponses.get(i);
-            Node cur = list.item(i);
+            Node cur = nodeList.item(i);
 
             assertEquals(UUID.fromString(xpath.evaluate("requestId", cur)), sr.getRequestId());
 
@@ -121,8 +120,6 @@ public class TrustAnchorResponseSerializerTest {
      */
     @Test
     public void shouldMatchPublishedObjects() throws XPathExpressionException, URISyntaxException {
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
         NodeList entries = (NodeList)xpath.evaluate("/TrustAnchorResponse/publishedObjects/entry",
                                                     document, XPathConstants.NODESET);
 
