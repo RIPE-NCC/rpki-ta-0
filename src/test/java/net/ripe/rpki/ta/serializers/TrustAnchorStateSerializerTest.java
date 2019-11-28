@@ -61,14 +61,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class TrustAnchorStateSerializerTest {
-    private static final String TA_STATE_PATH = "src/test/resources/ta.xml";
+    private static final String TA_STATE_PATH = "src/test/resources/acceptance/ta.xml";
 
     private Document document;
 
     private TAState state;
 
     @Before
-    public void loadState() throws IOException, SAXException, ParserConfigurationException, XPathExpressionException {
+    public void loadState() throws IOException, SAXException, ParserConfigurationException {
         final String stateXML = Files.toString(new File(TA_STATE_PATH), Charsets.UTF_8);
 
         final TAStateSerializer trustAnchorStateSerializer = new TAStateSerializer();
@@ -93,9 +93,9 @@ public class TrustAnchorStateSerializerTest {
 
     @Test
     public void shouldMatchSimpleFields() throws XPathExpressionException {
-        assertEquals(xpathQuery("/TA/encoded"), Base64.toBase64String(state.getEncoded()));
+        assertEquals(cleanupBase64(xpathQuery("/TA/encoded")), Base64.toBase64String(state.getEncoded()));
 
-        assertEquals(xpathQuery("/TA/crl/encoded"), Base64.toBase64String(state.getCrl().getEncoded()));
+        assertEquals(cleanupBase64(xpathQuery("/TA/crl/encoded")), Base64.toBase64String(state.getCrl().getEncoded()));
 
         assertEquals(xpathQuery("/TA/keyStorePassphrase"), state.getKeyStorePassphrase());
         assertEquals(xpathQuery("/TA/keyStoreKeyAlias"), state.getKeyStoreKeyAlias());
@@ -158,7 +158,7 @@ public class TrustAnchorStateSerializerTest {
             SignedResourceCertificate src = signedProductionCertificates.get(i);
             Node cur = list.item(i);
 
-            assertEquals(xpath.evaluate("certificateRepositoryObject/encoded", cur),
+            assertEquals(cleanupBase64(xpath.evaluate("certificateRepositoryObject/encoded", cur)),
                          Base64.toBase64String(src.getResourceCertificate().getEncoded()));
 
             assertEquals(xpath.evaluate("fileName", cur), src.getFileName());
@@ -192,9 +192,13 @@ public class TrustAnchorStateSerializerTest {
             SignedManifest smf = signedManifests.get(i);
             Node cur = list.item(i);
 
-            assertEquals(xpath.evaluate("certificateRepositoryObject/encoded", cur),
+            assertEquals(cleanupBase64(xpath.evaluate("certificateRepositoryObject/encoded", cur)),
                          Base64.toBase64String(smf.getManifest().getEncoded()));
         }
 
+    }
+
+    private String cleanupBase64(String s) {
+        return s.replaceAll("\\s*", "");
     }
 }
