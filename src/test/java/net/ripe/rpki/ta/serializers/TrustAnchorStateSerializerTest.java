@@ -47,8 +47,10 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -93,9 +95,9 @@ public class TrustAnchorStateSerializerTest {
 
     @Test
     public void shouldMatchSimpleFields() throws XPathExpressionException {
-        assertEquals(cleanupBase64(xpathQuery("/TA/encoded")), Base64.toBase64String(state.getEncoded()));
+        assertEquals(Utils.cleanupBase64(xpathQuery("/TA/encoded")), Base64.toBase64String(state.getEncoded()));
 
-        assertEquals(cleanupBase64(xpathQuery("/TA/crl/encoded")), Base64.toBase64String(state.getCrl().getEncoded()));
+        assertEquals(Utils.cleanupBase64(xpathQuery("/TA/crl/encoded")), Base64.toBase64String(state.getCrl().getEncoded()));
 
         assertEquals(xpathQuery("/TA/keyStorePassphrase"), state.getKeyStorePassphrase());
         assertEquals(xpathQuery("/TA/keyStoreKeyAlias"), state.getKeyStoreKeyAlias());
@@ -158,7 +160,7 @@ public class TrustAnchorStateSerializerTest {
             SignedResourceCertificate src = signedProductionCertificates.get(i);
             Node cur = list.item(i);
 
-            assertEquals(cleanupBase64(xpath.evaluate("certificateRepositoryObject/encoded", cur)),
+            assertEquals(Utils.cleanupBase64(xpath.evaluate("certificateRepositoryObject/encoded", cur)),
                          Base64.toBase64String(src.getResourceCertificate().getEncoded()));
 
             assertEquals(xpath.evaluate("fileName", cur), src.getFileName());
@@ -192,13 +194,10 @@ public class TrustAnchorStateSerializerTest {
             SignedManifest smf = signedManifests.get(i);
             Node cur = list.item(i);
 
-            assertEquals(cleanupBase64(xpath.evaluate("certificateRepositoryObject/encoded", cur)),
+            assertEquals(Utils.cleanupBase64(xpath.evaluate("certificateRepositoryObject/encoded", cur)),
                          Base64.toBase64String(smf.getManifest().getEncoded()));
         }
 
     }
 
-    private String cleanupBase64(String s) {
-        return s.replaceAll("\\s*", "");
-    }
 }

@@ -33,14 +33,11 @@ import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateObject;
-import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.response.SigningResponse;
 import net.ripe.rpki.ta.domain.response.TaResponse;
 import net.ripe.rpki.ta.domain.response.TrustAnchorResponse;
-import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.util.encoders.Base64;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -51,7 +48,11 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -59,10 +60,12 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TrustAnchorResponseSerializerTest {
-    private static final String TA_RESPONSE_PATH = "src/test/resources/ta-response.xml";
+    private static final String TA_RESPONSE_PATH = "src/test/resources/acceptance/response.xml";
 
     private Document document;
 
@@ -107,7 +110,7 @@ public class TrustAnchorResponseSerializerTest {
 
             assertEquals(xpath.evaluate("resourceClassName", cur), sr.getResourceClassName());
             assertEquals(new URI(xpath.evaluate("publicationUri", cur)), sr.getPublicationUri());
-            assertEquals(xpath.evaluate("certificate/encoded", cur),
+            assertEquals(Utils.cleanupBase64(xpath.evaluate("certificate/encoded", cur)),
                          Base64.toBase64String(sr.getCertificate().getEncoded()));
         }
     }
@@ -139,7 +142,7 @@ public class TrustAnchorResponseSerializerTest {
                 assertTrue(publishedObject instanceof X509CertificateObject);
 
                 X509CertificateObject xco = (X509CertificateObject)publishedObject;
-                assertEquals(encodedCertificate, Base64.toBase64String(xco.getEncoded()));
+                assertEquals(Utils.cleanupBase64(encodedCertificate), Base64.toBase64String(xco.getEncoded()));
             }
 
             String encodedCrl = xpath.evaluate("CRL/encoded", entry);
@@ -149,7 +152,7 @@ public class TrustAnchorResponseSerializerTest {
                 assertTrue(publishedObject instanceof X509Crl);
                 X509Crl crl = (X509Crl)publishedObject;
 
-                assertEquals(encodedCrl, Base64.toBase64String(crl.getEncoded()));
+                assertEquals(Utils.cleanupBase64(encodedCrl), Base64.toBase64String(crl.getEncoded()));
             }
 
             String encodedManifest = xpath.evaluate("Manifest/encoded", entry);
@@ -159,11 +162,9 @@ public class TrustAnchorResponseSerializerTest {
                 assertTrue(publishedObject instanceof ManifestCms);
                 ManifestCms mfs = (ManifestCms) publishedObject;
 
-                assertEquals(encodedManifest, Base64.toBase64String(mfs.getEncoded()));
+                assertEquals(Utils.cleanupBase64(encodedManifest), Base64.toBase64String(mfs.getEncoded()));
             }
         }
-
     }
-
 
 }
