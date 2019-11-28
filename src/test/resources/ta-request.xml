@@ -1,44 +1,44 @@
 <requests.TrustAnchorRequest>
-    <creationTimestamp>1498649792639</creationTimestamp>
-    <taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>
-    <taRequests>
-        <requests.SigningRequest>
-            <requestId>6f164750-b184-44ed-aa75-f2eaf4a598c7</requestId>
-            <resourceCertificateRequest>
-                <resourceClassName>DEFAULT</resourceClassName>
-                <subjectDN>CN=4d6a2ae807f842898b4411b55ae7907180b6b240</subjectDN>
-                <subjectInformationAccess>
-                    <X509CertificateInformationAccessDescriptor>
-                        <method>1.3.6.1.5.5.7.48.5</method>
-                        <location>rsync://localhost/online/DEFAULT/96/86d27d-9369-44b3-b3d6-3e8e8ca1bb2c/1/</location>
-                    </X509CertificateInformationAccessDescriptor>
-                    <X509CertificateInformationAccessDescriptor>
-                        <method>1.3.6.1.5.5.7.48.10</method>
-                        <location>rsync://localhost/online/DEFAULT/96/86d27d-9369-44b3-b3d6-3e8e8ca1bb2c/1/TWoq6Af4QomLRBG1WueQcYC2skA.mft</location>
-                    </X509CertificateInformationAccessDescriptor>
-                    <X509CertificateInformationAccessDescriptor>
-                        <method>1.3.6.1.5.5.7.48.13</method>
-                        <location>http://localhost:7788/notification.xml</location>
-                    </X509CertificateInformationAccessDescriptor>
-                </subjectInformationAccess>
-                <ipResourceSet>0.0.0.0/0, ::</ipResourceSet>
-                <encodedSubjectPublicKey>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhKz+AnIZWNYIEbN+iwjuFuntyg2MfWZ2
-                    A7+ZboLHHYZ2TCIYsf2R/ASFjdGGLCTr/QAJ0GyUideFkRgEsc8jPXPiTGBUx/gaG17nwp55shIn
-                    tNtHCAIR5lXYo0j5sVYNVQOXMEUSP8JSHipH2sd1h0mRkd15lwrKEumn+R0wY53wN2pfa/lo3W+8
-                    0dQm83KD+AGz4QmeiZxXtnLCikE4N8xnqWshmHFvzcP2PDVFxZrj490ydtE9ZoIVTXBR3/AF4GK3
-                    oEP7s5sgEYXzjJMpwWra+E+9Et6NrWE8LX0cXM2FbqkUmTEoIz2VDjjWOJFw9e4nUzwrUuwXp37+
-                    mMswMQIDAQAB</encodedSubjectPublicKey>
-            </resourceCertificateRequest>
-        </requests.SigningRequest>
-    </taRequests>
-    <siaDescriptors>
-        <X509CertificateInformationAccessDescriptor>
-            <method>1.3.6.1.5.5.7.48.13</method>
-            <location>http://localhost:7788/notification.xml</location>
-        </X509CertificateInformationAccessDescriptor>
-        <X509CertificateInformationAccessDescriptor>
+  <creationTimestamp>1572266158744</creationTimestamp>
+  <taCertificatePublicationUri>rsync://rpki.ripe.net/ta/</taCertificatePublicationUri>
+  <taRequests>
+    <requests.SigningRequest>
+      <requestId>0aca0128-b93e-81ad-c36f-584be0ac10bd</requestId>
+      <resourceCertificateRequest>
+        <resourceClassName>DEFAULT</resourceClassName>
+        <subjectDN>CN=2a7dd1d787d793e4c8af56e197d4eed92af6ba13</subjectDN>
+        <subjectInformationAccess>
+          <X509CertificateInformationAccessDescriptor>
             <method>1.3.6.1.5.5.7.48.5</method>
-            <location>rsync://localhost/online/</location>
-        </X509CertificateInformationAccessDescriptor>
-    </siaDescriptors>
+            <location>rsync://rpki.ripe.net/repository/aca/</location>
+          </X509CertificateInformationAccessDescriptor>
+          <X509CertificateInformationAccessDescriptor>
+            <method>1.3.6.1.5.5.7.48.10</method>
+            <location>rsync://rpki.ripe.net/repository/aca/Kn3R14fXk-TIr1bhl9Tu2Sr2uhM.mft</location>
+          </X509CertificateInformationAccessDescriptor>
+          <X509CertificateInformationAccessDescriptor>
+            <method>1.3.6.1.5.5.7.48.13</method>
+            <location>https://rrdp.ripe.net/notification.xml</location>
+          </X509CertificateInformationAccessDescriptor>
+        </subjectInformationAccess>
+        <ipResourceSet></ipResourceSet>
+        <encodedSubjectPublicKey>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6tpCG1pIpjJ5eJnl7r/Hu6Ts4prrrF4Q
+qH2x3P0itM/j5idgpvki9AUk+qZUigFDw64JA0Of4dImyW0UKFP44r4iA+W7IwjpDjl5Wqr8tiTp
+4ZitHR31QtFw3NHITf6EYmnE2/tj3bWQTk90oH4DdqELDfujbllXLn8fXofakYViOAidPXDx4k86
+ZL4tOVU1cDU2d/AIXQXL2wiMLlWCs/Wk8O0eYTdhT+w6rvZgGsmflycldFIyzSFt0iCAefgSgAeY
+24ycPy+gawsoUMamtCuxV/Vf0D9/43YfxO1NQodQdQtFiCCMJ8b0IgMEs9H5pfpqLEsl5TfruUNp
+AqHKRwIDAQAB</encodedSubjectPublicKey>
+      </resourceCertificateRequest>
+    </requests.SigningRequest>
+  </taRequests>
+  <siaDescriptors>
+    <X509CertificateInformationAccessDescriptor>
+      <method>1.3.6.1.5.5.7.48.13</method>
+      <location>https://rrdp.ripe.net/notification.xml</location>
+    </X509CertificateInformationAccessDescriptor>
+    <X509CertificateInformationAccessDescriptor>
+      <method>1.3.6.1.5.5.7.48.5</method>
+      <location>rsync://rpki.ripe.net/repository/</location>
+    </X509CertificateInformationAccessDescriptor>
+  </siaDescriptors>
 </requests.TrustAnchorRequest>

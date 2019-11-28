@@ -63,7 +63,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class TrustAnchorStateSerializerTest {
-    private static final String TA_STATE_PATH = "src/test/resources/acceptance/ta.xml";
+    private static final String TA_STATE_PATH = "src/test/resources/ta.xml";
 
     private Document document;
     private XPath xpath = XPathFactory.newInstance().newXPath();

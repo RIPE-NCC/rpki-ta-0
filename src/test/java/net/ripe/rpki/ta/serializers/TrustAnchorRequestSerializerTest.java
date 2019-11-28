@@ -65,7 +65,7 @@ import static org.junit.Assert.*;
 
 public class TrustAnchorRequestSerializerTest {
 
-    private static final String TA_REQUEST_PATH = "src/test/resources/acceptance/request.xml";
+    private static final String TA_REQUEST_PATH = "src/test/resources/ta-request.xml";
 
     private Document document;
     private XPath xpath = XPathFactory.newInstance().newXPath();
