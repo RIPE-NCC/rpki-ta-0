@@ -16,3 +16,29 @@ build:
   artifacts:
       paths:
         - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
+
+
+#.deploy_template: &deploy_env
+#  stage: deploy
+#  before_script:
+#    - apk add openssh-client
+#    - apk add curl
+#    - chmod 400 ${SSH_KEY}
+#    - mv target/rpki-ripe-ncc-all-${BUILD_NUMBER}-dist.tar.gz .
+#  script:
+#    - scripts/deploy.sh ${SSH_KEY} rpki-ripe-ncc-all-${BUILD_NUMBER}-dist.tar.gz "${NODES}" "${PROXIES}"
+#  when: manual
+
+
+localcert:
+  before_script:
+    - apk add openssh-client
+    - apk add curl
+    - chmod 400 ${SSH_KEY}
+    - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
+  variables:
+    NODES: "localcert-1.rpki.ripe.net"
+  script:
+    - scripts/deploy.sh ${SSH_KEY} rpki-ripe-ncc-all-${BUILD_NUMBER}-dist.tar.gz "${NODES}" "${PROXIES}"
+
+  when: manual
