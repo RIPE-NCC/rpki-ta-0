@@ -2,43 +2,29 @@ image: maven:3.6.1-jdk-8-alpine
 
 stages:
   - build
+  - deploy
 
 build:
   stage: build
   variables:
-      MAVEN_OPTS: -Dmaven.repo.local=pipeline_m2/repository
-      BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_JOB_ID}
+    MAVEN_OPTS: -Dmaven.repo.local=pipeline_m2/repository
+    BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_JOB_ID}
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - pipeline_m2/repository
   script: mvn package -Dbuild.number=${BUILD_NUMBER}
   artifacts:
-      paths:
-        - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
-
-
-#.deploy_template: &deploy_env
-#  stage: deploy
-#  before_script:
-#    - apk add openssh-client
-#    - apk add curl
-#    - chmod 400 ${SSH_KEY}
-#    - mv target/rpki-ripe-ncc-all-${BUILD_NUMBER}-dist.tar.gz .
-#  script:
-#    - scripts/deploy.sh ${SSH_KEY} rpki-ripe-ncc-all-${BUILD_NUMBER}-dist.tar.gz "${NODES}" "${PROXIES}"
-#  when: manual
-
+    paths:
+      - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
 
 localcert:
+  stage: deploy
   before_script:
     - apk add openssh-client
     - apk add curl
     - chmod 400 ${SSH_KEY}
     - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
-  variables:
-    NODES: "localcert-1.rpki.ripe.net"
   script:
-    - scripts/deploy.sh ${SSH_KEY} rpki-ripe-ncc-all-${BUILD_NUMBER}-dist.tar.gz "${NODES}" "${PROXIES}"
-
+    - scripts/deploy.sh ${SSH_KEY} rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "${NODES}"
   when: manual
