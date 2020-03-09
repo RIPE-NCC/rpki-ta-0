@@ -19,6 +19,7 @@ build:
   artifacts:
     paths:
       - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
+      - scripts/*
 
 localcert:
   stage: deploy
