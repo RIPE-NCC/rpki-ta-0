@@ -19,7 +19,7 @@ build:
   artifacts:
     paths:
       - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
-      - scripts/*
+      - src/main/scripts/*
 
 localcert:
   stage: deploy
@@ -27,7 +27,6 @@ localcert:
     - apk add openssh-client
     - apk add curl
     - chmod 400 ${SSH_KEY}
-    - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
   script:
-    - scripts/deploy.sh ${SSH_KEY} target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "${NODES}"
+    - src/main/scripts/deploy.sh ${SSH_KEY} target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "${NODES}"
   when: manual
