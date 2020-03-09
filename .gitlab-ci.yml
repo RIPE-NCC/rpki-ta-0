@@ -29,5 +29,5 @@ localcert:
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
   script:
-    - src/main/scripts/deploy.sh ${SSH_KEY} target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "${NODES}"
+    - src/main/scripts/deploy.sh ${SSH_KEY} target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "localcert-1.rpki.ripe.net"
   when: manual
