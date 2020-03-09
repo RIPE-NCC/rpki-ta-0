@@ -4,11 +4,13 @@ stages:
   - build
   - deploy
 
+variables:
+  BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_PIPELINE_ID}
+
 build:
   stage: build
   variables:
     MAVEN_OPTS: -Dmaven.repo.local=pipeline_m2/repository
-    BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_JOB_ID}
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
@@ -26,5 +28,5 @@ localcert:
     - chmod 400 ${SSH_KEY}
     - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
   script:
-    - scripts/deploy.sh ${SSH_KEY} rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "${NODES}"
+    - scripts/deploy.sh ${SSH_KEY} target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz "${NODES}"
   when: manual
