@@ -40,12 +40,19 @@ APP_DIR=$2
 
 WORK_DIR=./upgrading
 
+echo "WORK_DIR = ${WORK_DIR}"
+
 mkdir -p ${WORK_DIR}
+
+echo "ARTIFACT = ${ARTIFACT}"
+
 tar xzf ${ARTIFACT} -C ${WORK_DIR}
 
 CURRENT_LINK_DIR=`readlink ${APP_DIR}/current`
 
-NEW_ARTIFACT_DIR=`ls ${WORK_DIR}`
+echo "CURRENT_LINK_DIR = ${CURRENT_LINK_DIR}"
+
+NEW_ARTIFACT_DIR=`ls ${WORK_DIR}
 
 echo "NEW APP: ${NEW_ARTIFACT_DIR}"
 echo "CURRENT APP: ${CURRENT_LINK_DIR}"
