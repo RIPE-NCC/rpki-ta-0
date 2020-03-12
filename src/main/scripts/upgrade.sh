@@ -40,6 +40,8 @@ APP_DIR=$2
 
 WORK_DIR=./upgrading
 
+# WORK_DIR = ./upgrading, APP_DIR = /export/bad/apps/rpki-ta-0
+# ARTIFACT = rpki-ta-0-0.1-localcert-deployment-5249-dist.tar.gz
 echo "WORK_DIR = ${WORK_DIR}, APP_DIR = ${APP_DIR}"
 
 mkdir -p ${WORK_DIR}
@@ -48,19 +50,16 @@ echo "ARTIFACT = ${ARTIFACT}"
 
 tar xzf ${ARTIFACT} -C ${WORK_DIR}
 
-echo "00000000"
-
-CURRENT_LINK_DIR=`readlink ${APP_DIR}/current`
-
-echo "CURRENT_LINK_DIR = ${CURRENT_LINK_DIR}"
-
 NEW_ARTIFACT_DIR=`ls ${WORK_DIR}
-
 echo "NEW APP: ${NEW_ARTIFACT_DIR}"
-echo "CURRENT APP: ${CURRENT_LINK_DIR}"
+
+if [ -e ${APP_DIR}/current ]; then
+  CURRENT_LINK_DIR=`readlink ${APP_DIR}/current`
+  echo "CURRENT APP: ${CURRENT_LINK_DIR}"
+  rm -f ${APP_DIR}/current
+fi
 
 mv ${WORK_DIR}/${NEW_ARTIFACT_DIR} ${APP_DIR}
-rm ${APP_DIR}/current
 ln -sf ${NEW_ARTIFACT_DIR} ${APP_DIR}/current
 
 rm -rf ${WORK_DIR}
