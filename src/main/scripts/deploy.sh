@@ -73,9 +73,7 @@ do
 
     echo -e "$PURPLE_FONT"
     ssh ${SSH_FLAGS} -i ${SSH_KEY} rpkideploy@${node} -C "rm -rf deploy_work_dir && mkdir deploy_work_dir"
-    echo "Copying 'upgrade' to ${node}."
     scp ${SSH_FLAGS} -i ${SSH_KEY} src/main/scripts/upgrade.sh ${ARTIFACT} rpkideploy@${node}:./deploy_work_dir
-    echo "Calling 'upgrade' on ${node}."
     ssh ${SSH_FLAGS} -i ${SSH_KEY} rpkideploy@${node} -C "cd ./deploy_work_dir && ./upgrade.sh ${ARTIFACT} /export/bad/apps/rpki-ta-0"
     echo -e "$YELLOW_FONT"
 
