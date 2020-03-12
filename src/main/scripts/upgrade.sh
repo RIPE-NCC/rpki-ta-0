@@ -50,10 +50,10 @@ echo "ARTIFACT = ${ARTIFACT}"
 
 tar xzf ${ARTIFACT} -C ${WORK_DIR}
 
-NEW_ARTIFACT_DIR=`ls ${WORK_DIR}
+NEW_ARTIFACT_DIR=`ls ${WORK_DIR}`
 echo "NEW APP: ${NEW_ARTIFACT_DIR}"
 
-if [ -e ${APP_DIR}/current ]; then
+if [ -e "${APP_DIR}/current" ]; then
   CURRENT_LINK_DIR=`readlink ${APP_DIR}/current`
   echo "CURRENT APP: ${CURRENT_LINK_DIR}"
   rm -f ${APP_DIR}/current
