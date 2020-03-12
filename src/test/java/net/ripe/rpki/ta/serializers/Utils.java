@@ -24,33 +24,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ripe.rpki.ta.domain.response;
+package net.ripe.rpki.ta.serializers;
 
-
-import org.apache.commons.lang.Validate;
-
-import java.util.UUID;
-
-public class RevocationResponse extends TaResponse {
-
-    private static final long serialVersionUID = 1L;
-
-    private final String resourceClassName;
-    private final String encodedPublicKey;
-
-    public RevocationResponse(UUID requestId, String resourceClassName, String encodedPublicKey) {
-        super(requestId);
-        Validate.notNull(resourceClassName, "resourceClassName is required");
-        Validate.notNull(encodedPublicKey, "encodedPublicKey is required");
-        this.resourceClassName = resourceClassName;
-        this.encodedPublicKey = encodedPublicKey;
-    }
-
-    public String getResourceClassName() {
-        return resourceClassName;
-    }
-
-    public String getEncodedPublicKey() {
-        return encodedPublicKey;
+public class Utils {
+    public static String cleanupBase64(String s) {
+        return s.replaceAll("\\s*", "");
     }
 }
