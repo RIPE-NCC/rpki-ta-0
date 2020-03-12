@@ -63,6 +63,5 @@ mv ${WORK_DIR}/${NEW_ARTIFACT_DIR} ${APP_DIR}
 ln -sf ${NEW_ARTIFACT_DIR} ${APP_DIR}/current
 
 rm -rf ${WORK_DIR}
-rm -rf ${APP_DIR}/${CURRENT_LINK_DIR}
 
 exit $?
