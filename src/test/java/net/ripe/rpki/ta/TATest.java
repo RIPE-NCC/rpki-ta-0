@@ -60,7 +60,8 @@ public class TATest {
         assertTrue(xml.contains("<keypairGeneratorProvider>SunRsaSign</keypairGeneratorProvider>"));
         assertTrue(xml.contains("<signatureProvider>SunRsaSign</signatureProvider>"));
         assertTrue(xml.contains("<keystoreType>JKS</keystoreType>"));
-        assertTrue(xml.contains("<persistentStorageDir>/export/bad/certification/ta/data</persistentStorageDir>"));
+        final String home = System.getenv("HOME");
+        assertTrue(xml.contains("<persistentStorageDir>" + home + "/export/bad/certification/ta/data</persistentStorageDir>"));
         assertTrue(xml.contains("<minimumValidityPeriod>P1M</minimumValidityPeriod>"));
         assertTrue(xml.contains("<updatePeriod>P3M</updatePeriod>"));
         assertTrue(xml.contains("<keyStorePassphrase>"));
