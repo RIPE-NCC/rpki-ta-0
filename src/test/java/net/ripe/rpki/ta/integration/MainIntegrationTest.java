@@ -34,26 +34,24 @@ package net.ripe.rpki.ta.integration;
  */
 
 import com.google.common.io.Files;
+import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.KeyStore;
 import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
-import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.security.KeyPair;
+import java.net.URI;
 
+import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -171,13 +169,14 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void process_request_make_sure_ta_certificate_reissued_for_different_url() throws Exception {
         assertEquals(0, run("--initialise --env=test").exitCode);
+        assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
 
         final File tmpResponses = Files.createTempDir();
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
 
         final TAState taState0 = reloadTaState();
-        final X509ResourceCertificate taCert0 = getTaCertificate(taState0);
+        final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
         assertEquals(0, run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taStateAfterRrdpChange = reloadTaState();
@@ -185,10 +184,26 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertNotNull(taStateAfterRrdpChange);
 
         final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterRrdpChange);
-        assertNotEquals(taCert0.getSerialNumber(), taCertAfter.getSerialNumber());
+        assertNotEquals(taCertBefore.getSerialNumber(), taCertAfter.getSerialNumber());
 
-        assertEquals(taCert0.getResources(), taCertAfter.getResources());
-        assertEquals(taCert0.getPublicKey(), taCertAfter.getPublicKey());
+        assertEquals(URI.create("https://rrdp.ripe.net/notification.xml"), getNotifyUrl(taCertBefore));
+        assertEquals(URI.create("http://new-url.ripe.net/notification.xml"), getNotifyUrl(taCertAfter));
+
+        assertEquals(taCertBefore.getResources(), taCertAfter.getResources());
+        assertEquals(taCertBefore.getPublicKey(), taCertAfter.getPublicKey());
+    }
+
+    private java.net.URI getNotifyUrl(X509ResourceCertificate certificate) {
+        final X509CertificateInformationAccessDescriptor[] authorityInformationAccess = certificate.getSubjectInformationAccess();
+        if (authorityInformationAccess == null) {
+            return null;
+        }
+        for (X509CertificateInformationAccessDescriptor descriptor : authorityInformationAccess) {
+            if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod())) {
+                return descriptor.getLocation();
+            }
+        }
+        return null;
     }
 
     private X509ResourceCertificate getTaCertificate(TAState taState) throws Exception {
