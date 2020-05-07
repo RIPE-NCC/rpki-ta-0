@@ -384,7 +384,6 @@ public class TA {
     }
 
     private boolean taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, SignCtx signCtx) {
-        // TODO Think of other reasons why we would want to issue a new certificate
         final Config taConfig = signCtx.taState.getConfig();
         if (!taConfig.getTaCertificatePublicationUri().equals(taRequest.getTaCertificatePublicationUri())) {
             return true;
