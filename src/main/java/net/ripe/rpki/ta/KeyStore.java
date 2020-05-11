@@ -52,7 +52,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 
-class KeyStore {
+public class KeyStore {
 
     private static final String KEY_STORE_KEY_ALIAS = "RTA2";
     private static final char[] KEY_STORE_PASS_PHRASE = "2fe5a028-861a-47a0-a27f-7c657ea6ed49".toCharArray();
@@ -104,7 +104,7 @@ class KeyStore {
         }
     }
 
-    Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws Exception {
+    public Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws Exception {
         final Closer closer = Closer.create();
         try {
             final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));
@@ -126,7 +126,7 @@ class KeyStore {
         }
     }
 
-    static KeyStore of(final Config config) {
+    public static KeyStore of(final Config config) {
         return new KeyStore(config, KEY_STORE_KEY_ALIAS, KEY_STORE_PASS_PHRASE);
     }
 
