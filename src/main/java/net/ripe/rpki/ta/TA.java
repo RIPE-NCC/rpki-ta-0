@@ -34,6 +34,7 @@ package net.ripe.rpki.ta;
  */
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -306,6 +307,7 @@ public class TA {
             if (!hasState()) {
                 throw new Exception("No TA state found, please initialise it first.");
             }
+
             // try to read and decode existing state
             final KeyStore keyStore = KeyStore.of(config);
             final TAState taState = loadTAState();
@@ -330,7 +332,7 @@ public class TA {
     void processRequestXml(ProgramOptions options) throws Exception {
         final String requestXml = Files.toString(new File(options.getRequestFile()), Charsets.UTF_8);
         final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
-        final Pair<TrustAnchorResponse, TAState> p = processRequest(request);
+        final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate());
         final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
         final File responseFile = new File(options.getResponseFile());
         Files.write(response, responseFile, Charsets.UTF_8);
@@ -344,7 +346,7 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request) throws Exception {
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, boolean forceNewTaCertificate) throws Exception {
         final TAState taState = loadTAState();
         validateRequestSerial(request, taState);
 
@@ -356,7 +358,12 @@ public class TA {
                 decoded.getRight(), decoded.getLeft());
 
         // re-issue TA certificate if some of the publication points are changed
-        if (taCertificateHasToBeReIssued(request, signCtx)) {
+        final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
+        if (whyReissue.isPresent()) {
+            if (!forceNewTaCertificate) {
+                throw new Exception("TA certificate has to be re-issued: " + whyReissue.get() +
+                    ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
+            }
             final KeyPair keyPair = decoded.getLeft();
             final X509ResourceCertificate taCertificate = decoded.getRight();
             final BigInteger nextSerial = nextIssuedCertSerial(taState);
@@ -383,19 +390,21 @@ public class TA {
         return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), updateObjectsToBePublished(signCtx), taResponses), newTAState);
     }
 
-    private boolean taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, SignCtx signCtx) {
-        final Config taConfig = signCtx.taState.getConfig();
+    private Optional<String> taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, Config taConfig) {
         if (!taConfig.getTaCertificatePublicationUri().equals(taRequest.getTaCertificatePublicationUri())) {
-            return true;
+            return Optional.of("Different TA certificate location, request has '" +
+                    taRequest.getTaCertificatePublicationUri() + "', config has '" + taConfig.getTaCertificatePublicationUri() + "'");
         }
         for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
             if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getTaProductsPublicationUri())) {
-                return true;
+                return Optional.of("Different TA products URL, request has '" +
+                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
             } else if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getNotificationUri())) {
-                return true;
+                return Optional.of("Different notification.xml URL, request has '" +
+                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
             }
         }
-        return false;
+        return Optional.absent();
     }
 
     /**

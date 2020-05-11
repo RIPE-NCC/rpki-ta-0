@@ -46,7 +46,7 @@ public class Main {
 
     private static int EXIT_OK = 0;
     private static int EXIT_ERROR_1 = 1;
-    private static int EXIT_ERROR_2 = 2;
+    public static int EXIT_ERROR_2 = 2;
 
     public static void main(String[] args) {
         final Exit run = run(args);

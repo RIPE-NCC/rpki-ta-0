@@ -52,6 +52,7 @@ import java.math.BigInteger;
 import java.net.URI;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
+import static net.ripe.rpki.ta.Main.EXIT_ERROR_2;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -134,7 +135,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
         
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+            "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState1 = reloadTaState();
         assertEquals(BigInteger.valueOf(4L), taState1.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(1L), taState1.getLastMftSerial());
@@ -143,7 +145,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(1, taState1.getSignedManifests().size());
         assertNull(taState1.getCrl().getCrl().getRevokedCertificates());
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+            "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState2 = reloadTaState();
         assertEquals(BigInteger.valueOf(6L), taState2.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastMftSerial());
@@ -152,7 +155,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, taState2.getSignedManifests().size());
         assertEquals(2, taState2.getCrl().getCrl().getRevokedCertificates().size());
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+            "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState3 = reloadTaState();
         assertEquals(BigInteger.valueOf(8L), taState3.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
@@ -178,7 +182,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final TAState taState0 = reloadTaState();
         final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml --response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0, run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
+            "--response=" + response.getAbsolutePath() +
+            " --force-new-ta-certificate --env=test").exitCode);
+
         final TAState taStateAfterRrdpChange = reloadTaState();
 
         assertNotNull(taStateAfterRrdpChange);
@@ -191,6 +198,28 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         assertEquals(taCertBefore.getResources(), taCertAfter.getResources());
         assertEquals(taCertBefore.getPublicKey(), taCertAfter.getPublicKey());
+    }
+
+    @Test
+    public void process_request_do_not_reissue_ta_certificate_without_force_option() throws Exception {
+        assertEquals(0, run("--initialise --env=test").exitCode);
+        assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
+
+        final File tmpResponses = Files.createTempDir();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        final TAState taState0 = reloadTaState();
+        final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
+
+        final Main.Exit run = run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
+            "--response=" + response.getAbsolutePath() +
+            " --env=test");
+        assertEquals(EXIT_ERROR_2, run.exitCode);
+        assertTrue(run.stderr.contains("The following problem occurred: " +
+            "TA certificate has to be re-issued: Different notification.xml URL, " +
+            "request has 'http://new-url.ripe.net/notification.xml', config has 'https://rrdp.ripe.net/notification.xml', " +
+            "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue."));
     }
 
     private java.net.URI getNotifyUrl(X509ResourceCertificate certificate) {
