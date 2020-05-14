@@ -105,7 +105,7 @@ public class Env {
     public static Config local() {
         final Config config = EnvStub.testConfig();
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
-        config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
+        config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/repository/"));
         return config;
     }
 
