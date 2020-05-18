@@ -55,7 +55,7 @@ public class TATest {
     public void serialize_ta() throws Exception {
         final String xml = TA.serialize(new TA(Env.local()).initialiseTaState());
         assertTrue(xml.contains("<taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>"));
-        assertTrue(xml.contains("<taProductsPublicationUri>rsync://localhost:10873/online/</taProductsPublicationUri>"));
+        assertTrue(xml.contains("<taProductsPublicationUri>rsync://localhost:10873/repository/</taProductsPublicationUri>"));
         assertTrue(xml.contains("<keystoreProvider>SUN</keystoreProvider>"));
         assertTrue(xml.contains("<keypairGeneratorProvider>SunRsaSign</keypairGeneratorProvider>"));
         assertTrue(xml.contains("<signatureProvider>SunRsaSign</signatureProvider>"));
