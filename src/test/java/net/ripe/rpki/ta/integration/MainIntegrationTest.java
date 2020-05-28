@@ -104,11 +104,11 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         run("--print-tal="+ talPath +" --env=test");
 
         assertThat(readFile(talPath), equalTo(
-                "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n"+
+                "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n\n"+
                         "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApIXenLOBfyo7cOnm4mGKmYxsoWCp28dw3XJAoZNWPDK8i9MxYACpwfz7bj" +
                         "yGma1BWPBJuievNd6nriFI+3WG+wt2bnO2ZmiLenCwMtm8bu7BeldpWRwlAnRp4t4IL6sZ7T9bF+4sTrv1qiEANqam0mhtLtUfbWXV" +
                         "5Z4mjgnNur7fJH2lIOm7Oc2/tok1rid8WsPe18zuvgwA3M0fKQ/Oa4SMXKnHr3fg2cHAm1cfEEvhMKa3rUAvsKGVEYeTJNg6rh3IRn" +
-                        "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB")
+                        "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB\n")
         );
     }
     

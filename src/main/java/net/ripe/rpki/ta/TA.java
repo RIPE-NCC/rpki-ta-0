@@ -176,8 +176,8 @@ public class TA {
     String getCurrentTrustAnchorLocator() throws Exception {
         X509ResourceCertificate certificate = getTaCertificate();
         return config.getTaCertificatePublicationUri()
-                + TaNames.certificateFileName(certificate.getSubject()) + "\n"
-                + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate());
+                + TaNames.certificateFileName(certificate.getSubject()) + "\n\n"
+                + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate()) + "\n";
     }
 
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
