@@ -53,7 +53,7 @@ public class EnvStub {
     public static Config test() {
         final Config config = getTestConfig();
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
-        config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
+        config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/repository/"));
         return config;
     }
 }

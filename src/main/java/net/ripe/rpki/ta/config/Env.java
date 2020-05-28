@@ -92,14 +92,14 @@ public class Env {
         config.setTaCertificatePublicationUri(URI.create("rsync://localcert.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localcert.ripe.net/repository/"));
         config.setTrustAnchorName(new X500Principal("CN=ripe-ncc-pilot"));
-        config.setNotificationUri(URI.create("http://localcert.ripe.net:7788/notification.xml"));
+        config.setNotificationUri(URI.create("https://localcert.ripe.net/rrdp/notification.xml"));
         return config;
     }
 
     public static Config local() {
         final Config config = EnvStub.testConfig();
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
-        config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/online/"));
+        config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/repository/"));
         return config;
     }
 

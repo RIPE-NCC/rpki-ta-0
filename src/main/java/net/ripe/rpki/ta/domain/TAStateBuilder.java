@@ -45,6 +45,10 @@ public class TAStateBuilder {
         taState.setConfig(config);
     }
 
+    public TAStateBuilder(TAState taState) {
+        this.taState = taState;
+    }
+
     public TAStateBuilder withEncoded(byte[] encoded) {
         taState.setEncoded(encoded);
         return this;
