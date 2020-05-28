@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright © 2017, RIPE NCC
 # All rights reserved.
@@ -25,37 +26,56 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-image: maven:3.6.1-jdk-8-alpine
 
-stages:
-  - build
-  - deploy
+# shellcheck disable=SC2006
+# shellcheck disable=SC2086
 
-variables:
-  BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_PIPELINE_ID}
+set -e
 
-build:
-  stage: build
-  variables:
-    MAVEN_OPTS: -Dmaven.repo.local=pipeline_m2/repository
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - pipeline_m2/repository
-  script: mvn package -Dbuild.number=${BUILD_NUMBER}
-  artifacts:
-    paths:
-      - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
-      - src/main/scripts/*
+BOLD_FONT="\e[1m"
+GREEN_FONT="\e[92m"
+RED_FONT="\e[31m"
+PURPLE_FONT="\e[95m"
+YELLOW_FONT="\e[93m"
+RESET_FONT="\e[0m"
 
-localcert:
-  stage: deploy
-  before_script:
-    - apk add openssh-client
-    - apk add curl
-    - chmod 400 ${SSH_KEY}
-    - chmod +x src/main/scripts/*.sh
-    - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
-  script:
-    - src/main/scripts/deploy.sh ${SSH_KEY} rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz localcert-1.rpki.ripe.net
-  when: manual
+echo -e "$BOLD_FONT"
+
+SSH_KEY=${1}
+ARTIFACT=${2}
+NODES=${3}
+
+SSH_FLAGS="-4 -oStrictHostKeyChecking=no"
+
+echo -e "$YELLOW_FONT"
+
+echo "##################################################################"
+echo "##################################################################"
+echo "Start work on:"
+echo "    Node -> ${NODES} "
+echo "    Artifacts -> ${ARTIFACT} "
+echo "##################################################################"
+echo "##################################################################"
+
+
+for node in ${NODES}
+do
+    echo ""
+    echo ""
+    echo "Start deployment on ${node}."
+
+    echo -e "$PURPLE_FONT"
+    ssh ${SSH_FLAGS} -i ${SSH_KEY} rpkideploy@${node} -C "rm -rf deploy_work_dir && mkdir deploy_work_dir"
+    scp ${SSH_FLAGS} -i ${SSH_KEY} src/main/scripts/upgrade.sh ${ARTIFACT} rpkideploy@${node}:./deploy_work_dir
+    ssh ${SSH_FLAGS} -i ${SSH_KEY} rpkideploy@${node} -C "cd ./deploy_work_dir && ./upgrade.sh ${ARTIFACT} /export/bad/apps/rpki-ta-0"
+    echo -e "$YELLOW_FONT"
+
+    echo "Deployment done on ${node}."
+    echo "------------------------------------------------"
+    echo "------------------------------------------------"
+    echo ""
+    echo ""
+done
+
+echo -e "$RESET_FONT"
+exit 0

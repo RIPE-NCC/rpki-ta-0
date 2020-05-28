@@ -28,6 +28,7 @@ package net.ripe.rpki.ta;
 
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -165,12 +166,16 @@ public class TA {
     }
 
     byte[] getCertificateDER() throws Exception {
-        return KeyStore.of(config).decode(loadTAState().getEncoded()).getRight().getEncoded();
+        return getTaCertificate().getEncoded();
+    }
+
+    public X509ResourceCertificate getTaCertificate() throws Exception {
+        return KeyStore.of(config).decode(loadTAState().getEncoded()).getRight();
     }
 
     String getCurrentTrustAnchorLocator() throws Exception {
-        X509ResourceCertificate certificate = KeyStore.of(config).decode(loadTAState().getEncoded()).getRight();
-        return String.valueOf(config.getTaCertificatePublicationUri())
+        X509ResourceCertificate certificate = getTaCertificate();
+        return config.getTaCertificatePublicationUri()
                 + TaNames.certificateFileName(certificate.getSubject()) + "\n"
                 + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate());
     }
@@ -223,27 +228,27 @@ public class TA {
                                                            final X509CertificateInformationAccessDescriptor[] extraSiaDescriptors,
                                                            final X509ResourceCertificate currentTaCertificate,
                                                            final BigInteger serial) {
-        final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
+        final X509ResourceCertificateBuilder taCertificateBuilder = new X509ResourceCertificateBuilder();
 
-        taBuilder.withCa(true);
-        taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-        taBuilder.withIssuerDN(config.getTrustAnchorName());
-        taBuilder.withSubjectDN(config.getTrustAnchorName());
-        taBuilder.withSerial(serial);
-        taBuilder.withResources(ALL_RESOURCES_SET);
-        taBuilder.withPublicKey(rootKeyPair.getPublic());
-        taBuilder.withSigningKeyPair(rootKeyPair);
-        taBuilder.withSignatureProvider(getSignatureProvider());
-        taBuilder.withSubjectKeyIdentifier(true);
-        taBuilder.withAuthorityKeyIdentifier(false);
+        taCertificateBuilder.withCa(true);
+        taCertificateBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
+        taCertificateBuilder.withIssuerDN(config.getTrustAnchorName());
+        taCertificateBuilder.withSubjectDN(config.getTrustAnchorName());
+        taCertificateBuilder.withSerial(serial);
+        taCertificateBuilder.withResources(ALL_RESOURCES_SET);
+        taCertificateBuilder.withPublicKey(rootKeyPair.getPublic());
+        taCertificateBuilder.withSigningKeyPair(rootKeyPair);
+        taCertificateBuilder.withSignatureProvider(getSignatureProvider());
+        taCertificateBuilder.withSubjectKeyIdentifier(true);
+        taCertificateBuilder.withAuthorityKeyIdentifier(false);
 
         final DateTime now = DateTime.now(DateTimeZone.UTC);
-        taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
+        taCertificateBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
         // TODO Normally extraSiaDescriptors come from the request
-        taBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
+        taCertificateBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
 
-        return taBuilder.build();
+        return taCertificateBuilder.build();
     }
 
     private X509CertificateInformationAccessDescriptor[] merge(
@@ -253,7 +258,7 @@ public class TA {
             return subjectInformationAccess;
         }
 
-        final HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> result = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
+        final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> result = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
 
         for (final X509CertificateInformationAccessDescriptor descriptor : subjectInformationAccess) {
             result.put(descriptor.getMethod(), descriptor);
@@ -296,6 +301,7 @@ public class TA {
             if (!hasState()) {
                 throw new Exception("No TA state found, please initialise it first.");
             }
+
             // try to read and decode existing state
             final KeyStore keyStore = KeyStore.of(config);
             final TAState taState = loadTAState();
@@ -320,7 +326,7 @@ public class TA {
     void processRequestXml(ProgramOptions options) throws Exception {
         final String requestXml = Files.toString(new File(options.getRequestFile()), Charsets.UTF_8);
         final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
-        final Pair<TrustAnchorResponse, TAState> p = processRequest(request);
+        final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate());
         final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
         final File responseFile = new File(options.getResponseFile());
         Files.write(response, responseFile, Charsets.UTF_8);
@@ -334,18 +340,37 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request) throws Exception {
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, boolean forceNewTaCertificate) throws Exception {
         final TAState taState = loadTAState();
         validateRequestSerial(request, taState);
 
-        final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(config).decode(taState.getEncoded());
-        final TAState newTAState = copyTAState(taState);
+        final KeyStore keyStore = KeyStore.of(config);
+        final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(taState.getEncoded());
+        TAState newTAState = copyTAState(taState);
 
         final SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
 
-        // TODO Ask Tim why do we do it
-        updateUrls(request, signCtx);
+        // re-issue TA certificate if some of the publication points are changed
+        final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
+        if (whyReissue.isPresent()) {
+            if (!forceNewTaCertificate) {
+                throw new Exception("TA certificate has to be re-issued: " + whyReissue.get() +
+                    ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
+            }
+            final KeyPair keyPair = decoded.getLeft();
+            final X509ResourceCertificate taCertificate = decoded.getRight();
+            final BigInteger nextSerial = nextIssuedCertSerial(taState);
+            final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
+                request.getSiaDescriptors(), taCertificate, nextSerial);
+
+            TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
+            taStateBuilder.withCrl(newTAState.getCrl());
+            newTAState = createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
+        }
+
+        // copy new SIAs to the TA config
+        updateTaConfigUrls(request, signCtx);
 
         final List<TaResponse> taResponses = Lists.newArrayList();
         for (final TaRequest r : request.getTaRequests()) {
@@ -356,7 +381,24 @@ public class TA {
             }
         }
 
-        return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), getObjectsToBePublished(signCtx), taResponses), newTAState);
+        return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), updateObjectsToBePublished(signCtx), taResponses), newTAState);
+    }
+
+    private Optional<String> taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, Config taConfig) {
+        if (!taConfig.getTaCertificatePublicationUri().equals(taRequest.getTaCertificatePublicationUri())) {
+            return Optional.of("Different TA certificate location, request has '" +
+                    taRequest.getTaCertificatePublicationUri() + "', config has '" + taConfig.getTaCertificatePublicationUri() + "'");
+        }
+        for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
+            if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getTaProductsPublicationUri())) {
+                return Optional.of("Different TA products URL, request has '" +
+                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
+            } else if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getNotificationUri())) {
+                return Optional.of("Different notification.xml URL, request has '" +
+                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
+            }
+        }
+        return Optional.absent();
     }
 
     /**
@@ -381,11 +423,13 @@ public class TA {
         }
     }
 
-    private void updateUrls(final TrustAnchorRequest taRequest, final SignCtx signCtx) {
+    private void updateTaConfigUrls(final TrustAnchorRequest taRequest, final SignCtx signCtx) {
         signCtx.taState.getConfig().setTaCertificatePublicationUri(taRequest.getTaCertificatePublicationUri());
         for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
             if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod())) {
                 signCtx.taState.getConfig().setTaProductsPublicationUri(descriptor.getLocation());
+            } else if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod())) {
+                signCtx.taState.getConfig().setNotificationUri(descriptor.getLocation());
             }
         }
     }
@@ -399,7 +443,8 @@ public class TA {
         signCtx.taState.getSignedProductionCertificates().add(new SignedResourceCertificate(
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
 
-        final URI publicationPoint = TaNames.certificatePublicationUri(getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
+        final URI publicationPoint = TaNames.certificatePublicationUri(
+            getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
 
         return new SigningResponse(signingRequest.getRequestId(), requestData.getResourceClassName(), publicationPoint, allResourcesCertificate);
     }
@@ -413,7 +458,7 @@ public class TA {
         }
     }
 
-    private Map<URI, CertificateRepositoryObject> getObjectsToBePublished(final SignCtx signCtx) {
+    private Map<URI, CertificateRepositoryObject> updateObjectsToBePublished(final SignCtx signCtx) {
         for (final SignedManifest signedManifest : signCtx.taState.getSignedManifests()) {
             signedManifest.revoke();
         }
@@ -421,11 +466,11 @@ public class TA {
         final URI taCertificatePublicationUri = config.getTaCertificatePublicationUri();
 
         final Map<URI, CertificateRepositoryObject> result = new HashMap<URI, CertificateRepositoryObject>();
-        result.put(taCertificatePublicationUri.resolve(TaNames.certificateFileName(signCtx.certificate.getSubject())), signCtx.certificate);
+        result.put(taCertificatePublicationUri.resolve(TaNames.certificateFileName(signCtx.taCertificate.getSubject())), signCtx.taCertificate);
         final X509Crl newCrl = createNewCrl(signCtx);
         signCtx.taState.setCrl(newCrl);
-        result.put(taProductsPublicationUri.resolve(TaNames.crlFileName(signCtx.certificate.getSubject())), newCrl);
-        result.put(taProductsPublicationUri.resolve(TaNames.manifestFileName(signCtx.certificate.getSubject())), createNewManifest(signCtx));
+        result.put(taProductsPublicationUri.resolve(TaNames.crlFileName(signCtx.taCertificate.getSubject())), newCrl);
+        result.put(taProductsPublicationUri.resolve(TaNames.manifestFileName(signCtx.taCertificate.getSubject())), createNewManifest(signCtx));
         for (final SignedResourceCertificate cert : signCtx.taState.getSignedProductionCertificates()) {
             if (cert.isPublishable()) {
                 result.put(taProductsPublicationUri.resolve(cert.getFileName()), cert.getCertificateRepositoryObject());
@@ -435,7 +480,7 @@ public class TA {
     }
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
-        return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.certificate.getSubject(), signCtx.now);
+        return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.taCertificate.getSubject(), signCtx.now);
     }
 
     private X509Crl createNewCrl(final KeyPair keyPair, final TAState taState, final X500Principal issuer, final  DateTime now) {
@@ -467,7 +512,7 @@ public class TA {
         final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, nextUpdateTime, signCtx);
 
         final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(nextUpdateTime, eeCertificate, signCtx);
-        manifestBuilder.addFile(TaNames.crlFileName(signCtx.certificate.getSubject()), signCtx.taState.getCrl().getEncoded());
+        manifestBuilder.addFile(TaNames.crlFileName(signCtx.taCertificate.getSubject()), signCtx.taState.getCrl().getEncoded());
         for (final SignedResourceCertificate signedProductionCertificate : signCtx.taState.getSignedProductionCertificates()) {
             if (signedProductionCertificate.isPublishable()) {
                 X509ResourceCertificate resourceCertificate = signedProductionCertificate.getResourceCertificate();
@@ -481,10 +526,10 @@ public class TA {
 
     private X509ResourceCertificate signAllResourcesCertificate(final ResourceCertificateRequestData request,
                                                                 final SignCtx signCtx) {
-        final X500Principal issuer = signCtx.certificate.getSubject();
+        final X500Principal issuer = signCtx.taCertificate.getSubject();
 
         final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
-        final URI taProductsPublicationUri = getTaProductsPublicationUri();
+        final URI taProductsPublicationUri = getConfig().getTaProductsPublicationUri();
         final X509CertificateInformationAccessDescriptor[] taAIA = { aiaDescriptor(
                 X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
                 URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer)))
@@ -504,7 +549,7 @@ public class TA {
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
         builder.withResources(ALL_RESOURCES_SET);
         builder.withSubjectInformationAccess(request.getSubjectInformationAccess());
-        builder.withCrlDistributionPoints(TaNames.clrPublicationUriForParentCertificate(signCtx.certificate));
+        builder.withCrlDistributionPoints(TaNames.clrPublicationUriForParentCertificate(signCtx.taCertificate));
         builder.withSignatureProvider(getSignatureProvider());
         builder.withAuthorityInformationAccess(taAIA);
         return builder.build();
@@ -523,7 +568,7 @@ public class TA {
 
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
 
-        final X500Principal caName = signCtx.certificate.getSubject();
+        final X500Principal caName = signCtx.taCertificate.getSubject();
         final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
@@ -532,8 +577,8 @@ public class TA {
         builder.withSigningKeyPair(signCtx.keyPair);
         builder.withValidityPeriod(validityPeriod);
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
-        builder.withCrlUri(TaNames.crlPublicationUri(getTaProductsPublicationUri(), caName));
-        builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(getTaProductsPublicationUri(), caName));
+        builder.withCrlUri(TaNames.crlPublicationUri(getConfig().getTaProductsPublicationUri(), caName));
+        builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(getConfig().getTaProductsPublicationUri(), caName));
         builder.withInheritedResourceTypes(EnumSet.allOf(IpResourceType.class));
         builder.withSignatureProvider(getSignatureProvider());
         return builder.build();
@@ -599,10 +644,6 @@ public class TA {
         return getConfig().getKeypairGeneratorProvider();
     }
 
-    private URI getTaProductsPublicationUri() {
-        return getConfig().getTaProductsPublicationUri();
-    }
-
     public Config getConfig() {
         return config;
     }
@@ -618,14 +659,14 @@ public class TA {
         final TrustAnchorRequest request;
         final TAState taState;
         final DateTime now;
-        final X509ResourceCertificate certificate;
+        final X509ResourceCertificate taCertificate;
         final KeyPair keyPair;
 
-        private SignCtx(TrustAnchorRequest request, TAState taState, DateTime now, X509ResourceCertificate certificate, KeyPair keyPair) {
+        private SignCtx(TrustAnchorRequest request, TAState taState, DateTime now, X509ResourceCertificate taCertificate, KeyPair keyPair) {
             this.request = request;
             this.taState = taState;
             this.now = now;
-            this.certificate = certificate;
+            this.taCertificate = taCertificate;
             this.keyPair = keyPair;
         }
     }

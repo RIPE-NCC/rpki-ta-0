@@ -49,6 +49,7 @@ public class ProgramOptions {
     private static final String PRINT_TAL_OPT = "print-tal";
     private static final String REQUEST_OPT = "request";
     private static final String RESPONSE_OPT = "response";
+    public static final String FORCE_NEW_TA_CERT_OPT = "force-new-ta-certificate";
 
     private final CommandLine commandLine;
     private final static Options options;
@@ -74,6 +75,11 @@ public class ProgramOptions {
                 hasArg(false).
                 desc("Generate trust anchor certificate and persist its state").
                 build());
+
+        options.addOption(Option.builder().longOpt(FORCE_NEW_TA_CERT_OPT).
+            hasArg(false).
+            desc("Force re-issuing new TA certificate if there're SIA differences between config and request").
+            build());
 
         options.addOption(Option.builder().longOpt(EXPORT_TA_CERTIFICATE_OPT).
                 hasArg().
@@ -106,7 +112,8 @@ public class ProgramOptions {
 
     public void validateOptions() throws BadOptions {
         if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
-                hasGenerateTACertificateOption() || hasExportCertificateOption() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
+                hasGenerateTACertificateOption() || hasExportCertificateOption() ||
+                hasForceNewTaCertificate() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
 
@@ -125,12 +132,14 @@ public class ProgramOptions {
         checkDependency(REQUEST_OPT, RESPONSE_OPT);
 
         checkDependency(RESPONSE_OPT, REQUEST_OPT);
+
+        checkDependency(FORCE_NEW_TA_CERT_OPT, REQUEST_OPT, RESPONSE_OPT);
     }
 
     private void checkDependency(final String option, final String... dependencies) throws BadOptions {
         for (final String dependency : dependencies) {
             if (commandLine.hasOption(option) && !commandLine.hasOption(dependency)) {
-                throw new BadOptions("Doesn't have meaningful options.");
+                throw new BadOptions("Option --" + option + " doesn't make sense without --" + dependency + " option.");
             }
         }
     }
@@ -157,6 +166,10 @@ public class ProgramOptions {
 
     public boolean hasPrintTALOption() {
         return commandLine.hasOption(PRINT_TAL_OPT);
+    }
+
+    public boolean hasForceNewTaCertificate() {
+        return commandLine.hasOption(FORCE_NEW_TA_CERT_OPT);
     }
 
     public boolean hasRequestOption() {

@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright © 2017, RIPE NCC
 # All rights reserved.
@@ -25,37 +26,30 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-image: maven:3.6.1-jdk-8-alpine
+set -e
 
-stages:
-  - build
-  - deploy
+ARTIFACT=$1
+APP_DIR=$2
 
-variables:
-  BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_PIPELINE_ID}
+WORK_DIR=./upgrading
 
-build:
-  stage: build
-  variables:
-    MAVEN_OPTS: -Dmaven.repo.local=pipeline_m2/repository
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - pipeline_m2/repository
-  script: mvn package -Dbuild.number=${BUILD_NUMBER}
-  artifacts:
-    paths:
-      - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
-      - src/main/scripts/*
+mkdir -p ${WORK_DIR}
 
-localcert:
-  stage: deploy
-  before_script:
-    - apk add openssh-client
-    - apk add curl
-    - chmod 400 ${SSH_KEY}
-    - chmod +x src/main/scripts/*.sh
-    - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
-  script:
-    - src/main/scripts/deploy.sh ${SSH_KEY} rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz localcert-1.rpki.ripe.net
-  when: manual
+tar xzf ${ARTIFACT} -C ${WORK_DIR}
+
+NEW_ARTIFACT_DIR=`ls ${WORK_DIR}`
+
+if [ -e "${APP_DIR}/current" ]; then
+  CURRENT_LINK_DIR=`readlink ${APP_DIR}/current`
+  echo "CURRENT APP: ${CURRENT_LINK_DIR}"
+  rm -f ${APP_DIR}/current
+fi
+
+echo "NEW APP: ${NEW_ARTIFACT_DIR}"
+
+mv ${WORK_DIR}/${NEW_ARTIFACT_DIR} ${APP_DIR}
+ln -sf ${NEW_ARTIFACT_DIR} ${APP_DIR}/current
+
+rm -rf ${WORK_DIR}
+
+exit $?
