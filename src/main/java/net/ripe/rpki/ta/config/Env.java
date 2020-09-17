@@ -32,11 +32,27 @@ import net.ripe.rpki.ta.BadOptions;
 import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.File;
 import java.net.URI;
 
 public class Env {
 
-    public static Config config(String envName) throws BadOptions {
+    public static Config config(ProgramOptions options) throws BadOptions {
+        final Config config = byEnvironment(options.getEnv());
+
+        if (options.hasPersistentStoragePath()) {
+            final File storageDirectory = new File(options.getPersistentStoragePath());
+            if (!storageDirectory.isDirectory()) {
+                throw new BadOptions(String.format("Persistant storage directory '%s' does not exist.", storageDirectory.getAbsolutePath()));
+            }
+
+            config.setPersistentStorageDir(storageDirectory.getAbsolutePath());
+        }
+
+        return config;
+    }
+
+    private static Config byEnvironment(String envName) throws BadOptions {
         if ("test".equals(envName)) {
             return EnvStub.test();
         }
@@ -55,6 +71,7 @@ public class Env {
         if ("production".equals(envName)) {
             return production();
         }
+
         throw new BadOptions("Unknown environment name: " + envName);
     }
 
