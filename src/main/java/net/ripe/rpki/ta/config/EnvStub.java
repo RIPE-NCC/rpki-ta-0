@@ -42,7 +42,7 @@ public class EnvStub {
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
-        config.setNotificationUri(URI.create("https://rrdp.ripe.net/notification.xml"));
+        config.setNotificationUri(URI.create("http://localhost:7788/notification.xml"));
         return config;
     }
 

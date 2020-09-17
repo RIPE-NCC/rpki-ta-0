@@ -187,7 +187,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterRrdpChange);
         assertNotEquals(taCertBefore.getSerialNumber(), taCertAfter.getSerialNumber());
 
-        assertEquals(URI.create("https://rrdp.ripe.net/notification.xml"), getNotifyUrl(taCertBefore));
+        assertEquals(URI.create("http://localhost:7788/notification.xml"), getNotifyUrl(taCertBefore));
         assertEquals(URI.create("http://new-url.ripe.net/notification.xml"), getNotifyUrl(taCertAfter));
 
         assertEquals(taCertBefore.getResources(), taCertAfter.getResources());
@@ -212,7 +212,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(EXIT_ERROR_2, run.exitCode);
         assertTrue(run.stderr.contains("The following problem occurred: " +
             "TA certificate has to be re-issued: Different notification.xml URL, " +
-            "request has 'http://new-url.ripe.net/notification.xml', config has 'https://rrdp.ripe.net/notification.xml', " +
+            "request has 'http://new-url.ripe.net/notification.xml', config has 'http://localhost:7788/notification.xml', " +
             "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue."));
     }
 
