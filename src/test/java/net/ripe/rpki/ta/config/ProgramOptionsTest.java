@@ -62,6 +62,7 @@ public class ProgramOptionsTest {
         assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --initialise-from-old=./test --env=dev", "Cannot have both --request and --initialise-from-old options.");
         assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --initialise --env=dev", "Cannot have both --request and --initialise options.");
 
+        assertInvalidCombinationsOfOptions("--request=./test.in --response=./test.out --initialise --env=dev --config=./config.yaml", "Cannot have both --config and --env options.");
     }
 
     @Test

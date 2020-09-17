@@ -50,10 +50,22 @@ public class Main {
         System.exit(run.exitCode);
     }
 
+    private static Config parseConfigFile(final ProgramOptions options) {
+        return null;
+    }
+
     public static Exit run(final String... args) {
         try {
             final ProgramOptions options = new ProgramOptions(args);
-            return run(Env.config(options.getEnv()), options, args);
+
+            Config config;
+            if (options.hasConfigFileOption()) {
+                config = Env.parseConfigFile(options.getConfigFileName());
+            } else {
+                config = Env.config(options.getEnv());
+            }
+
+            return run(config, options, args);
         } catch (BadOptions e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {

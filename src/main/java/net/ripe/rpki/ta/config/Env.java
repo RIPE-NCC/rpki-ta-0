@@ -27,14 +27,69 @@
 package net.ripe.rpki.ta.config;
 
 
-
+import java.time.Duration;
+import java.util.Map;
 import net.ripe.rpki.ta.BadOptions;
 import org.joda.time.Period;
+import org.yaml.snakeyaml.Yaml;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.net.URI;
 
 public class Env {
+    private static String assertOption(Map<String, String> options, String key) throws BadOptions {
+        if (!options.containsKey(key)) {
+            throw new BadOptions(String.format("Option '%s' is not set in the configuration file."));
+        }
+        final String value = options.get(key);
+
+        if (value == null || "".equals(value)) {
+            throw new BadOptions(String.format("Option '%s' is empty or null"));
+        }
+
+        return value;
+    }
+
+    public static Config parseConfigFile(String configFileName) throws BadOptions {
+        final File file = new File(configFileName);
+
+        Yaml yaml = new Yaml();
+
+        try {
+            Map<String, String> options = yaml.load(new FileReader(file));
+
+            final String keyStore = assertOption(options, "keystore");
+
+            Config config;
+
+            if ("ncipher".equals(keyStore)) {
+                config = nCipherConf();
+            } else if ("jks".equals(keyStore)) {
+                config = sunRsaConf();
+            } else {
+                throw new BadOptions("keystore option is invalid, valid options are 'ncipher' or 'jks'");
+            }
+
+            config.setPersistentStorageDir(assertOption(options, "persistent_storage_dir"));
+
+            config.setMinimumValidityPeriod(Period.parse(assertOption(options, "minimum_validity_period")));
+            config.setUpdatePeriod(Period.parse(assertOption(options, "update_period")));
+
+            config.setTrustAnchorName(new X500Principal(assertOption(options, "trust_anchor_name")));
+
+            config.setTaCertificatePublicationUri(URI.create(assertOption(options, "ta_certificate_publication_uri")));
+            config.setTaProductsPublicationUri(URI.create(assertOption(options, "ta_products_publication_uri")));
+
+            config.setNotificationUri(URI.create(assertOption(options, "notification_uri")));
+
+            return config;
+        } catch (FileNotFoundException e) {
+            throw new BadOptions(String.format("config file %s not found.", file.getAbsoluteFile().toString()));
+        }
+    }
 
     public static Config config(String envName) throws BadOptions {
         if ("test".equals(envName)) {

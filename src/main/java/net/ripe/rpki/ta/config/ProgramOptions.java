@@ -41,6 +41,7 @@ import java.io.StringWriter;
 
 public class ProgramOptions {
 
+    private static final String CONFIG_OPT = "config";
     private static final String ENV_OPT = "env";
     private static final String INITIALISE_OPT = "initialise";
     private static final String INITIALISE_FROM_OLD_OPT = "initialise-from-old";
@@ -56,6 +57,11 @@ public class ProgramOptions {
 
     static {
         options = new Options();
+        options.addOption(Option.builder().longOpt(CONFIG_OPT).
+                hasArg().
+                desc(String.format("Name of the configuration file (mutually exclusive with --%s)", ENV_OPT)).
+                build());
+
         options.addOption(Option.builder().longOpt(ENV_OPT).
                 hasArg().
                 desc("Must be one of 'local', 'dev', 'prepdev', 'pilot' or 'production'").
@@ -111,11 +117,13 @@ public class ProgramOptions {
     }
 
     public void validateOptions() throws BadOptions {
-        if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
+        if ((!hasEnv() && !hasConfigFileOption()) || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
                 hasGenerateTACertificateOption() || hasExportCertificateOption() ||
                 hasForceNewTaCertificate() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
+
+        checkIncompatible(CONFIG_OPT, ENV_OPT);
 
         checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
 
@@ -186,6 +194,14 @@ public class ProgramOptions {
 
     public String getEnv() {
         return commandLine.getOptionValue(ENV_OPT);
+    }
+
+    public boolean hasConfigFileOption() {
+        return commandLine.hasOption(CONFIG_OPT);
+    }
+
+    public String getConfigFileName() {
+        return commandLine.getOptionValue(CONFIG_OPT);
     }
 
     public boolean hasInitialiseFromOldOption() {

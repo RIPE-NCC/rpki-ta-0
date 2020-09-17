@@ -1,0 +1,14 @@
+# ncipher or jks
+keystore: ncipher
+
+persistent_storage_dir: /export/bad/ta-ca/data/
+
+minimum_validity_period: 1m
+update_period: 3m
+
+trust_anchor_name: CN=ripe-ncc-ta
+
+ta_certificate_publication_uri: rsync://rpki.ripe.net/ta/
+ta_products_publication_uri: rsync://rpki.ripe.net/repository/
+
+notification_uri: https://rrdp.ripe.net/notification.xml
