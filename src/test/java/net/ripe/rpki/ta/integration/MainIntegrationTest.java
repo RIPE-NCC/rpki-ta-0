@@ -129,8 +129,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
         
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
-            "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0,
+            run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                      "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+
         final TAState taState1 = reloadTaState();
         assertEquals(BigInteger.valueOf(4L), taState1.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(1L), taState1.getLastMftSerial());
@@ -139,8 +141,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(1, taState1.getSignedManifests().size());
         assertNull(taState1.getCrl().getCrl().getRevokedCertificates());
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
-            "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0,
+            run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                      "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState2 = reloadTaState();
         assertEquals(BigInteger.valueOf(6L), taState2.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastMftSerial());
@@ -149,8 +152,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, taState2.getSignedManifests().size());
         assertEquals(2, taState2.getCrl().getCrl().getRevokedCertificates().size());
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
-            "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertEquals(0,
+            run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                      "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState3 = reloadTaState();
         assertEquals(BigInteger.valueOf(8L), taState3.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
@@ -187,8 +191,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterRrdpChange);
         assertNotEquals(taCertBefore.getSerialNumber(), taCertAfter.getSerialNumber());
 
-        assertEquals(URI.create("http://localhost:7788/notification.xml"), getNotifyUrl(taCertBefore));
-        assertEquals(URI.create("http://new-url.ripe.net/notification.xml"), getNotifyUrl(taCertAfter));
+        assertEquals(URI.create("https://localhost:7788/notification.xml"), getNotifyUrl(taCertBefore));
+        assertEquals(URI.create("https://new-url.ripe.net/notification.xml"), getNotifyUrl(taCertAfter));
 
         assertEquals(taCertBefore.getResources(), taCertAfter.getResources());
         assertEquals(taCertBefore.getPublicKey(), taCertAfter.getPublicKey());
@@ -212,7 +216,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(EXIT_ERROR_2, run.exitCode);
         assertTrue(run.stderr.contains("The following problem occurred: " +
             "TA certificate has to be re-issued: Different notification.xml URL, " +
-            "request has 'http://new-url.ripe.net/notification.xml', config has 'http://localhost:7788/notification.xml', " +
+            "request has 'https://new-url.ripe.net/notification.xml', config has 'https://localhost:7788/notification.xml', " +
             "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue."));
     }
 
