@@ -31,13 +31,14 @@
     <name>RIPE NCC Trust Anchor</name>
     <groupId>net.ripe.rpki-trust-anchor</groupId>
     <artifactId>rpki-ta-0</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2.0</version>
     <packaging>jar</packaging>
     <inceptionYear>2017</inceptionYear>
 
     <scm>
         <connection>scm:git:ssh://git@gitlab.ripe.net:7999/rpki/rpki-ta-0.git</connection>
-    </scm>
+      <tag>rpki-ta-0-0.2.0</tag>
+  </scm>
 
     <properties>
         <main.class>net.ripe.rpki.ta.Main</main.class>
