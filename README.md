@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+### 0.3:
+
+  * Update RPKI commons to a recent version
+  * Make storage directory configurable
+
 ### 0.2:
 
   * Use RPKI commons version that uses the correct encoding in manifest and has
