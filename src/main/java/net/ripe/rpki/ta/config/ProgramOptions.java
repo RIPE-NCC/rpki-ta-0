@@ -49,6 +49,7 @@ public class ProgramOptions {
     private static final String PRINT_TAL_OPT = "print-tal";
     private static final String REQUEST_OPT = "request";
     private static final String RESPONSE_OPT = "response";
+    private static final String STORAGE_DIRECTORY = "storage-directory";
     public static final String FORCE_NEW_TA_CERT_OPT = "force-new-ta-certificate";
 
     private final CommandLine commandLine;
@@ -99,6 +100,11 @@ public class ProgramOptions {
         options.addOption(Option.builder().longOpt(RESPONSE_OPT).
                 hasArg().
                 desc("Path to the response file that was processed").
+                build());
+
+        options.addOption(Option.builder().longOpt(STORAGE_DIRECTORY).
+                hasArg(true).
+                desc("Path to the persistent storage directory").
                 build());
     }
 
@@ -198,6 +204,14 @@ public class ProgramOptions {
 
     public String getOldTaFilePath() {
         return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
+    }
+
+    public boolean hasPersistentStoragePath() {
+        return commandLine.hasOption(STORAGE_DIRECTORY);
+    }
+
+    public String getPersistentStoragePath() {
+        return commandLine.getOptionValue(STORAGE_DIRECTORY);
     }
 
     public String getTalFilePath() {

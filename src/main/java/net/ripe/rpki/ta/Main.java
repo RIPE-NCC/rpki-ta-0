@@ -53,7 +53,7 @@ public class Main {
     public static Exit run(final String... args) {
         try {
             final ProgramOptions options = new ProgramOptions(args);
-            return run(Env.config(options.getEnv()), options, args);
+            return run(Env.config(options), options, args);
         } catch (BadOptions e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {
@@ -73,6 +73,7 @@ public class Main {
 
     private static Exit run(final Config config, final ProgramOptions options, final String... args) throws Exception {
         options.validateOptions();
+
         final TA ta = new TA(config);
 
         if (options.hasExportCertificateOption()) {
