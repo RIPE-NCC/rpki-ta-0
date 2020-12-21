@@ -99,7 +99,7 @@ public class Env {
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
-        config.setNotificationUri(URI.create("https://pub-server.elasticbeanstalk.com/notification.xml"));
+        config.setNotificationUri(URI.create("https://rrdp.prepdev.ripe.net/notification.xml"));
         return config;
     }
 
