@@ -35,6 +35,7 @@ import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -53,6 +54,7 @@ public class LegacyTATest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
+    @Ignore ("We do not need to initialise from the old. This can go...")
     @Test
     public void migrateLegacyTA() throws Exception {
         final Config testConfig = Env.local();

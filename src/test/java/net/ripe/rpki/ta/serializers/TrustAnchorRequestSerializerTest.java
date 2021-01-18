@@ -28,18 +28,15 @@ package net.ripe.rpki.ta.serializers;
 
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.io.Files;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
-import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.request.ResourceCertificateRequestData;
+import net.ripe.rpki.ta.domain.request.RevocationRequest;
 import net.ripe.rpki.ta.domain.request.SigningRequest;
 import net.ripe.rpki.ta.domain.request.TaRequest;
 import net.ripe.rpki.ta.domain.request.TrustAnchorRequest;
-import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
-import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.util.encoders.Base64;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -47,6 +44,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -66,6 +64,7 @@ import static org.junit.Assert.*;
 public class TrustAnchorRequestSerializerTest {
 
     private static final String TA_REQUEST_PATH = "src/test/resources/ta-request.xml";
+    public static final java.util.Base64.Encoder BASE64_ENCODER = java.util.Base64.getMimeEncoder(10_000, "\n".getBytes());
 
     private Document document;
     private XPath xpath = XPathFactory.newInstance().newXPath();
@@ -168,4 +167,279 @@ public class TrustAnchorRequestSerializerTest {
             validateX509CertificateInformationAccessDescriptor(siaDescriptors[i], list.item(i));
         }
     }
+
+    @Test
+    public void itShouldDeserializeSigningRequestTaCertificatePublicationUri() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        assertEquals("rsync://localhost:10873/ta/", taRequest.getTaCertificatePublicationUri().toString());
+    }
+
+    @Test
+    public void itShouldDeserializeSigningRequestCreationTimestamp() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        assertEquals(Long.parseLong("1558700883582"), taRequest.getCreationTimestamp().longValue());
+    }
+
+    @Test
+    public void itShouldDeserializeSigningRequestTaSigningRequests() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        assertEquals(1, taRequest.getTaRequests().size());
+
+        final TaRequest signingRequest = taRequest.getTaRequests().get(0);
+        assertEquals(UUID.fromString("4ee2e78c-f746-426b-bf8b-c37e0155ca3e") ,signingRequest.getRequestId());
+    }
+
+    @Test
+    public void itShouldDeserializeSigningRequestResourceCertificateRequestInSigningRequest() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+
+        final SigningRequest signingRequest = (SigningRequest)taRequest.getTaRequests().get(0);
+        final ResourceCertificateRequestData resourceCertificateRequest = signingRequest.getResourceCertificateRequest();
+        assertEquals("DEFAULT", resourceCertificateRequest.getResourceClassName());
+        assertEquals(new X500Principal("CN=8ecc2cdf3247ef43295ebafca8c711ffd51de071"), resourceCertificateRequest.getSubjectDN());
+
+        final String subjectPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtZC7nbyxIqHdncRCXV6wBtBfXtMjuz0TQLd20Hunnr/982wFMqRfsBqEI4+Q/KnPV+N1rsKGhTrAzOCnISDFO5d111qOrWWd/X0T3AjoBLu2yFwtsc+2PYXxM7aAwPl1YfBsmvDjc+BlZEmPgIVLTbkYW2dXaOKVWi5CHpcbHuzox3stStSF9C2CT49N7URwL5qQ7f55BA4kQ1U1grnQR9nbFWT0HjiVIeZow+9ofRD6Io/T6+sMS2LWb3E+YMK6DCdStlYwmZEu+2HpqBjRqB7/3nfO74djpnUXLMzSFIv4x95ZFAeV0GTvLbflfTRd9G9Wa5CF5hd9zrj5OMNwAwIDAQAB";
+        assertEquals(subjectPublicKey, BASE64_ENCODER.encodeToString(resourceCertificateRequest.getEncodedSubjectPublicKey()));
+
+    }
+
+    @Test
+    public void itShouldDeserializeSigningRequestSubjectInformationAccessDescriptorsInResourceCertificateRequest() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+
+        final SigningRequest signingRequest = (SigningRequest)taRequest.getTaRequests().get(0);
+        final ResourceCertificateRequestData resourceCertificateRequest = signingRequest.getResourceCertificateRequest();
+        final X509CertificateInformationAccessDescriptor[] subjectInformationAccessDescriptors = resourceCertificateRequest.getSubjectInformationAccess();
+
+        assertEquals(3, subjectInformationAccessDescriptors.length);
+
+        final X509CertificateInformationAccessDescriptor subjectInformationAccess = subjectInformationAccessDescriptors[0];
+        assertEquals(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.5"), subjectInformationAccess.getMethod());
+        assertEquals(URI.create("rsync://localhost/online/aca/"), subjectInformationAccess.getLocation());
+    }
+
+    @Test
+    public void itShouldDeserializeSigningRequestSubjectInformationAccessDescriptorsInTrustAnchorRequest() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        final X509CertificateInformationAccessDescriptor[] subjectInformationAccessDescriptors = taRequest.getSiaDescriptors();
+
+        assertEquals(2, subjectInformationAccessDescriptors.length);
+
+        final X509CertificateInformationAccessDescriptor subjectInformationAccess = subjectInformationAccessDescriptors[0];
+        assertEquals(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.13"), subjectInformationAccess.getMethod());
+        assertEquals(URI.create("http://localhost:7788/notification.xml"), subjectInformationAccess.getLocation());
+    }
+
+    @Test
+    public void itShouldDeserializeRevocationRequestTaCertificatePublicationUri() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        assertEquals("rsync://localhost:10873/ta/", taRequest.getTaCertificatePublicationUri().toString());
+    }
+
+    @Test
+    public void itShouldDeserializeRevocationRequestCreationTimestamp() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        assertEquals(Long.parseLong("1610359575105"), taRequest.getCreationTimestamp().longValue());
+    }
+
+    @Test
+    public void itShouldDeserializeRevocationRequestTaSigningRequests() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        assertEquals(1, taRequest.getTaRequests().size());
+
+        final TaRequest signingRequest = taRequest.getTaRequests().get(0);
+        assertEquals(UUID.fromString("3ced3f70-a2b4-42d4-9e46-2fe4cac6b4bf") ,signingRequest.getRequestId());
+    }
+
+    @Test
+    public void itShouldDeserializeRevocationRequestResourceCertificateRequestInSigningRequest() {
+        final TrustAnchorRequest taRequest = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+
+        final RevocationRequest revocationRequest = (RevocationRequest)taRequest.getTaRequests().get(0);
+        assertEquals("DEFAULT", revocationRequest.getResourceClassName());
+
+        final String subjectPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtZC7nbyxIqHdncRCXV6wBtBfXtMjuz0TQLd20Hunnr/982wFMqRfsBqEI4+Q/KnPV+N1rsKGhTrAzOCnISDFO5d111qOrWWd/X0T3AjoBLu2yFwtsc+2PYXxM7aAwPl1YfBsmvDjc+BlZEmPgIVLTbkYW2dXaOKVWi5CHpcbHuzox3stStSF9C2CT49N7URwL5qQ7f55BA4kQ1U1grnQR9nbFWT0HjiVIeZow+9ofRD6Io/T6+sMS2LWb3E+YMK6DCdStlYwmZEu+2HpqBjRqB7/3nfO74djpnUXLMzSFIv4x95ZFAeV0GTvLbflfTRd9G9Wa5CF5hd9zrj5OMNwAwIDAQAB";
+        assertEquals(subjectPublicKey,revocationRequest.getEncodedPublicKey());
+
+    }
+
+    @Test
+    public void itShouldSerializeSigningRequestTaCertificatePublicationUri() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        assertEquals(taRequest0.getTaCertificatePublicationUri(), taRequest1.getTaCertificatePublicationUri());
+    }
+
+    @Test
+    public void itShouldSerializeSigningRequestCreationTimestamp() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        assertEquals(taRequest0.getCreationTimestamp(), taRequest1.getCreationTimestamp());
+    }
+
+    @Test
+    public void itShouldSerializeSigningRequestTaSigningRequests() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        assertEquals(taRequest0.getTaRequests().size(), taRequest1.getTaRequests().size());
+        assertEquals(taRequest0.getTaRequests().get(0).getRequestId(), taRequest1.getTaRequests().get(0).getRequestId());
+
+    }
+
+    @Test
+    public void itShouldSerializeSigningRequestResourceCertificateRequestInSigningRequest() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        final ResourceCertificateRequestData resourceCertificateRequest0 = ((SigningRequest)taRequest0.getTaRequests().get(0)).getResourceCertificateRequest();
+        final ResourceCertificateRequestData resourceCertificateRequest1 = ((SigningRequest)taRequest1.getTaRequests().get(0)).getResourceCertificateRequest();
+
+        assertEquals(resourceCertificateRequest0.getResourceClassName(), resourceCertificateRequest1.getResourceClassName());
+        assertEquals(resourceCertificateRequest0.getSubjectDN(), resourceCertificateRequest1.getSubjectDN());
+        assertEquals(BASE64_ENCODER.encodeToString(resourceCertificateRequest0.getEncodedSubjectPublicKey()), BASE64_ENCODER.encodeToString(resourceCertificateRequest1.getEncodedSubjectPublicKey()));
+
+    }
+
+    @Test
+    public void itShouldSerializeSigningRequestSubjectInformationAccessDescriptorsInResourceCertificateRequest() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        final ResourceCertificateRequestData resourceCertificateRequest0 = ((SigningRequest)taRequest0.getTaRequests().get(0)).getResourceCertificateRequest();
+        final ResourceCertificateRequestData resourceCertificateRequest1 = ((SigningRequest)taRequest1.getTaRequests().get(0)).getResourceCertificateRequest();
+
+        final X509CertificateInformationAccessDescriptor[] subjectInformationAccess0 = resourceCertificateRequest0.getSubjectInformationAccess();
+        final X509CertificateInformationAccessDescriptor[] subjectInformationAccess1 = resourceCertificateRequest1.getSubjectInformationAccess();
+
+        assertEquals(subjectInformationAccess0.length, subjectInformationAccess1.length);
+
+        final X509CertificateInformationAccessDescriptor x509CertificateInformationAccessDescriptor0 = subjectInformationAccess0[0];
+        final X509CertificateInformationAccessDescriptor x509CertificateInformationAccessDescriptor1 = subjectInformationAccess1[0];
+
+        assertEquals(x509CertificateInformationAccessDescriptor0.getMethod(), x509CertificateInformationAccessDescriptor1.getMethod());
+        assertEquals(x509CertificateInformationAccessDescriptor0.getLocation(), x509CertificateInformationAccessDescriptor1.getLocation());
+    }
+
+    @Test
+    public void itShouldSerializeSigningRequestSubjectInformationAccessDescriptorsInTrustAnchorRequest() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(signingRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+
+        final X509CertificateInformationAccessDescriptor[] subjectInformationAccess0 = taRequest0.getSiaDescriptors();
+        final X509CertificateInformationAccessDescriptor[] subjectInformationAccess1 = taRequest1.getSiaDescriptors();
+
+        assertEquals(subjectInformationAccess0.length, subjectInformationAccess1.length);
+
+        final X509CertificateInformationAccessDescriptor x509CertificateInformationAccessDescriptor0 = subjectInformationAccess0[0];
+        final X509CertificateInformationAccessDescriptor x509CertificateInformationAccessDescriptor1 = subjectInformationAccess1[0];
+
+        assertEquals(x509CertificateInformationAccessDescriptor0.getMethod(), x509CertificateInformationAccessDescriptor1.getMethod());
+        assertEquals(x509CertificateInformationAccessDescriptor0.getLocation(), x509CertificateInformationAccessDescriptor1.getLocation());
+    }
+
+
+    @Test
+    public void itShouldSerializeRevocationRequestTaCertificatePublicationUri() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        assertEquals(taRequest0.getTaCertificatePublicationUri(), taRequest1.getTaCertificatePublicationUri());
+    }
+
+    @Test
+    public void itShouldSerializeRevocationRequestCreationTimestamp() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        assertEquals(taRequest0.getCreationTimestamp(), taRequest1.getCreationTimestamp());
+    }
+
+    @Test
+    public void itShouldSerializeRevocationRequestTaSigningRequests() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        assertEquals(taRequest0.getTaRequests().size(), taRequest1.getTaRequests().size());
+        assertEquals(taRequest0.getTaRequests().get(0).getRequestId(), taRequest1.getTaRequests().get(0).getRequestId());
+    }
+
+    @Test
+    public void itShouldSerializeRevocationRequestResourceCertificateRequestInSigningRequest() {
+        final TrustAnchorRequest taRequest0 = new TrustAnchorRequestSerializer().deserialize(revocationRequest);
+        String request = new TrustAnchorRequestSerializer().serialize(taRequest0);
+        final TrustAnchorRequest taRequest1 = new TrustAnchorRequestSerializer().deserialize(request);
+
+        final RevocationRequest revocationRequest0 = (RevocationRequest) taRequest0.getTaRequests().get(0);
+        final RevocationRequest revocationRequest1 = (RevocationRequest) taRequest1.getTaRequests().get(0);
+
+        assertEquals(revocationRequest0.getResourceClassName(), revocationRequest1.getResourceClassName());
+        assertEquals(revocationRequest0.getEncodedPublicKey(), revocationRequest1.getEncodedPublicKey());
+
+    }
+
+    private final String signingRequest = "<requests.TrustAnchorRequest>\n" +
+            "  <creationTimestamp>1558700883582</creationTimestamp>\n" +
+            "  <taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>\n" +
+            "  <taRequests>\n" +
+            "    <requests.SigningRequest>\n" +
+            "      <requestId>4ee2e78c-f746-426b-bf8b-c37e0155ca3e</requestId>\n" +
+            "      <resourceCertificateRequest>\n" +
+            "        <resourceClassName>DEFAULT</resourceClassName>\n" +
+            "        <subjectDN>CN=8ecc2cdf3247ef43295ebafca8c711ffd51de071</subjectDN>\n" +
+            "        <subjectInformationAccess>\n" +
+            "          <X509CertificateInformationAccessDescriptor>\n" +
+            "            <method>1.3.6.1.5.5.7.48.5</method>\n" +
+            "            <location>rsync://localhost/online/aca/</location>\n" +
+            "          </X509CertificateInformationAccessDescriptor>\n" +
+            "          <X509CertificateInformationAccessDescriptor>\n" +
+            "            <method>1.3.6.1.5.5.7.48.10</method>\n" +
+            "            <location>rsync://localhost/online/aca/jsws3zJH70MpXrr8qMcR_9Ud4HE.mft</location>\n" +
+            "          </X509CertificateInformationAccessDescriptor>\n" +
+            "          <X509CertificateInformationAccessDescriptor>\n" +
+            "            <method>1.3.6.1.5.5.7.48.13</method>\n" +
+            "            <location>http://localhost:7788/notification.xml</location>\n" +
+            "          </X509CertificateInformationAccessDescriptor>\n" +
+            "        </subjectInformationAccess>\n" +
+            "        <ipResourceSet>10.0.0.0/8, 11.0.0.0/8</ipResourceSet>\n" +
+            "        <encodedSubjectPublicKey>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtZC7nbyxIqHdncRCXV6wBtBfXtMjuz0TQLd20Hunnr/982wFMqRfsBqEI4+Q/KnPV+N1rsKGhTrAzOCnISDFO5d111qOrWWd/X0T3AjoBLu2yFwtsc+2PYXxM7aAwPl1YfBsmvDjc+BlZEmPgIVLTbkYW2dXaOKVWi5CHpcbHuzox3stStSF9C2CT49N7URwL5qQ7f55BA4kQ1U1grnQR9nbFWT0HjiVIeZow+9ofRD6Io/T6+sMS2LWb3E+YMK6DCdStlYwmZEu+2HpqBjRqB7/3nfO74djpnUXLMzSFIv4x95ZFAeV0GTvLbflfTRd9G9Wa5CF5hd9zrj5OMNwAwIDAQAB</encodedSubjectPublicKey>\n" +
+            "      </resourceCertificateRequest>\n" +
+            "    </requests.SigningRequest>\n" +
+            "  </taRequests>\n" +
+            "  <siaDescriptors>\n" +
+            "    <X509CertificateInformationAccessDescriptor>\n" +
+            "      <method>1.3.6.1.5.5.7.48.13</method>\n" +
+            "      <location>http://localhost:7788/notification.xml</location>\n" +
+            "    </X509CertificateInformationAccessDescriptor>\n" +
+            "    <X509CertificateInformationAccessDescriptor>\n" +
+            "      <method>1.3.6.1.5.5.7.48.5</method>\n" +
+            "      <location>rsync://localhost/online/</location>\n" +
+            "    </X509CertificateInformationAccessDescriptor>\n" +
+            "  </siaDescriptors>\n" +
+            "</requests.TrustAnchorRequest>";
+
+    private final String revocationRequest = "<requests.TrustAnchorRequest>\n" +
+            "  <creationTimestamp>1610359575105</creationTimestamp>\n" +
+            "  <taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>\n" +
+            "  <taRequests>\n" +
+            "    <requests.RevocationRequest>\n" +
+            "      <requestId>3ced3f70-a2b4-42d4-9e46-2fe4cac6b4bf</requestId>\n" +
+            "      <resourceClassName>DEFAULT</resourceClassName>\n" +
+            "      <encodedPublicKey>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtZC7nbyxIqHdncRCXV6wBtBfXtMjuz0TQLd20Hunnr/982wFMqRfsBqEI4+Q/KnPV+N1rsKGhTrAzOCnISDFO5d111qOrWWd/X0T3AjoBLu2yFwtsc+2PYXxM7aAwPl1YfBsmvDjc+BlZEmPgIVLTbkYW2dXaOKVWi5CHpcbHuzox3stStSF9C2CT49N7URwL5qQ7f55BA4kQ1U1grnQR9nbFWT0HjiVIeZow+9ofRD6Io/T6+sMS2LWb3E+YMK6DCdStlYwmZEu+2HpqBjRqB7/3nfO74djpnUXLMzSFIv4x95ZFAeV0GTvLbflfTRd9G9Wa5CF5hd9zrj5OMNwAwIDAQAB</encodedPublicKey>\n" +
+            "    </requests.RevocationRequest>\n" +
+            "  </taRequests>\n" +
+            "  <siaDescriptors/>\n" +
+            "</requests.TrustAnchorRequest>";
 }

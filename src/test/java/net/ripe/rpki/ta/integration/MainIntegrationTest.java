@@ -37,6 +37,7 @@ import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -97,6 +98,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertNotEquals(taXml, taXmlRegenerated);
     }
 
+    @Ignore ("We do not need to initialise from the old. This can go...")
     @Test
     public void print_ta() {
         run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=test");
@@ -111,7 +113,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
                         "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB\n")
         );
     }
-    
+
+    @Ignore ("We do not need to initialise from the old. This can go...")
     @Test
     public void generate_ta_certificate() throws Exception {
         final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=test");
