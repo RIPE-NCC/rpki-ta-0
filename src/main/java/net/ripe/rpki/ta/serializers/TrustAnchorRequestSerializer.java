@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -79,57 +80,46 @@ public class TrustAnchorRequestSerializer extends DomXmlSerializer<TrustAnchorRe
     public TrustAnchorRequestSerializer() {
         super("");
     }
-    
+
     @Override
     public String serialize(TrustAnchorRequest trustAnchorRequest) {
-        if(trustAnchorRequest == null) {
-            return "";
+        if (trustAnchorRequest == null) {
+            return null;
         }
 
         try {
             final Document doc = getDocumentBuilder().newDocument();
-            final Element requestsTrustAnchorRequestElement = doc.createElement(REQUESTS_TRUST_ANCHOR_REQUEST);
-            doc.appendChild(requestsTrustAnchorRequestElement);
+            final Element requestsTrustAnchorRequestElement = addChild(doc, doc, REQUESTS_TRUST_ANCHOR_REQUEST);
 
-            final Element taCertificatePublicationUriElement = doc.createElement(TA_CERTIFICATE_PUBLICATION_URI);
             final URI taCertificatePublicationUri = trustAnchorRequest.getTaCertificatePublicationUri();
-            if(taCertificatePublicationUri != null) {
-                taCertificatePublicationUriElement.setTextContent(taCertificatePublicationUri.toString());
-                requestsTrustAnchorRequestElement.appendChild(taCertificatePublicationUriElement);
+            if (taCertificatePublicationUri != null) {
+                addChild(doc, requestsTrustAnchorRequestElement, TA_CERTIFICATE_PUBLICATION_URI)
+                    .setTextContent(taCertificatePublicationUri.toString());
             }
 
-            final Element creationTimestampElement = doc.createElement(CREATION_TIMESTAMP);
             final Long creationTimestamp = trustAnchorRequest.getCreationTimestamp();
-            if(creationTimestamp != null) {
-                creationTimestampElement.setTextContent(creationTimestamp.toString());
-                requestsTrustAnchorRequestElement.appendChild(creationTimestampElement);
+            if (creationTimestamp != null) {
+                addChild(doc, requestsTrustAnchorRequestElement, CREATION_TIMESTAMP)
+                    .setTextContent(creationTimestamp.toString());
             }
 
-            final Element taRequestsElement = doc.createElement(TA_REQUESTS);
-            requestsTrustAnchorRequestElement.appendChild(taRequestsElement);
             final List<TaRequest> taRequests = trustAnchorRequest.getTaRequests();
-            if(taRequests != null) {
+            if (taRequests != null) {
+                final Element taRequestsElement = addChild(doc, requestsTrustAnchorRequestElement, TA_REQUESTS);
                 for (TaRequest taRequest : taRequests) {
                     if (taRequest instanceof SigningRequest) {
-                        final Element signingRequestElement = doc.createElement(REQUESTS_SIGNING_REQUEST);
-                        taRequestsElement.appendChild(signingRequestElement);
-
+                        final Element signingRequestElement = addChild(doc, taRequestsElement, REQUESTS_SIGNING_REQUEST);
                         serializeSigningRequest(doc, signingRequestElement, (SigningRequest) taRequest);
-                    }
-
-                    if (taRequest instanceof RevocationRequest) {
-                        final Element revocationRequestElement = doc.createElement(REQUESTS_REVOCATION_REQUEST);
-                        taRequestsElement.appendChild(revocationRequestElement);
-
+                    } else if (taRequest instanceof RevocationRequest) {
+                        final Element revocationRequestElement = addChild(doc, taRequestsElement, REQUESTS_REVOCATION_REQUEST);
                         serializeRevocationRequest(doc, revocationRequestElement, (RevocationRequest) taRequest);
                     }
                 }
             }
 
-            final Element siaDescriptors = doc.createElement(SIA_DESCRIPTORS);
-            requestsTrustAnchorRequestElement.appendChild(siaDescriptors);
             final X509CertificateInformationAccessDescriptor[] descriptors = trustAnchorRequest.getSiaDescriptors();
-            if(descriptors != null) {
+            if (descriptors != null) {
+                final Element siaDescriptors = addChild(doc, requestsTrustAnchorRequestElement, SIA_DESCRIPTORS);
                 for (X509CertificateInformationAccessDescriptor informationAccessDescriptor : descriptors) {
                     serializeSia(doc, siaDescriptors, informationAccessDescriptor);
                 }
@@ -141,57 +131,44 @@ public class TrustAnchorRequestSerializer extends DomXmlSerializer<TrustAnchorRe
         }
     }
     private void serializeRevocationRequest(Document doc, Element revocationRequestElement, RevocationRequest revocationRequest) {
-        final Element requestIdElement = doc.createElement(REQUEST_ID);
-        revocationRequestElement.appendChild(requestIdElement);
-        requestIdElement.setTextContent(revocationRequest.getRequestId().toString());
+        addChild(doc, revocationRequestElement, REQUEST_ID)
+            .setTextContent(revocationRequest.getRequestId().toString());
 
-        final Element resourceClassName = doc.createElement(RESOURCE_CLASS_NAME);
-        revocationRequestElement.appendChild(resourceClassName);
-        resourceClassName.setTextContent(revocationRequest.getResourceClassName());
+        addChild(doc, revocationRequestElement, RESOURCE_CLASS_NAME)
+            .setTextContent(revocationRequest.getResourceClassName());
 
-        final Element encodedPublicKey = doc.createElement(ENCODED_REVOCATION_PUBLIC_KEY);
-        revocationRequestElement.appendChild(encodedPublicKey);
-        encodedPublicKey.setTextContent(revocationRequest.getEncodedPublicKey());
-
+        addChild(doc, revocationRequestElement, ENCODED_REVOCATION_PUBLIC_KEY)
+            .setTextContent(revocationRequest.getEncodedPublicKey());
     }
 
     private void serializeSigningRequest(Document doc, Element signingRequestElement, SigningRequest signingRequest) {
-        final Element requestIdElement = doc.createElement(REQUEST_ID);
-        signingRequestElement.appendChild(requestIdElement);
-        requestIdElement.setTextContent(signingRequest.getRequestId().toString());
+        addChild(doc, signingRequestElement, REQUEST_ID)
+            .setTextContent(signingRequest.getRequestId().toString());
 
-        final Element resourceCertificateRequestElement = doc.createElement(RESOURCE_CERTIFICATE_REQUEST);
-        signingRequestElement.appendChild(resourceCertificateRequestElement);
-        final Element resourceClassName = doc.createElement(RESOURCE_CLASS_NAME);
-        resourceCertificateRequestElement.appendChild(resourceClassName);
-        resourceClassName.setTextContent(signingRequest.getResourceCertificateRequest().getResourceClassName());
+        final Element resourceCertificateRequestElement = addChild(doc, signingRequestElement, RESOURCE_CERTIFICATE_REQUEST);
+        addChild(doc, resourceCertificateRequestElement, RESOURCE_CLASS_NAME)
+            .setTextContent(signingRequest.getResourceCertificateRequest().getResourceClassName());
 
-        final Element subjectDNElement = doc.createElement(SUBJECT_DN);
-        resourceCertificateRequestElement.appendChild(subjectDNElement);
-        subjectDNElement.setTextContent(signingRequest.getResourceCertificateRequest().getSubjectDN().getName());
+        addChild(doc, resourceCertificateRequestElement, SUBJECT_DN)
+            .setTextContent(signingRequest.getResourceCertificateRequest().getSubjectDN().getName());
 
-        final Element encodedSubjectPublicKeyElement = doc.createElement(ENCODED_SIGNING_SUBJECT_PUBLIC_KEY);
-        resourceCertificateRequestElement.appendChild(encodedSubjectPublicKeyElement);
-        encodedSubjectPublicKeyElement.setTextContent(BASE64_ENCODER.encodeToString(signingRequest.getResourceCertificateRequest().getEncodedSubjectPublicKey()));
+        addChild(doc, resourceCertificateRequestElement, ENCODED_SIGNING_SUBJECT_PUBLIC_KEY)
+            .setTextContent(BASE64_ENCODER.encodeToString(signingRequest.getResourceCertificateRequest().getEncodedSubjectPublicKey()));
 
-        final Element subjectInformationAccessElement = doc.createElement(SUBJECT_INFORMATION_ACCESS);
-        resourceCertificateRequestElement.appendChild(subjectInformationAccessElement);
+        final Element subjectInformationAccessElement = addChild(doc, resourceCertificateRequestElement, SUBJECT_INFORMATION_ACCESS);
         for (X509CertificateInformationAccessDescriptor informationAccessDescriptor: signingRequest.getResourceCertificateRequest().getSubjectInformationAccess()) {
             serializeSia(doc, subjectInformationAccessElement, informationAccessDescriptor);
         }
     }
 
     private void serializeSia(Document doc, Element subjectInformationAccessElement, X509CertificateInformationAccessDescriptor informationAccessDescriptor) {
-        final Element x509CertificateInformationAccessDescriptorElement = doc.createElement(X_509_CERTIFICATE_INFORMATION_ACCESS_DESCRIPTOR);
-        subjectInformationAccessElement.appendChild(x509CertificateInformationAccessDescriptorElement);
+        final Element x509CertificateInformationAccessDescriptorElement = addChild(doc, subjectInformationAccessElement, X_509_CERTIFICATE_INFORMATION_ACCESS_DESCRIPTOR);
 
-        final Element methodElement = doc.createElement(METHOD);
-        x509CertificateInformationAccessDescriptorElement.appendChild(methodElement);
-        methodElement.setTextContent(informationAccessDescriptor.getMethod().toString());
+        addChild(doc, x509CertificateInformationAccessDescriptorElement, METHOD)
+            .setTextContent(informationAccessDescriptor.getMethod().toString());
 
-        final Element locationElement = doc.createElement(LOCATION);
-        x509CertificateInformationAccessDescriptorElement.appendChild(locationElement);
-        locationElement.setTextContent(informationAccessDescriptor.getLocation().toString());
+        addChild(doc, x509CertificateInformationAccessDescriptorElement, LOCATION)
+            .setTextContent(informationAccessDescriptor.getLocation().toString());
     }
 
     @Override
@@ -234,7 +211,8 @@ public class TrustAnchorRequestSerializer extends DomXmlSerializer<TrustAnchorRe
 
     private X509CertificateInformationAccessDescriptor[] getX509CertificateInformationAccessDescriptorArray(Element parent) {
         final List<Element> x509CertificateInformationAccessDescriptorElements = getChildElements(parent, X_509_CERTIFICATE_INFORMATION_ACCESS_DESCRIPTOR);
-        final X509CertificateInformationAccessDescriptor[] x509CertificateInformationAccessDescriptors = new X509CertificateInformationAccessDescriptor[x509CertificateInformationAccessDescriptorElements.size()];
+        final X509CertificateInformationAccessDescriptor[] x509CertificateInformationAccessDescriptors =
+            new X509CertificateInformationAccessDescriptor[x509CertificateInformationAccessDescriptorElements.size()];
 
         int i = 0;
         for (Element x509CertificateInformationAccessElement : x509CertificateInformationAccessDescriptorElements) {
@@ -301,23 +279,13 @@ public class TrustAnchorRequestSerializer extends DomXmlSerializer<TrustAnchorRe
         return taRequests;
     }
 
-    private String getElementTextContent(Element element) {
-        try {
-            return element.getTextContent();
-        } catch (DOMException e) {
-            throw new DomXmlSerializerException("error reading "+element.getLocalName()+" content", e);
-        }
-    }
-
     private void setField(Class<?> clazz, Object obj, String fieldName, Object value) {
         try {
             Field privateField = clazz.getDeclaredField(fieldName);
             privateField.setAccessible(true);
             privateField.set(obj, value);
             privateField.setAccessible(false);
-        } catch (IllegalAccessException e) {
-            throw new DomXmlSerializerException("Unable to inject "+fieldName+": "+value + " into "+obj.getClass().getSimpleName(), e);
-        } catch (NoSuchFieldException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new DomXmlSerializerException("Unable to inject "+fieldName+": "+value + " into "+obj.getClass().getSimpleName(), e);
         }
     }

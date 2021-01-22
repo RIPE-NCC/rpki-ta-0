@@ -35,8 +35,8 @@ import java.util.UUID;
 public abstract class TaRequest extends EqualsSupport implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    private UUID requestId;
+    
+    private final UUID requestId;
 
     public TaRequest() {
         this.requestId = UUID.randomUUID();

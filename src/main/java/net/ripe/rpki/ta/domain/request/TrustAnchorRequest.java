@@ -47,7 +47,7 @@ public class TrustAnchorRequest {
     public TrustAnchorRequest(URI taCertificatePublicationUri, X509CertificateInformationAccessDescriptor[] siaDescriptors, List<TaRequest> taRequests) {
         this.creationTimestamp = DateTimeUtils.currentTimeMillis();
         this.taCertificatePublicationUri = taCertificatePublicationUri;
-        this.taRequests = new ArrayList<TaRequest>(taRequests);
+        this.taRequests = new ArrayList<>(taRequests);
         this.siaDescriptors = siaDescriptors;
     }
 
