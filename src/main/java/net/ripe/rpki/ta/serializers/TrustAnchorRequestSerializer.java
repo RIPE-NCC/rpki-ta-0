@@ -73,7 +73,6 @@ public class TrustAnchorRequestSerializer extends DomXmlSerializer<TrustAnchorRe
     public static final String REQUESTS_SIGNING_REQUEST = "requests.SigningRequest";
     public static final String RESOURCE_CERTIFICATE_REQUEST = "resourceCertificateRequest";
     public static final String SUBJECT_DN = "subjectDN";
-    public static final String IP_RESOURCE_SET = "ipResourceSet";
     public static final String ENCODED_SIGNING_SUBJECT_PUBLIC_KEY = "encodedSubjectPublicKey";
     public static final String SUBJECT_INFORMATION_ACCESS = "subjectInformationAccess";
 
