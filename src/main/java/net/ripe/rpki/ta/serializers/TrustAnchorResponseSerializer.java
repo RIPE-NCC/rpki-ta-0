@@ -31,8 +31,10 @@ import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 import net.ripe.rpki.commons.crypto.cms.roa.RoaCms;
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
+import net.ripe.rpki.commons.crypto.util.CertificateRepositoryObjectFactory;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateParser;
+import net.ripe.rpki.commons.validation.ValidationResult;
 import net.ripe.rpki.commons.xml.DomXmlSerializer;
 import net.ripe.rpki.commons.xml.DomXmlSerializerException;
 import net.ripe.rpki.ta.domain.response.ErrorResponse;
@@ -67,7 +69,7 @@ public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorR
     private static final Base64.Decoder BASE64_DECODER = Base64.getMimeDecoder();
     private static final Base64.Encoder BASE64_ENCODER = Base64.getMimeEncoder();
 
-    public static final String CREATION_TIMESTAMP = "creationTimestamp";
+    public static final String CREATION_TIMESTAMP = "requestCreationTimestamp";
     public static final String TRUST_ANCHOR_RESPONSE = "TrustAnchorResponse";
     public static final String X_509_RESOURCE_CERTIFICATE = "X509ResourceCertificate";
     public static final String CRL = "CRL";
@@ -76,9 +78,9 @@ public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorR
     public static final String ROA_PREFIX = "RoaPrefix";
     public static final String TA_RESPONSES = "taResponses";
 
-    public static final String SIGNING_RESPONSE = "responses.SigningResponse";
-    public static final String REVOCATION_RESPONSE = "responses.RevocationResponse";
-    public static final String ERROR_RESPONSE = "responses.ErrorResponse";
+    public static final String SIGNING_RESPONSE = "SigningResponse";
+    public static final String REVOCATION_RESPONSE = "RevocationResponse";
+    public static final String ERROR_RESPONSE = "ErrorResponse";
     public static final String PUBLISHED_OBJECTS = "publishedObjects";
     public static final String URI_ELEMENT = "uri";
     public static final String ENTRY_ELEMENT = "entry";
@@ -189,7 +191,7 @@ public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorR
             final Document doc = getDocumentBuilder().parse(new InputSource(characterStream));
 
             final Element taResponseElement = getElement(doc, TRUST_ANCHOR_RESPONSE)
-                .orElseThrow(() -> new DomXmlSerializerException("requests.TrustAnchorRequest element not found"));
+                .orElseThrow(() -> new DomXmlSerializerException(TRUST_ANCHOR_RESPONSE + " element not found"));
 
             final Element creationTimestampElement = getSingleChildElement(taResponseElement, CREATION_TIMESTAMP);
             final String creationTimeStampText = getElementTextContent(creationTimestampElement);
@@ -218,37 +220,43 @@ public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorR
         final List<Element> entryElements = getChildElements(getSingleChildElement(taResponseElement, PUBLISHED_OBJECTS), ENTRY_ELEMENT);
         for (final Element entryElement : entryElements) {
             final NodeList childNodes = entryElement.getChildNodes();
+            String uri = null;
+            CertificateRepositoryObject object = null;
             for (int i = 0; i < childNodes.getLength(); ++i) {
                 final Node item = childNodes.item(i);
-                String uri = null;
                 if (URI_ELEMENT.equals(item.getLocalName())) {
                     uri = getElementTextContent((Element) item);
                 }
-                CertificateRepositoryObject object = null;
                 if (X_509_RESOURCE_CERTIFICATE.equals(item.getLocalName())) {
-                    String encodedContent = getElementTextContent((Element) item);
-                    final byte[] encoded = BASE64_DECODER.decode(encodedContent);
-                    final X509ResourceCertificateParser parser = new X509ResourceCertificateParser();
-                    parser.parse("tmp.cer", encoded);
-                    object = parser.getCertificate();
+                    object = parseObject((Element) item, uri, "tmp.cer");
                 } else if (CRL.equals(item.getLocalName())) {
-                    String encodedContent = getElementTextContent((Element) item);
-                    final byte[] encoded = BASE64_DECODER.decode(encodedContent);
-//                    final  parser = new X509CRLParser();
-//                    parser. parse("tmp.crl", encoded);
-//                    object = parser.getCertificate();
+                    object = parseObject((Element) item, uri, "tmp.crl");
+                } else if (MANIFEST.equals(item.getLocalName())) {
+                    object = parseObject((Element) item, uri, "tmp.mft");
+                } else if (ROA.equals(item.getLocalName())) {
+                    object = parseObject((Element) item, uri, "tmp.roa");
                 }
-                if (uri == null) {
-                    throw new DomXmlSerializerException("<uri> is not found inside of an entry");
-                }
-                if (object == null) {
-                    throw new DomXmlSerializerException("Object is not found inside of an entry");
-                }
-                publishedObjects.put(URI.create(uri), object);
             }
-
+            if (uri == null) {
+                throw new DomXmlSerializerException("<uri> is not found inside of an entry");
+            }
+            if (object == null) {
+                throw new DomXmlSerializerException("Object is not found inside of an entry");
+            }
+            publishedObjects.put(URI.create(uri), object);
         }
         return publishedObjects;
+    }
+
+    private CertificateRepositoryObject parseObject(Element item, String uri, String name) {
+        final String parseName = uri != null ? uri : name;
+        final byte[] encoded = getBase64(item);
+        return CertificateRepositoryObjectFactory.createCertificateRepositoryObject(encoded, ValidationResult.withLocation(parseName));
+    }
+
+    private byte[] getBase64(Element e) {
+        String encodedContent = getElementTextContent(e);
+        return BASE64_DECODER.decode(encodedContent);
     }
 
     private List<TaResponse> getTaSigningResponses(Element responseListElement) {
