@@ -87,7 +87,7 @@ public class TrustAnchorResponseSerializerTest {
     @Test
     public void shouldMatchSimpleFields() throws XPathExpressionException {
         assertEquals(Long.valueOf(xpath.evaluate("/TrustAnchorResponse/requestCreationTimestamp", document)),
-                     response.getRequestCreationTimestamp());
+            response.getRequestCreationTimestamp());
     }
 
     @Test
@@ -95,14 +95,14 @@ public class TrustAnchorResponseSerializerTest {
         List<TaResponse> taResponses = response.getTaResponses();
 
         XPathExpression query = xpath.compile("/TrustAnchorResponse/taResponses/SigningResponse");
-        NodeList nodeList = (NodeList)query.evaluate(document, XPathConstants.NODESET);
+        NodeList nodeList = (NodeList) query.evaluate(document, XPathConstants.NODESET);
 
         // Check for equal length + identical values.
         // Implictly checks that all items are of required type.
         assertEquals(nodeList.getLength(), taResponses.size());
 
-        for (int i=0; i < nodeList.getLength(); i++) {
-            SigningResponse sr = (SigningResponse)taResponses.get(i);
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            SigningResponse sr = (SigningResponse) taResponses.get(i);
             Node cur = nodeList.item(i);
 
             assertEquals(UUID.fromString(xpath.evaluate("requestId", cur)), sr.getRequestId());
@@ -110,7 +110,7 @@ public class TrustAnchorResponseSerializerTest {
             assertEquals(xpath.evaluate("resourceClassName", cur), sr.getResourceClassName());
             assertEquals(new URI(xpath.evaluate("publicationUri", cur)), sr.getPublicationUri());
             assertEquals(Utils.cleanupBase64(xpath.evaluate("certificate/encoded", cur)),
-                         Base64.toBase64String(sr.getCertificate().getEncoded()));
+                Base64.toBase64String(sr.getCertificate().getEncoded()));
         }
     }
 
@@ -120,12 +120,12 @@ public class TrustAnchorResponseSerializerTest {
      */
     @Test
     public void shouldMatchPublishedObjects() throws XPathExpressionException, URISyntaxException {
-        NodeList entries = (NodeList)xpath.evaluate("/TrustAnchorResponse/publishedObjects/entry",
-                                                    document, XPathConstants.NODESET);
+        NodeList entries = (NodeList) xpath.evaluate("/TrustAnchorResponse/publishedObjects/entry",
+            document, XPathConstants.NODESET);
 
         assertEquals(entries.getLength(), response.getPublishedObjects().size());
 
-        for (int i=0; i < entries.getLength(); i++) {
+        for (int i = 0; i < entries.getLength(); i++) {
             Node entry = entries.item(i);
 
             URI entryURI = new URI(xpath.evaluate("uri", entry));
@@ -138,7 +138,7 @@ public class TrustAnchorResponseSerializerTest {
             } else {
                 assertTrue(publishedObject instanceof X509CertificateObject);
 
-                X509CertificateObject xco = (X509CertificateObject)publishedObject;
+                X509CertificateObject xco = (X509CertificateObject) publishedObject;
                 assertEquals(Utils.cleanupBase64(encodedCertificate), Base64.toBase64String(xco.getEncoded()));
             }
 
@@ -147,7 +147,7 @@ public class TrustAnchorResponseSerializerTest {
                 assertFalse(publishedObject instanceof X509Crl);
             } else {
                 assertTrue(publishedObject instanceof X509Crl);
-                X509Crl crl = (X509Crl)publishedObject;
+                X509Crl crl = (X509Crl) publishedObject;
 
                 assertEquals(Utils.cleanupBase64(encodedCrl), Base64.toBase64String(crl.getEncoded()));
             }
@@ -162,6 +162,14 @@ public class TrustAnchorResponseSerializerTest {
                 assertEquals(Utils.cleanupBase64(encodedManifest), Base64.toBase64String(mfs.getEncoded()));
             }
         }
+    }
+
+    @Test
+    public void shouldSerialiseAndDeserialise() {
+        final TrustAnchorResponseSerializer trustAnchorResponseSerializer = new TrustAnchorResponseSerializer();
+        String responseXML = trustAnchorResponseSerializer.serialize(response);
+        TrustAnchorResponse response1 = trustAnchorResponseSerializer.deserialize(responseXML);
+        assertEquals(response1, response);
     }
 
 }
