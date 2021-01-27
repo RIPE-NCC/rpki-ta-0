@@ -66,6 +66,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TrustAnchorResponseSerializerTest {
     private static final String TA_RESPONSE_PATH = "src/test/resources/ta-response.xml";
+    private static final String TA_RESPONSE_PATH1 = "src/test/resources/response.xml";
 
     private Document document;
     private XPath xpath = XPathFactory.newInstance().newXPath();
@@ -165,10 +166,14 @@ public class TrustAnchorResponseSerializerTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialise() {
+    public void shouldSerialiseAndDeserialise() throws IOException {
+        final String responseXML = Files.toString(new File(TA_RESPONSE_PATH), Charsets.UTF_8);
+
         final TrustAnchorResponseSerializer trustAnchorResponseSerializer = new TrustAnchorResponseSerializer();
-        String responseXML = trustAnchorResponseSerializer.serialize(response);
-        TrustAnchorResponse response1 = trustAnchorResponseSerializer.deserialize(responseXML);
+        TrustAnchorResponse response = trustAnchorResponseSerializer.deserialize(responseXML);
+
+        String responseXML2 = trustAnchorResponseSerializer.serialize(response);
+        TrustAnchorResponse response1 = trustAnchorResponseSerializer.deserialize(responseXML2);
         assertEquals(response1, response);
     }
 

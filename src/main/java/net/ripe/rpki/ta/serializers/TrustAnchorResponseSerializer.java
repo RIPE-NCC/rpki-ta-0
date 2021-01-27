@@ -67,7 +67,7 @@ import java.util.UUID;
 public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorResponse> {
 
     private static final Base64.Decoder BASE64_DECODER = Base64.getMimeDecoder();
-    private static final Base64.Encoder BASE64_ENCODER = Base64.getMimeEncoder();
+    private static final Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
 
     public static final String CREATION_TIMESTAMP = "requestCreationTimestamp";
     public static final String TRUST_ANCHOR_RESPONSE = "TrustAnchorResponse";
@@ -91,6 +91,8 @@ public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorR
     public static final String PUBLICATION_URI = "publicationUri";
     public static final String CERTIFICATE = "certificate";
     public static final String ENCODED = "encoded";
+
+
 
     public TrustAnchorResponseSerializer() {
         super("");
@@ -181,8 +183,9 @@ public class TrustAnchorResponseSerializer extends DomXmlSerializer<TrustAnchorR
             throw new RuntimeException("Not implemented serialisation of '" + objects.getClass() + "'");
         }
         final Element objectElement = addChild(doc, entryElement, tagName);
+        final String textContent = BASE64_ENCODER.encodeToString(objects.getEncoded());
         addChild(doc, objectElement, ENCODED)
-            .setTextContent(BASE64_ENCODER.encodeToString(objects.getEncoded()));
+            .setTextContent(textContent);
     }
 
     @Override

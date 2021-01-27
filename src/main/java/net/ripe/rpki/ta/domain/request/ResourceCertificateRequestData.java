@@ -50,8 +50,8 @@ public class ResourceCertificateRequestData extends EqualsSupport implements Ser
         this(resourceClassName, subjectDN, subjectPublicKey.getEncoded(), subjectInformationAccess);
     }
 
-    public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, byte[] encodedSubjectPublicKey, //NOPMD - ArrayIsStoredDirectly
-                                          X509CertificateInformationAccessDescriptor[] subjectInformationAccess) { //NOPMD - ArrayIsStoredDirectly
+    public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, byte[] encodedSubjectPublicKey,
+                                          X509CertificateInformationAccessDescriptor[] subjectInformationAccess) {
         this.resourceClassName = resourceClassName;
         this.subjectDN = subjectDN;
         this.encodedSubjectPublicKey = encodedSubjectPublicKey;
