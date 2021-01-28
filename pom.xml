@@ -53,8 +53,15 @@
         <build.number>DEV</build.number>
     </properties>
 
-    <dependencies>
+    <repositories>
+        <repository>
+            <id>sonatype-snapshots</id>
+            <name>OSS Sonatype Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
 
+    <dependencies>
         <dependency>
             <groupId>net.ripe.rpki</groupId>
             <artifactId>rpki-commons</artifactId>
