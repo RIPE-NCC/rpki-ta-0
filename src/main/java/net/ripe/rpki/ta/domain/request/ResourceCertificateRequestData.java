@@ -47,11 +47,11 @@ public class ResourceCertificateRequestData extends EqualsSupport implements Ser
 
     public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, PublicKey subjectPublicKey,
                                           X509CertificateInformationAccessDescriptor[] subjectInformationAccess, IpResourceSet ipResourceSet) {
-        this(resourceClassName, subjectDN, subjectPublicKey.getEncoded(), subjectInformationAccess, ipResourceSet);
+        this(resourceClassName, subjectDN, subjectPublicKey.getEncoded(), subjectInformationAccess);
     }
 
-    public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, byte[] encodedSubjectPublicKey, //NOPMD - ArrayIsStoredDirectly
-                                          X509CertificateInformationAccessDescriptor[] subjectInformationAccess, IpResourceSet ipResourceSet) { //NOPMD - ArrayIsStoredDirectly
+    public ResourceCertificateRequestData(String resourceClassName, X500Principal subjectDN, byte[] encodedSubjectPublicKey,
+                                          X509CertificateInformationAccessDescriptor[] subjectInformationAccess) {
         this.resourceClassName = resourceClassName;
         this.subjectDN = subjectDN;
         this.encodedSubjectPublicKey = encodedSubjectPublicKey;

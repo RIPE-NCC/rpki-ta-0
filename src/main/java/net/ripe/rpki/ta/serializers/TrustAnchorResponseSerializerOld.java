@@ -24,23 +24,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ripe.rpki.ta.domain.response;
+package net.ripe.rpki.ta.serializers;
 
 
-import java.util.UUID;
+import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
+import net.ripe.rpki.commons.crypto.cms.roa.RoaCms;
+import net.ripe.rpki.commons.crypto.cms.roa.RoaPrefix;
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
+import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
+import net.ripe.rpki.commons.xml.XStreamXmlSerializerBuilder;
+import net.ripe.rpki.ta.domain.response.ErrorResponse;
+import net.ripe.rpki.ta.domain.response.RevocationResponse;
+import net.ripe.rpki.ta.domain.response.SigningResponse;
+import net.ripe.rpki.ta.domain.response.TrustAnchorResponse;
 
-public class ErrorResponse extends TaResponse {
 
-    private static final long serialVersionUID = 1L;
+public class TrustAnchorResponseSerializerOld extends Serializer<TrustAnchorResponse> {
 
-    private final String message;
+    protected XStreamXmlSerializerBuilder<TrustAnchorResponse> configureBuilder(XStreamXmlSerializerBuilder<TrustAnchorResponse> builder) {
+        builder.withAliasType("TrustAnchorResponse", TrustAnchorResponse.class);
+        builder.withAliasType("SigningResponse", SigningResponse.class);
+        builder.withAliasType("RevocationResponse", RevocationResponse.class);
+        builder.withAliasType("ErrorResponse", ErrorResponse.class);
 
-    public ErrorResponse(UUID requestId, String message) {
-        super(requestId);
-        this.message = message;
+        builder.withAliasType("X509ResourceCertificate", X509ResourceCertificate.class);
+        builder.withAliasType("CRL", X509Crl.class);
+        builder.withAliasType("Manifest", ManifestCms.class);
+        builder.withAliasType("Roa", RoaCms.class);
+        builder.withAliasType("RoaPrefix", RoaPrefix.class);
+        return builder;
     }
 
-    public String getMessage() {
-        return message;
+    protected Class<TrustAnchorResponse> clazz() {
+        return TrustAnchorResponse.class;
     }
+
+
 }
