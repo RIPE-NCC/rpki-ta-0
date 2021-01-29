@@ -54,7 +54,6 @@ localcert:
     - apk add openssh-client
     - apk add curl
     - cat ${SSH_KEY}
-    - cat "${SSH_KEY}"
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
     - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
