@@ -53,6 +53,8 @@ localcert:
   before_script:
     - apk add openssh-client
     - apk add curl
+    - echo ${SSH_KEY}
+    - echo "${SSH_KEY}"
     - echo "${SSH_KEY}" > "${HOME}/.deploy.ssh.key"
     - chmod 400 "${HOME}/.deploy.ssh.key"
     - cat "${HOME}/.deploy.ssh.key"
