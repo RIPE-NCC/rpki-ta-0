@@ -53,9 +53,10 @@ localcert:
   before_script:
     - apk add openssh-client
     - apk add curl
-    - chmod 400 ${SSH_KEY}
+    - echo "${SSH_KEY}" > "${HOME}/.deploy.ssh.key"
+    - chmod 400 "${HOME}/.deploy.ssh.key"
     - chmod +x src/main/scripts/*.sh
     - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
   script:
-    - src/main/scripts/deploy.sh ${SSH_KEY} rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz localcert-1.rpki.ripe.net
+    - src/main/scripts/deploy.sh "${HOME}/.deploy.ssh.key" rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz localcert-1.rpki.ripe.net
   when: manual
