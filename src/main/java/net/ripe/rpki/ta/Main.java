@@ -37,7 +37,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class Main {
-    private final static int EXIT_OK = 0;
+    public final static int EXIT_OK = 0;
     private final static int EXIT_ERROR_1 = 1;
     public final static int EXIT_ERROR_2 = 2;
 
