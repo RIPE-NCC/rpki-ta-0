@@ -37,9 +37,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class Main {
-    public final static int EXIT_OK = 0;
-    private final static int EXIT_ERROR_1 = 1;
-    public final static int EXIT_ERROR_2 = 2;
+    public static final int EXIT_OK = 0;
+    public static final int EXIT_ERROR_2 = 2;
 
     public static void main(String[] args) {
         final Exit run = run(args);

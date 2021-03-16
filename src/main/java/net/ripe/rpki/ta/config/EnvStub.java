@@ -34,7 +34,7 @@ import java.net.URI;
 import java.nio.file.Paths;
 
 public class EnvStub {
-    public final static Config _testConfig = testConfig();
+    public static final Config _testConfig = testConfig();
 
     static Config testConfig() {
         final String HOME = System.getProperty("user.home");
