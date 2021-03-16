@@ -1,30 +1,4 @@
-#
-# Copyright © 2017, RIPE NCC
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the <organization> nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-
+---
 image: maven:3.6.1-jdk-8-alpine
 
 stages:
@@ -37,25 +11,42 @@ variables:
 build:
   stage: build
   variables:
-    MAVEN_OPTS: -Dmaven.repo.local=pipeline_m2/repository
+    MAVEN_OPTS: -Dmaven.repo.local=${HOME}/.m2/repository
   cache:
-    key: ${CI_COMMIT_REF_SLUG}
+    key: ${CI_JOB_NAME}
     paths:
-      - pipeline_m2/repository
-  script: mvn package -Dbuild.number=${BUILD_NUMBER}
+      - ${HOME}/.m2/repository
+  script: mvn verify -Dbuild.number=${BUILD_NUMBER}
   artifacts:
     paths:
       - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
       - src/main/scripts/*
 
-localcert:
+.deploy: &deploy
   stage: deploy
+  image: docker-registry.ripe.net/swe/gitlab-ci/debian-deployenv
   before_script:
-    - apk add openssh-client
-    - apk add curl
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
     - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
   script:
-    - src/main/scripts/deploy.sh ${SSH_KEY} rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz localcert-1.rpki.ripe.net
+    # Print public key
+    - ssh-keygen -y -l -f ${SSH_KEY}
+    - >
+      src/main/scripts/deploy.sh ${SSH_KEY}
+      rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz ${NODES}
   when: manual
+
+localcert:
+  <<: *deploy
+  variables:
+    NODES: "localcert-1.rpki.ripe.net"
+  environment:
+    name: localcert
+
+prepdev:
+  <<: *deploy
+  variables:
+    NODES: "core-1.rpki.prepdev.ripe.net"
+  environment:
+    name: prepdev
