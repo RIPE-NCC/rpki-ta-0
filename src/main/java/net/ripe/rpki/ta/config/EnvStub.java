@@ -37,8 +37,10 @@ public class EnvStub {
     public final static Config _testConfig = testConfig();
 
     static Config testConfig() {
+        final String HOME = System.getProperty("user.home");
+
         Config config = Env.sunRsaConf();
-        config.setPersistentStorageDir(Paths.get("~/export/bad/certification/ta/data").toAbsolutePath().toString());
+        config.setPersistentStorageDir(Paths.get(HOME, "export/bad/certification/ta/data").toAbsolutePath().toString());
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));
