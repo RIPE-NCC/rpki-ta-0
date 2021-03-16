@@ -43,7 +43,7 @@
     <properties>
         <main.class>net.ripe.rpki.ta.Main</main.class>
         <junit.version>4.12</junit.version>
-        <rpki.commons.version>1.7.0</rpki.commons.version>
+        <rpki.commons.version>1.13</rpki.commons.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
