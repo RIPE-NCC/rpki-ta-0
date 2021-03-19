@@ -37,10 +37,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class Main {
-
-    private static int EXIT_OK = 0;
-    private static int EXIT_ERROR_1 = 1;
-    public static int EXIT_ERROR_2 = 2;
+    public static final int EXIT_OK = 0;
+    public static final int EXIT_ERROR_2 = 2;
 
     public static void main(String[] args) {
         final Exit run = run(args);
@@ -77,7 +75,9 @@ public class Main {
         final TA ta = new TA(config);
 
         if (options.hasExportCertificateOption()) {
-            new FileOutputStream(options.getPrintCertificateFileName()).write(ta.getCertificateDER());
+            try (final FileOutputStream out = new FileOutputStream(options.getPrintCertificateFileName())) {
+                out.write(ta.getCertificateDER());
+            }
             return new Exit(EXIT_OK);
         }
 
@@ -87,7 +87,9 @@ public class Main {
         }
 
         if (options.hasPrintTALOption()) {
-            new FileOutputStream(options.getTalFilePath()).write(ta.getCurrentTrustAnchorLocator().getBytes());
+            try (final FileOutputStream out = new FileOutputStream(options.getTalFilePath())) {
+                out.write(ta.getCurrentTrustAnchorLocator().getBytes());
+            }
             return new Exit(EXIT_OK);
         }
 

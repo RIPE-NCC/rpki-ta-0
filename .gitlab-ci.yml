@@ -1,8 +1,14 @@
 ---
 image: maven:3.6.1-jdk-8-alpine
 
+include:
+  # Run pipeline on main branch, merge requests, tags.
+  # this is equivalent to `workflow.rules:` that set this up.
+  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+
 stages:
   - build
+  - qa
   - deploy
 
 variables:
@@ -21,6 +27,30 @@ build:
     paths:
       - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
       - src/main/scripts/*
+      - target/site
+      - target/classes
+    reports:
+      junit:
+        - target/surefire-reports/*.xml
+
+######### Test stage #########
+sonarqube:
+  stage: qa
+  needs: ["build"]
+  dependencies: ["build"]
+  variables:
+    GIT_DEPTH: 0
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - ${HOME}/.m2/repository
+  script:
+    - mvn sonar:sonar -Dsonar.qualitygate.wait=true
+  allow_failure: true
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .deploy: &deploy
   stage: deploy
@@ -35,7 +65,8 @@ build:
     - >
       src/main/scripts/deploy.sh ${SSH_KEY}
       rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz ${NODES}
-  when: manual
+  rules:
+    - when: manual
 
 localcert:
   <<: *deploy

@@ -31,14 +31,16 @@ import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
 import java.net.URI;
+import java.nio.file.Paths;
 
 public class EnvStub {
-    public static Config _testConfig = testConfig();
+    public static final Config _testConfig = testConfig();
 
     static Config testConfig() {
+        final String HOME = System.getProperty("user.home");
+
         Config config = Env.sunRsaConf();
-        final String home = System.getenv("HOME");
-        config.setPersistentStorageDir(home + "/export/bad/certification/ta/data");
+        config.setPersistentStorageDir(Paths.get(HOME, "export/bad/certification/ta/data").toAbsolutePath().toString());
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("CN=RIPE-NCC-TA-TEST"));

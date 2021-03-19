@@ -47,6 +47,8 @@ public class TATest {
 
     @Test
     public void serialize_ta() throws Exception {
+        final String HOME = System.getProperty("user.home");
+
         final String xml = TA.serialize(new TA(Env.local()).initialiseTaState());
         assertTrue(xml.contains("<taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>"));
         assertTrue(xml.contains("<taProductsPublicationUri>rsync://localhost:10873/repository/</taProductsPublicationUri>"));
@@ -54,8 +56,8 @@ public class TATest {
         assertTrue(xml.contains("<keypairGeneratorProvider>SunRsaSign</keypairGeneratorProvider>"));
         assertTrue(xml.contains("<signatureProvider>SunRsaSign</signatureProvider>"));
         assertTrue(xml.contains("<keystoreType>JKS</keystoreType>"));
-        final String home = System.getenv("HOME");
-        assertTrue(xml.contains("<persistentStorageDir>" + home + "/export/bad/certification/ta/data</persistentStorageDir>"));
+        // Constructed differently from implementation
+        assertTrue(xml.contains("<persistentStorageDir>" + HOME + "/export/bad/certification/ta/data</persistentStorageDir>"));
         assertTrue(xml.contains("<minimumValidityPeriod>P1M</minimumValidityPeriod>"));
         assertTrue(xml.contains("<updatePeriod>P3M</updatePeriod>"));
         assertTrue(xml.contains("<keyStorePassphrase>"));

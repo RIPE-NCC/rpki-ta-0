@@ -48,9 +48,8 @@ import java.net.URI;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 import static net.ripe.rpki.ta.Main.EXIT_ERROR_2;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static net.ripe.rpki.ta.Main.EXIT_OK;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -221,6 +220,28 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             "TA certificate has to be re-issued: Different notification.xml URL, " +
             "request has 'https://new-url.ripe.net/notification.xml', config has 'https://localhost:7788/notification.xml', " +
             "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue."));
+    }
+
+    @Test
+    public void test_export_ta_certificate() {
+        assertEquals(0, run("--initialise --env=test").exitCode);
+        assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
+
+        final Main.Exit run = run("--export-ta-certificate="+ talPath +" --env=test");
+        assertEquals(EXIT_OK, run.exitCode);
+
+        assertThat(readFile(talPath), notNullValue());
+    }
+
+    @Test
+    public void test_print_ta_certificate() {
+        assertEquals(0, run("--initialise --env=test").exitCode);
+        assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
+
+        final Main.Exit run = run("--print-tal="+ talPath +" --env=test");
+        assertEquals(EXIT_OK, run.exitCode);
+
+        assertThat(readFile(talPath), notNullValue());
     }
 
     private java.net.URI getNotifyUrl(X509ResourceCertificate certificate) {
