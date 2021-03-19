@@ -37,10 +37,18 @@ import java.util.List;
  * Class to read old style TA.
  */
 public class LegacyTA {
-
-    // TODO Move this ones to ta.xml
     public static final String KEY_STORE_ALIAS = "RTA";
-    public final static char[] KEY_STORE_PASSPHRASE = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
+    /**
+     * Keystore passphrase for the legacy trust anchor XML format. For the current (2017) trust anchor format, the
+     * passphrase is stored in the XML. This passphrase only applies to trust anchor XML files using <b>software keys</b>.
+     *
+     * This passphrase is <b>not appplicable</b> for the production keys stored in the HSMs.
+     * For the trust anchor HSMs, we use Operator Card Set protected keys. Multiple operator card holders need to be
+     * present and enter the passphrase for their operator card to load the key into the HSM.
+     *
+     * This software is not used for the online HSMs.
+     */
+    public static final char[] SOFTWARE_KEY_STORE_PASSPHRASE = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
 
     public TrustAnchorKeyStore getTrustAnchorKeyStore() {
         return trustAnchorKeyStore;
@@ -55,7 +63,7 @@ public class LegacyTA {
 
     private BigInteger lastManifestNumber;
 
-    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<SignedResourceCertificate>();
+    private List<SignedResourceCertificate> signedProductionCertificates = new ArrayList<>();
 
     private List<SignedManifest> signedManifests;
 
