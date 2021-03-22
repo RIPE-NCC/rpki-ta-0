@@ -27,7 +27,6 @@
 package net.ripe.rpki.ta;
 
 
-import com.google.common.io.Closer;
 import net.ripe.rpki.commons.crypto.util.KeyStoreException;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateParser;
@@ -71,7 +70,7 @@ public class KeyStore {
         this.keyStorePassPhrase = keyStorePassPhrase;
     }
 
-    byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws Exception {
+    byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws IOException, GeneralSecurityException {
         return encodeKeyStore(createKeyStore(keyPair, taCertificate));
     }
 
@@ -81,9 +80,7 @@ public class KeyStore {
             final Certificate[] certificates = new Certificate[] { taCertificate.getCertificate() };
             ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassPhrase, certificates);
             return ks;
-        } catch (GeneralSecurityException e) {
-            throw new KeyStoreException(e);
-        } catch (IOException e) {
+        } catch (IOException | GeneralSecurityException e) {
             throw new KeyStoreException(e);
         }
     }
@@ -94,23 +91,15 @@ public class KeyStore {
         return keyStore;
     }
 
-    private byte[] encodeKeyStore(java.security.KeyStore keyStore) throws Exception {
-        final Closer closer = Closer.create();
-        try {
-            final ByteArrayOutputStream output = closer.register(new ByteArrayOutputStream());
+    private byte[] encodeKeyStore(java.security.KeyStore keyStore) throws IOException, GeneralSecurityException {
+        try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             keyStore.store(output, keyStorePassPhrase);
             return output.toByteArray();
-        } catch (final Throwable t) {
-            throw closer.rethrow(t, GeneralSecurityException.class);
-        } finally {
-            closer.close();
         }
     }
 
-    public Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws Exception {
-        final Closer closer = Closer.create();
-        try {
-            final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));
+    public Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws IOException, GeneralSecurityException {
+        try (final ByteArrayInputStream input = new ByteArrayInputStream(encoded)){
             final java.security.KeyStore keyStore = loadKeyStore(input, keyStorePassPhrase);
             final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, keyStorePassPhrase);
             Validate.notNull(privateKey, "private key is null");
@@ -121,11 +110,6 @@ public class KeyStore {
             final X509ResourceCertificate taCertificate = parser.getCertificate();
             final KeyPair keyPair = new KeyPair(taCertificate.getPublicKey(), privateKey);
             return ImmutablePair.of(keyPair, taCertificate);
-
-        } catch (final Throwable t) {
-            throw closer.rethrow(t, GeneralSecurityException.class);
-        } finally {
-            closer.close();
         }
     }
 
