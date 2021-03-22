@@ -39,8 +39,8 @@ import java.util.List;
 public class LegacyTA {
     public static final String KEY_STORE_ALIAS = "RTA";
     /**
-     * Keystore passphrase for the legacy trust anchor XML format. For the current (2017) trust anchor format, the
-     * passphrase is stored in the XML. This passphrase only applies to trust anchor XML files using <b>software keys</b>.
+     * Keystore passphrase for the legacy trust anchor XML format. This passphrase only applies to trust anchor XML
+     * files using <b>software keys</b>.
      *
      * This passphrase is <b>not appplicable</b> for the production keys stored in the HSMs.
      * For the trust anchor HSMs, we use Operator Card Set protected keys. Multiple operator card holders need to be

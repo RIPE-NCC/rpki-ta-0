@@ -49,6 +49,15 @@ import java.security.cert.Certificate;
 public class KeyStore {
 
     private static final String KEY_STORE_KEY_ALIAS = "RTA2";
+    /**
+     * This passphrase only applies to trust anchor XML files using <b>software keys</b>.
+     *
+     * This passphrase is <b>not appplicable</b> for the production keys stored in the HSMs.
+     * For the trust anchor HSMs, we use Operator Card Set protected keys. Multiple operator card holders need to be
+     * present and enter the passphrase for their operator card to load the key into the HSM.
+     *
+     * This software is not used for the online HSMs.
+     */
     private static final char[] KEY_STORE_PASS_PHRASE = "2fe5a028-861a-47a0-a27f-7c657ea6ed49".toCharArray();
 
     private final String keyStoreKeyAlias;
