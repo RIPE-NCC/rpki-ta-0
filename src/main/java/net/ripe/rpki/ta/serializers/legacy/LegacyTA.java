@@ -48,6 +48,7 @@ public class LegacyTA {
      *
      * This software is not used for the online HSMs.
      */
+    @SuppressWarnings("java:S2068")
     public static final char[] SOFTWARE_KEY_STORE_PASSPHRASE = "68f2d230-ba89-49d8-9578-83aea34f8817".toCharArray();
 
     public TrustAnchorKeyStore getTrustAnchorKeyStore() {

@@ -57,6 +57,7 @@ public class KeyStore {
      *
      * This software is not used for the online HSMs.
      */
+    @SuppressWarnings("java:S2068")
     private static final char[] KEY_STORE_PASS_PHRASE = "2fe5a028-861a-47a0-a27f-7c657ea6ed49".toCharArray();
 
     private final String keyStoreKeyAlias;
