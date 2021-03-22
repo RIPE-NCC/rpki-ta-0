@@ -119,7 +119,7 @@ public class KeyStore {
     }
 
     static KeyStore legacy(final Config config) {
-        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.SOFTWARE_KEY_STORE_PASSPHRASE);
+        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.SOFTWARE_KEY_STORE_PASSPHRASE.toCharArray());
     }
 
     public String getKeyStoreKeyAlias() {
