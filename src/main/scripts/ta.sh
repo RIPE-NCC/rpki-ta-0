@@ -34,7 +34,7 @@ cd ${EXECUTION_DIR}
 # Preconditions:
 : ${APPLICATION_ENVIRONMENT:?"Please export APPLICATION_ENVIRONMENT"}
 
-echo "Running mode APPLICATION_ENVIRONMENT => ${APPLICATION_ENVIRONMENT}"
+echo "Running mode APPLICATION_ENVIRONMENT => ${APPLICATION_ENVIRONMENT}" >&2
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
     JAVA_HOME=/export/bad/java
@@ -73,4 +73,3 @@ if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
 else
   ${TA_TOOL_COMMAND}
 fi
-
