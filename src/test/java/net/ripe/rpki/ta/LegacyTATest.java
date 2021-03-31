@@ -75,6 +75,9 @@ public class LegacyTATest {
         final Pair<KeyPair, X509ResourceCertificate> decodedLegacy = KeyStore.legacy(testConfig).decode(encodedLegacy);
         final Pair<KeyPair, X509ResourceCertificate> decoded = KeyStore.of(testConfig).decode(encoded);
 
+        assertNotNull(taState.getSignedProductionCertificates());
+        assertNotNull(taState.getSignedManifests());
+
         assertEquals(decoded.getKey().getPublic(), decodedLegacy.getKey().getPublic());
 
         // TA last serial should be legacy TA serial + 1:

@@ -27,7 +27,6 @@
 package net.ripe.rpki.ta;
 
 
-import com.google.common.io.Closer;
 import net.ripe.rpki.commons.crypto.util.KeyStoreException;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateParser;
@@ -49,6 +48,16 @@ import java.security.cert.Certificate;
 public class KeyStore {
 
     private static final String KEY_STORE_KEY_ALIAS = "RTA2";
+    /**
+     * This passphrase only applies to trust anchor XML files using <b>software keys</b>.
+     *
+     * This passphrase is <b>not appplicable</b> for the production keys stored in the HSMs.
+     * For the trust anchor HSMs, we use Operator Card Set protected keys. Multiple operator card holders need to be
+     * present and enter the passphrase for their operator card to load the key into the HSM.
+     *
+     * This software is not used for the online HSMs.
+     */
+    @SuppressWarnings("java:S2068")
     private static final char[] KEY_STORE_PASS_PHRASE = "2fe5a028-861a-47a0-a27f-7c657ea6ed49".toCharArray();
 
     private final String keyStoreKeyAlias;
@@ -62,7 +71,7 @@ public class KeyStore {
         this.keyStorePassPhrase = keyStorePassPhrase;
     }
 
-    byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws Exception {
+    byte[] encode(final KeyPair keyPair, final X509ResourceCertificate taCertificate) throws IOException, GeneralSecurityException {
         return encodeKeyStore(createKeyStore(keyPair, taCertificate));
     }
 
@@ -72,9 +81,7 @@ public class KeyStore {
             final Certificate[] certificates = new Certificate[] { taCertificate.getCertificate() };
             ks.setKeyEntry(keyStoreKeyAlias, keyPair.getPrivate(), keyStorePassPhrase, certificates);
             return ks;
-        } catch (GeneralSecurityException e) {
-            throw new KeyStoreException(e);
-        } catch (IOException e) {
+        } catch (IOException | GeneralSecurityException e) {
             throw new KeyStoreException(e);
         }
     }
@@ -85,23 +92,15 @@ public class KeyStore {
         return keyStore;
     }
 
-    private byte[] encodeKeyStore(java.security.KeyStore keyStore) throws Exception {
-        final Closer closer = Closer.create();
-        try {
-            final ByteArrayOutputStream output = closer.register(new ByteArrayOutputStream());
+    private byte[] encodeKeyStore(java.security.KeyStore keyStore) throws IOException, GeneralSecurityException {
+        try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             keyStore.store(output, keyStorePassPhrase);
             return output.toByteArray();
-        } catch (final Throwable t) {
-            throw closer.rethrow(t, GeneralSecurityException.class);
-        } finally {
-            closer.close();
         }
     }
 
-    public Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws Exception {
-        final Closer closer = Closer.create();
-        try {
-            final ByteArrayInputStream input = closer.register(new ByteArrayInputStream(encoded));
+    public Pair<KeyPair, X509ResourceCertificate> decode(byte[] encoded) throws IOException, GeneralSecurityException {
+        try (final ByteArrayInputStream input = new ByteArrayInputStream(encoded)){
             final java.security.KeyStore keyStore = loadKeyStore(input, keyStorePassPhrase);
             final PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyStoreKeyAlias, keyStorePassPhrase);
             Validate.notNull(privateKey, "private key is null");
@@ -112,11 +111,6 @@ public class KeyStore {
             final X509ResourceCertificate taCertificate = parser.getCertificate();
             final KeyPair keyPair = new KeyPair(taCertificate.getPublicKey(), privateKey);
             return ImmutablePair.of(keyPair, taCertificate);
-
-        } catch (final Throwable t) {
-            throw closer.rethrow(t, GeneralSecurityException.class);
-        } finally {
-            closer.close();
         }
     }
 
@@ -125,7 +119,7 @@ public class KeyStore {
     }
 
     static KeyStore legacy(final Config config) {
-        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.KEY_STORE_PASSPHRASE);
+        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.SOFTWARE_KEY_STORE_PASSPHRASE.toCharArray());
     }
 
     public String getKeyStoreKeyAlias() {
