@@ -31,7 +31,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
+import com.google.common.io.CharStreams;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.ipresource.IpResourceType;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
@@ -79,8 +79,12 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
@@ -324,19 +328,30 @@ public class TA {
     }
 
     void processRequestXml(ProgramOptions options) throws Exception {
-        final String requestXml = Files.toString(new File(options.getRequestFile()), Charsets.UTF_8);
-        final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
-        final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate());
-        final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
-        final File responseFile = new File(options.getResponseFile());
-        Files.write(response, responseFile, Charsets.UTF_8);
-        try {
+        try (InputStream in = requestXml(options);
+             PrintStream out = responseXml(options)) {
+            final String requestXml = CharStreams.toString(new InputStreamReader(in, Charsets.UTF_8));
+            final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
+            final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate());
+            final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
             persist(p.getRight());
-        } catch (Exception e) {
-            if (responseFile.exists()) {
-                responseFile.delete();
-            }
-            throw e;
+            out.print(response);
+        }
+    }
+
+    private InputStream requestXml(ProgramOptions options) throws IOException {
+        if ("-".equals(options.getRequestFile())) {
+            return System.in;
+        } else {
+            return new FileInputStream(options.getRequestFile());
+        }
+    }
+
+    private PrintStream responseXml(ProgramOptions options) throws IOException {
+        if ("-".equals(options.getResponseFile())) {
+            return System.out;
+        } else {
+            return new PrintStream(new FileOutputStream(options.getResponseFile()));
         }
     }
 
