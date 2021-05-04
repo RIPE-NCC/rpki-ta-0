@@ -28,7 +28,7 @@ package net.ripe.rpki.ta.serializers.legacy;
 
 
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
