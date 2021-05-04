@@ -172,8 +172,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void process_request_make_sure_ta_certificate_reissued_for_different_url() throws Exception {
-        assertEquals(0, run("--initialise --env=test").exitCode);
-        assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
+        assertEquals("initialise failed", 0, run("--initialise --env=test").exitCode);
+        assertEquals("generate-ta-certificate failed", 0, run("--generate-ta-certificate --env=test").exitCode);
 
         final File tmpResponses = Files.createTempDir();
         tmpResponses.deleteOnExit();
@@ -182,7 +182,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final TAState taState0 = reloadTaState();
         final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
-        assertEquals(0, run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
+        assertEquals("signing request failed",
+                0,
+                run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
             "--response=" + response.getAbsolutePath() +
             " --force-new-ta-certificate --env=test").exitCode);
 
