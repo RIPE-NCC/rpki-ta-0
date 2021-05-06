@@ -33,7 +33,7 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.Period;

@@ -217,7 +217,6 @@ public class TA {
         taBuilder.withPublicKey(rootKeyPair.getPublic());
         taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(getSignatureProvider());
-        taBuilder.withSubjectKeyIdentifier(true);
         taBuilder.withAuthorityKeyIdentifier(false);
 
         final DateTime now = DateTime.now(DateTimeZone.UTC);
@@ -243,7 +242,6 @@ public class TA {
         taCertificateBuilder.withPublicKey(rootKeyPair.getPublic());
         taCertificateBuilder.withSigningKeyPair(rootKeyPair);
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
-        taCertificateBuilder.withSubjectKeyIdentifier(true);
         taCertificateBuilder.withAuthorityKeyIdentifier(false);
 
         final DateTime now = DateTime.now(DateTimeZone.UTC);
@@ -559,7 +557,6 @@ public class TA {
         builder.withSigningKeyPair(signCtx.keyPair);
         builder.withValidityPeriod(new ValidityPeriod(signCtx.now, calculateValidityNotAfter(signCtx.now)));
         builder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-        builder.withSubjectKeyIdentifier(true);
         builder.withAuthorityKeyIdentifier(true);
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
         builder.withResources(ALL_RESOURCES_SET);
