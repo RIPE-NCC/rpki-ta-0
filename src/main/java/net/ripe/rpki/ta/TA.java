@@ -99,7 +99,6 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 
 public class TA {
-
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
     public static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
@@ -521,7 +520,9 @@ public class TA {
     private ManifestCms createNewManifest(final SignCtx signCtx) {
         final DateTime nextUpdateTime = calculateNextUpdateTime(signCtx.now);
 
-        final KeyPair eeKeyPair = keyPairFactory.withProvider(getKeypairGeneratorProvider()).generate();
+        // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
+        // re-use in the future, and prevents keys from piling up in the HSM 'security world'
+        final KeyPair eeKeyPair = keyPairFactory.withProvider("SunRsaSign").generate();
         final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, nextUpdateTime, signCtx);
 
         final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(nextUpdateTime, eeCertificate, signCtx);
