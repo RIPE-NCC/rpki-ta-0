@@ -88,14 +88,14 @@ public class Env {
     }
 
     public static Config dev() {
-        final Config config = EnvStub.testConfig();
+        final Config config = withSunRsaConf(EnvStub.testConfig());
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.dev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.dev.ripe.net/repository/"));
         return config;
     }
 
     public static Config prepdev() {
-        final Config config = EnvStub.testConfig();
+        final Config config = withDBProviderConf(EnvStub.testConfig());
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
@@ -104,7 +104,7 @@ public class Env {
     }
 
     public static Config pilot() {
-        final Config config = EnvStub.testConfig();
+        final Config config = withSunRsaConf(EnvStub.testConfig());
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://localcert.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localcert.ripe.net/repository/"));
@@ -114,14 +114,17 @@ public class Env {
     }
 
     public static Config local() {
-        final Config config = EnvStub.testConfig();
+        final Config config = withSunRsaConf(EnvStub.testConfig());
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/repository/"));
         return config;
     }
 
     private static Config nCipherConf() {
-        final Config config = new Config();
+        return withNCipherConf(new Config());
+    }
+
+    private static Config withNCipherConf(final Config config) {
         config.setSignatureProvider("nCipherKM");
         config.setKeystoreProvider("nCipherKM");
         config.setKeypairGeneratorProvider("nCipherKM");
@@ -129,8 +132,15 @@ public class Env {
         return config;
     }
 
-    static Config sunRsaConf() {
-        final Config config = new Config();
+    private static Config withDBProviderConf(final Config config) {
+        config.setSignatureProvider("DBProvider");
+        config.setKeystoreProvider("DBProvider");
+        config.setKeypairGeneratorProvider("DBProvider");
+        config.setKeystoreType("nCipher.database");
+        return config;
+    }
+
+    static Config withSunRsaConf(Config config) {
         config.setSignatureProvider("SunRsaSign");
         config.setKeystoreProvider("SUN");
         config.setKeypairGeneratorProvider("SunRsaSign");

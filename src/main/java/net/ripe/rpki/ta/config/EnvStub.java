@@ -38,8 +38,7 @@ public class EnvStub {
 
     static Config testConfig() {
         final String HOME = System.getProperty("user.home");
-
-        Config config = Env.sunRsaConf();
+        Config config = new Config();
         config.setPersistentStorageDir(Paths.get(HOME, "export/bad/certification/ta/data").toAbsolutePath().toString());
         config.setMinimumValidityPeriod(Period.months(1));
         config.setUpdatePeriod(Period.months(3));
@@ -53,7 +52,7 @@ public class EnvStub {
     }
 
     public static Config test() {
-        final Config config = getTestConfig();
+        final Config config = Env.withSunRsaConf(getTestConfig());
         config.setTaCertificatePublicationUri(URI.create("rsync://localhost:10873/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localhost:10873/repository/"));
         return config;
