@@ -95,7 +95,7 @@ public class Env {
     }
 
     public static Config prepdev() {
-        final Config config = withDBProviderConf(EnvStub.testConfig());
+        final Config config = withNCipherConf(EnvStub.testConfig());
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
@@ -129,14 +129,6 @@ public class Env {
         config.setKeystoreProvider("nCipherKM");
         config.setKeypairGeneratorProvider("nCipherKM");
         config.setKeystoreType("ncipher.sworld");
-        return config;
-    }
-
-    private static Config withDBProviderConf(final Config config) {
-        config.setSignatureProvider("DBProvider");
-        config.setKeystoreProvider("DBProvider");
-        config.setKeypairGeneratorProvider("DBProvider");
-        config.setKeystoreType("nCipher.database");
         return config;
     }
 
