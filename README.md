@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 0.3.2:
+  * Release installed on HSM machine on 2022-1-18
+
 ### 0.3:
 
   * Update RPKI commons to a recent version

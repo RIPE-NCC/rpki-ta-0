@@ -1,5 +1,5 @@
 ---
-image: maven:3.6.1-jdk-8-alpine
+image: maven:3.8-jdk-8
 
 include:
   # Run pipeline on main branch, merge requests, tags.
@@ -90,14 +90,10 @@ build_release:
     - job: build
   variables:
     MAVEN_OPTS: -Dmaven.repo.local=${HOME}/.m2/repository
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-      - ${HOME}/.m2/repository
   script:
-    - if [[ "$CI_COMMIT_TAG" =~ ^rpki-ta0-.* ]]; then echo "Correct tag"; else exit 1; fi
+    - if [[ "$CI_COMMIT_TAG" =~ ^rpki-ta-0-.* ]]; then echo "Build for tag $CI_COMMIT_TAG"; else exit 1; fi
     # Update version in pom.xml to match the tag
-    - mvn versions:set -DnewVersion=$(echo $CI_COMMIT_TAG | sed -e 's/rpki-ta0-//')
+    - mvn versions:set -DnewVersion=$(echo $CI_COMMIT_TAG | sed -e 's/rpki-ta-0-//')
     - mvn $MAVEN_CLI_OPTS verify
   only:
     - tags
