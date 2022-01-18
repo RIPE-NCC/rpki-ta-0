@@ -31,15 +31,14 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
+import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.ta.config.Config;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 
+@Slf4j
 public class TAPersistence {
-
-    private static final Logger LOG = Logger.getLogger(TAPersistence.class);
 
     private static final String TRUST_ANCHOR_FILENAME = "ta";
     private static final String TRUST_ANCHOR_FILE_EXT = "xml";
@@ -62,7 +61,7 @@ public class TAPersistence {
         try {
             Files.write(xml, tempFile, Charsets.UTF_8);
             Files.move(tempFile, trustAnchorFile);
-            LOG.info("Trust Anchor written to: " + trustAnchorFile);
+            log.info("Trust Anchor written to: " + trustAnchorFile);
         } finally {
             if (tempFile.exists()) tempFile.delete();
         }
