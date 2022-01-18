@@ -5,9 +5,13 @@ include:
   # Run pipeline on main branch, merge requests, tags.
   # this is equivalent to `workflow.rules:` that set this up.
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+  # Whitesource
+  - project: 'swe/gitlab-ci'
+    file: '/templates/whitesource-scanning.yml'
 
 stages:
   - build
+  - test
   - qa
   - deploy
 
