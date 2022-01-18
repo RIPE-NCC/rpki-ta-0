@@ -33,14 +33,17 @@ cd ${EXECUTION_DIR}
 
 # Preconditions:
 : ${APPLICATION_ENVIRONMENT:?"Please export APPLICATION_ENVIRONMENT"}
+: ${JAVA_HOME:?"Please export JAVA_HOME"}
 
-echo "Running mode APPLICATION_ENVIRONMENT => ${APPLICATION_ENVIRONMENT}" >&2
+if [[ ! -x "${JAVA_HOME}/bin/java" ]]; then
+  echo "${JAVA_HOME}/bin/java not found or not executable, exiting (is JAVA_HOME really a JAVA_HOME?)"
+  exit
+fi
+
+echo "Running mode APPLICATION_ENVIRONMENT=\"${APPLICATION_ENVIRONMENT}\" with JAVA_HOME=\"${JAVA_HOME}\"" >&2
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
-    JAVA_HOME=/export/bad/java
     NFAST_BIN=/opt/nfast/bin/
-else
-    : ${JAVA_HOME:?"Please export JAVA_HOME"}
 fi
 
 CONF_DIR="conf"
