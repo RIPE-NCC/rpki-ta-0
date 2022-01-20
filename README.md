@@ -1,6 +1,10 @@
 Changelog
 ---------
 
+### 0.3.4:
+  * Add lombok
+  * Replace log4j by slf4j/logback.
+
 ### 0.3.2:
   * Release installed on HSM machine on 2022-1-18
 
