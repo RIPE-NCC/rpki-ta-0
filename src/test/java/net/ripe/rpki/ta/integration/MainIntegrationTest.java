@@ -97,32 +97,6 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertNotEquals(taXml, taXmlRegenerated);
     }
 
-    @Ignore ("We do not need to initialise from the old. This can go...")
-    @Test
-    public void print_ta() {
-        run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=test");
-
-        run("--print-tal="+ talPath +" --env=test");
-
-        assertThat(readFile(talPath), equalTo(
-                "rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer\n\n"+
-                        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApIXenLOBfyo7cOnm4mGKmYxsoWCp28dw3XJAoZNWPDK8i9MxYACpwfz7bj" +
-                        "yGma1BWPBJuievNd6nriFI+3WG+wt2bnO2ZmiLenCwMtm8bu7BeldpWRwlAnRp4t4IL6sZ7T9bF+4sTrv1qiEANqam0mhtLtUfbWXV" +
-                        "5Z4mjgnNur7fJH2lIOm7Oc2/tok1rid8WsPe18zuvgwA3M0fKQ/Oa4SMXKnHr3fg2cHAm1cfEEvhMKa3rUAvsKGVEYeTJNg6rh3IRn" +
-                        "jWhZ8GmE1ywl/9qMa2z4YsUi9Bx9U+/zMS8qpJn/q6XBbZ8XYTTFvSWfXd6b82jSfABa4ukIDCUF/QFwIDAQAB\n")
-        );
-    }
-
-    @Ignore ("We do not need to initialise from the old. This can go...")
-    @Test
-    public void generate_ta_certificate() throws Exception {
-        final Main.Exit exit = run("--initialise-from-old=./src/test/resources/ta-legacy.xml --env=test");
-        assertEquals(0, exit.exitCode);
-
-        final TAState taState = reloadTaState();
-        assertEquals(BigInteger.valueOf(29L), taState.getLastIssuedCertificateSerial());
-    }
-
     @Test
     public void process_request() throws Exception {
         assertEquals(0, run("--initialise --env=test").exitCode);

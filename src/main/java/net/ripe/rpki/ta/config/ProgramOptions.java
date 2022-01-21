@@ -43,7 +43,6 @@ public class ProgramOptions {
 
     private static final String ENV_OPT = "env";
     private static final String INITIALISE_OPT = "initialise";
-    private static final String INITIALISE_FROM_OLD_OPT = "initialise-from-old";
     private static final String GENERATE_TA_CERTIFICATE_OPT = "generate-ta-certificate";
     private static final String EXPORT_TA_CERTIFICATE_OPT = "export-ta-certificate";
     private static final String PRINT_TAL_OPT = "print-tal";
@@ -60,11 +59,6 @@ public class ProgramOptions {
         options.addOption(Option.builder().longOpt(ENV_OPT).
                 hasArg().
                 desc("Must be one of 'local', 'dev', 'prepdev', 'pilot' or 'production'").
-                build());
-
-        options.addOption(Option.builder().longOpt(INITIALISE_FROM_OLD_OPT).
-                hasArg().
-                desc("Path to the file with old-style trust anchor serialized state").
                 build());
 
         options.addOption(Option.builder().longOpt(INITIALISE_OPT).
@@ -117,21 +111,20 @@ public class ProgramOptions {
     }
 
     public void validateOptions() throws BadOptions {
-        if (!hasEnv() || !(hasInitialiseFromOldOption() || hasInitialiseOption() ||
-                hasGenerateTACertificateOption() || hasExportCertificateOption() ||
-                hasForceNewTaCertificate() || hasPrintTALOption() || hasRequestOption() || hasResponseOption())) {
+        if (!hasEnv() || !(
+                hasInitialiseOption() || hasGenerateTACertificateOption() || hasExportCertificateOption() ||
+                hasForceNewTaCertificate() || hasPrintTALOption() || hasRequestOption() || hasResponseOption()
+        )) {
             throw new BadOptions("Doesn't have meaningful options.");
         }
 
-        checkIncompatible(INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, INITIALISE_OPT, PRINT_TAL_OPT, EXPORT_TA_CERTIFICATE_OPT);
 
-        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, PRINT_TAL_OPT, EXPORT_TA_CERTIFICATE_OPT);
+        checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, INITIALISE_OPT);
 
-        checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
+        checkIncompatible(PRINT_TAL_OPT, INITIALISE_OPT);
 
-        checkIncompatible(PRINT_TAL_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT);
-
-        checkIncompatible(REQUEST_OPT, INITIALISE_OPT, INITIALISE_FROM_OLD_OPT, GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
+        checkIncompatible(REQUEST_OPT, INITIALISE_OPT, GENERATE_TA_CERTIFICATE_OPT, EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
 
         checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, PRINT_TAL_OPT);
 
@@ -194,16 +187,8 @@ public class ProgramOptions {
         return commandLine.getOptionValue(ENV_OPT);
     }
 
-    public boolean hasInitialiseFromOldOption() {
-        return commandLine.hasOption(INITIALISE_FROM_OLD_OPT);
-    }
-
     public boolean hasGenerateTACertificateOption() {
         return commandLine.hasOption(GENERATE_TA_CERTIFICATE_OPT);
-    }
-
-    public String getOldTaFilePath() {
-        return commandLine.getOptionValue(INITIALISE_FROM_OLD_OPT);
     }
 
     public boolean hasPersistentStoragePath() {

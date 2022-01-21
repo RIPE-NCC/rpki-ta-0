@@ -66,9 +66,7 @@ import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.TAStateBuilder;
 import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.processing.RequestProcessorException;
-import net.ripe.rpki.ta.serializers.LegacyTASerializer;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
-import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
@@ -113,25 +111,6 @@ public class TA {
 
     public TAState initialiseTaState() throws Exception {
         return createTaState(new TAStateBuilder(config), generateRootKeyPair(), BigInteger.ONE);
-    }
-
-    TAState migrateTaState(final String oldTaFilePath) throws Exception {
-        final String legacyXml = new TAPersistence(config).load(oldTaFilePath);
-        final LegacyTA legacyTA = new LegacyTASerializer().deserialize(legacyXml);
-        return migrateTaState(legacyTA);
-    }
-
-    private TAState migrateTaState(final LegacyTA legacyTA) throws Exception {
-        final byte[] encodedLegacy = legacyTA.getTrustAnchorKeyStore().getEncoded();
-        final KeyPair oldKeyPair = KeyStore.legacy(config).decode(encodedLegacy).getLeft();
-
-        final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
-
-        taStateBuilder.withCrl(legacyTA.getCrl());
-        taStateBuilder.withLastCrlSerial(legacyTA.getLastCrlNumber());
-        taStateBuilder.withLastMftSerial(legacyTA.getLastManifestNumber());
-
-        return createTaState(taStateBuilder, oldKeyPair, next(legacyTA.lastIssuedCertificateSerial));
     }
 
     private TAState createTaState(final TAStateBuilder taStateBuilder, KeyPair keyPair, final BigInteger serial) throws Exception {
@@ -288,13 +267,6 @@ public class TA {
                 throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
             }
             return initialiseTaState();
-        }
-
-        if (programOptions.hasInitialiseFromOldOption()) {
-            if (hasState()) {
-                throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
-            }
-            return migrateTaState(programOptions.getOldTaFilePath());
         }
 
         // there is no '--initialise' but there is '--generate-ta-certificate'

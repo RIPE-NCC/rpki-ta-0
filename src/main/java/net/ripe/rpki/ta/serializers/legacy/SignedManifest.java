@@ -31,6 +31,7 @@ import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 
 import java.math.BigInteger;
 
+// Do not move from `legacy` folder because qualified name is used in the XML files.
 public class SignedManifest extends SignedObjectTracker {
 
     public SignedManifest(ManifestCms manifestCms) {

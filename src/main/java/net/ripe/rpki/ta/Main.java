@@ -93,7 +93,7 @@ public class Main {
             return new Exit(EXIT_OK);
         }
 
-        if (options.hasInitialiseOption() || options.hasInitialiseFromOldOption() || options.hasGenerateTACertificateOption()) {
+        if (options.hasInitialiseOption() || options.hasGenerateTACertificateOption()) {
             ta.persist(ta.createNewTAState(options));
             return new Exit(EXIT_OK);
         }
