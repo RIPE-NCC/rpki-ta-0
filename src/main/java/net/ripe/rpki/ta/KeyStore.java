@@ -31,7 +31,6 @@ import net.ripe.rpki.commons.crypto.util.KeyStoreException;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateParser;
 import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.serializers.legacy.LegacyTA;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -116,10 +115,6 @@ public class KeyStore {
 
     public static KeyStore of(final Config config) {
         return new KeyStore(config, KEY_STORE_KEY_ALIAS, KEY_STORE_PASS_PHRASE);
-    }
-
-    static KeyStore legacy(final Config config) {
-        return new KeyStore(config, LegacyTA.KEY_STORE_ALIAS, LegacyTA.SOFTWARE_KEY_STORE_PASSPHRASE.toCharArray());
     }
 
     public String getKeyStoreKeyAlias() {
