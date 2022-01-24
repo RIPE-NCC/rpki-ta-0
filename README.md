@@ -1,5 +1,22 @@
+RPKI - trust anchor software
+============================
+
+License
+-------
+
+Copyright (c) 2017-2022 RIPE NCC
+All rights reserved.
+
+This software, including all its separate source codes, is licensed under the
+terms of the BSD 3-Clause License. If a copy of the license was not distributed
+to you, you can obtain one at
+https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
+
 Changelog
 ---------
+
+### HEAD:
+  * Removed explicit license from all files.
 
 ### 0.3.4:
   * Add lombok
