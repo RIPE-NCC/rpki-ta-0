@@ -27,7 +27,6 @@
 package net.ripe.rpki.ta.integration;
 
 
-import com.google.common.io.Files;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.KeyStore;
@@ -37,7 +36,6 @@ import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -45,16 +43,16 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
+import java.nio.file.Files;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 import static net.ripe.rpki.ta.Main.EXIT_ERROR_2;
 import static net.ripe.rpki.ta.Main.EXIT_OK;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class MainIntegrationTest extends AbstractIntegrationTest {
@@ -84,30 +82,29 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void initialize_local_should_write_ta_xml() {
-        assertThat(run("--initialise --env=test").exitCode, is(0));
-        assertThat(readFile(taXmlPath), containsString("<TA>"));
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+        assertThat(readFile(taXmlPath)).contains("<TA>");
     }
 
     @Test
     public void generate_certificate_should_rewrite_state() {
-        assertThat(run("--initialise --env=test").exitCode, is(0));
+        assertThat(run("--initialise --env=test").exitCode).isZero();
         final String taXml = readFile(taXmlPath);
-        assertThat(run("--generate-ta-certificate --env=test").exitCode, is(0));
+        assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
         final String taXmlRegenerated = readFile(taXmlPath);
-        assertNotEquals(taXml, taXmlRegenerated);
+        assertThat(taXmlRegenerated).isNotEqualTo(taXml);
     }
 
     @Test
     public void process_request() throws Exception {
-        assertEquals(0, run("--initialise --env=test").exitCode);
+        assertThat(run("--initialise --env=test").exitCode).isZero();
 
-        final File tmpResponses = Files.createTempDir();
+        final File tmpResponses = Files.createTempDirectory("process_request").toFile();
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
         
-        assertEquals(0,
-            run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
-                      "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                      "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
 
         final TAState taState1 = reloadTaState();
         assertEquals(BigInteger.valueOf(4L), taState1.getLastIssuedCertificateSerial());
@@ -149,7 +146,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals("initialise failed", 0, run("--initialise --env=test").exitCode);
         assertEquals("generate-ta-certificate failed", 0, run("--generate-ta-certificate --env=test").exitCode);
 
-        final File tmpResponses = Files.createTempDir();
+        final File tmpResponses = Files.createTempDirectory("process_request_make_sure_ta_certificate_reissued_for_different_url").toFile();
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
 
@@ -181,7 +178,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0, run("--initialise --env=test").exitCode);
         assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
 
-        final File tmpResponses = Files.createTempDir();
+        final File tmpResponses = Files.createTempDirectory("process_request_do_not_reissue_ta_certificate_without_force_option").toFile();
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
 
@@ -204,9 +201,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
 
         final Main.Exit run = run("--export-ta-certificate="+ talPath +" --env=test");
-        assertEquals(EXIT_OK, run.exitCode);
+        assertThat(run.exitCode).isEqualTo(EXIT_OK);
 
-        assertThat(readFile(talPath), notNullValue());
+        assertThat(readFile(talPath)).isNotEmpty();
     }
 
     @Test
@@ -215,9 +212,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
 
         final Main.Exit run = run("--print-tal="+ talPath +" --env=test");
-        assertEquals(EXIT_OK, run.exitCode);
+        assertThat(run.exitCode).isEqualTo(EXIT_OK);
 
-        assertThat(readFile(talPath), notNullValue());
+        assertThat(readFile(talPath)).isNotEmpty();
     }
 
     private java.net.URI getNotifyUrl(X509ResourceCertificate certificate) {
@@ -240,6 +237,4 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     private TAState reloadTaState() throws Exception {
         return new TA(EnvStub.test()).loadTAState();
     }
-
-
 }
