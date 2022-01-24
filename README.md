@@ -17,6 +17,8 @@ Changelog
 
 ### HEAD:
   * Removed explicit license from all files.
+  * Save backup of trust anchor state when saving
+  * Print sha256 when loading or storing trust anchor state.
 
 ### 0.3.4:
   * Add lombok
