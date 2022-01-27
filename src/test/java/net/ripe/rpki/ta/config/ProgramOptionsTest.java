@@ -30,7 +30,7 @@ package net.ripe.rpki.ta.config;
 import net.ripe.rpki.ta.BadOptions;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.*;
 
 public class ProgramOptionsTest {
@@ -65,12 +65,9 @@ public class ProgramOptionsTest {
     }
 
     private void assertInvalidCombinationsOfOptions(final String args, final String message) {
-        try {
-            new ProgramOptions(args.split(" ")).validateOptions();
-            fail("should not accept "+args);
-        } catch (final BadOptions badOptions) {
-            assertThat(badOptions.getMessage(), is(message));
-        }
+        assertThatThrownBy(() -> new ProgramOptions(args.split(" ")).validateOptions())
+                .isInstanceOf(BadOptions.class)
+                .hasMessage(message);
     }
 
 }

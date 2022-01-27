@@ -27,6 +27,7 @@
 package net.ripe.rpki.ta;
 
 
+import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
@@ -36,6 +37,7 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@Slf4j
 public class Main {
     public static final int EXIT_OK = 0;
     public static final int EXIT_ERROR_2 = 2;
@@ -65,6 +67,7 @@ public class Main {
         } catch (BadOptions e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {
+            log.error("Exiting due to uncaught exception", e);
             return Exit.of(e);
         }
     }
@@ -121,5 +124,4 @@ public class Main {
             return new Exit(EXIT_ERROR_2, sw.toString());
         }
     }
-
 }

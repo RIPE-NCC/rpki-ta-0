@@ -28,6 +28,7 @@ package net.ripe.rpki.ta.integration;
 
 
 import com.google.common.io.Files;
+import lombok.SneakyThrows;
 import net.ripe.rpki.ta.Main;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -44,7 +45,7 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeClass
     public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = Files.createTempDir();
+        final File tempDirectory = java.nio.file.Files.createTempDirectory("abstractIntegrationtest").toFile();
         tempDirectory.deleteOnExit();
         System.setProperty("user.dir", tempDirectory.getAbsolutePath());
     }
@@ -66,12 +67,9 @@ public abstract class AbstractIntegrationTest {
         new File(pathToFile).delete();
     }
 
+    @SneakyThrows
     protected String readFile(final String pathToFile) {
-        try {
-            return Files.toString(new File(pathToFile), Charset.defaultCharset());
-        } catch (IOException e) {
-            throw new AssertionError(e.getClass().getName() + ": " + e.getMessage());
-        }
+        return Files.asCharSource(new File(pathToFile), Charset.defaultCharset()).read();
     }
 
 }
