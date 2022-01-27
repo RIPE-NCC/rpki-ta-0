@@ -1,5 +1,5 @@
 ---
-image: maven:3.8-jdk-8
+image: gradle:jdk8
 
 include:
   # Run pipeline on main branch, merge requests, tags.
@@ -17,19 +17,21 @@ stages:
 
 variables:
   BUILD_NUMBER: ${CI_COMMIT_REF_SLUG}-${CI_PIPELINE_ID}
+  GRADLE_USER_HOME: "${CI_PROJECT_DIR}/.gradle/"
+  GRADLE_OPTS: "-Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false"
+
 
 build:
   stage: build
-  variables:
-    MAVEN_OPTS: -Dmaven.repo.local=${HOME}/.m2/repository
   cache:
     key: ${CI_JOB_NAME}
     paths:
-      - ${HOME}/.m2/repository
-  script: mvn verify -Dbuild.number=${BUILD_NUMBER}
+      - .gradle/caches
+      - .gradle/wrapper
+  script: ./gradlew -i build
   artifacts:
     paths:
-      - target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz
+      - build/distributions/*.tar
       - src/main/scripts/*
       - target/site
       - target/classes
@@ -45,11 +47,12 @@ sonarqube:
   variables:
     GIT_DEPTH: 0
   cache:
-    key: ${CI_COMMIT_REF_SLUG}
+    key: ${CI_JOB_NAME}
     paths:
-      - ${HOME}/.m2/repository
+      - .gradle/caches
+      - .gradle/wrapper
   script:
-    - mvn sonar:sonar -Dsonar.qualitygate.wait=true
+    - ./gradlew -i -Dsonar.projectKey=rpki-ta-0 sonarqube
   allow_failure: true
   rules:
     - if: $CI_MERGE_REQUEST_IID
@@ -62,13 +65,13 @@ sonarqube:
   before_script:
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
-    - mv target/rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz .
+    - mv build/distributions/rpki-ta-0-*-${BUILD_NUMBER}.tar .
   script:
     # Print public key
     - ssh-keygen -y -l -f ${SSH_KEY}
     - >
       src/main/scripts/deploy.sh ${SSH_KEY}
-      rpki-ta-0-*-${BUILD_NUMBER}-dist.tar.gz ${NODES}
+      rpki-ta-0-*-${BUILD_NUMBER}-dist.tar ${NODES}
   rules:
     - when: manual
 

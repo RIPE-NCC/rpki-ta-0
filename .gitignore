@@ -5,3 +5,6 @@ target/
 .settings
 .project
 .factorypath
+.metals
+.gradle
+build
