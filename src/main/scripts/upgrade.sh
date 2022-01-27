@@ -8,7 +8,7 @@ WORK_DIR=./upgrading
 
 mkdir -p ${WORK_DIR}
 
-tar xf ${ARTIFACT} -C ${WORK_DIR}
+tar zxf ${ARTIFACT} -C ${WORK_DIR}
 
 NEW_ARTIFACT_DIR=`ls ${WORK_DIR}`
 
