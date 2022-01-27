@@ -2,7 +2,7 @@ package net.ripe.rpki.ta.config;
 
 
 
-import net.ripe.rpki.ta.BadOptions;
+import net.ripe.rpki.ta.exception.BadOptionsException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -76,20 +76,20 @@ public class ProgramOptions {
                 build());
     }
 
-    public ProgramOptions(String... args) throws BadOptions {
+    public ProgramOptions(String... args) throws BadOptionsException {
         try {
             commandLine = new DefaultParser().parse(options, args);
         } catch (ParseException e) {
-            throw new BadOptions(e);
+            throw new BadOptionsException(e);
         }
     }
 
-    public void validateOptions() throws BadOptions {
+    public void validateOptions() throws BadOptionsException {
         if (!hasEnv() || !(
                 hasInitialiseOption() || hasGenerateTACertificateOption() || hasExportCertificateOption() ||
                 hasForceNewTaCertificate() || hasPrintTALOption() || hasRequestOption() || hasResponseOption()
         )) {
-            throw new BadOptions("Doesn't have meaningful options.");
+            throw new BadOptionsException("Doesn't have meaningful options.");
         }
 
         checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, INITIALISE_OPT, PRINT_TAL_OPT, EXPORT_TA_CERTIFICATE_OPT);
@@ -109,18 +109,18 @@ public class ProgramOptions {
         checkDependency(FORCE_NEW_TA_CERT_OPT, REQUEST_OPT, RESPONSE_OPT);
     }
 
-    private void checkDependency(final String option, final String... dependencies) throws BadOptions {
+    private void checkDependency(final String option, final String... dependencies) throws BadOptionsException {
         for (final String dependency : dependencies) {
             if (commandLine.hasOption(option) && !commandLine.hasOption(dependency)) {
-                throw new BadOptions("Option --" + option + " doesn't make sense without --" + dependency + " option.");
+                throw new BadOptionsException("Option --" + option + " doesn't make sense without --" + dependency + " option.");
             }
         }
     }
 
-    private void checkIncompatible(final String option, final String... incompatibleList) throws BadOptions {
+    private void checkIncompatible(final String option, final String... incompatibleList) throws BadOptionsException {
         for (final String incompatibleOption : incompatibleList) {
             if (commandLine.hasOption(option) && commandLine.hasOption(incompatibleOption)) {
-                throw new BadOptions("Cannot have both --" + option + " and --" + incompatibleOption + " options.");
+                throw new BadOptionsException("Cannot have both --" + option + " and --" + incompatibleOption + " options.");
             }
         }
     }

@@ -1,14 +1,12 @@
 package net.ripe.rpki.ta.config;
 
 
-import net.ripe.rpki.ta.BadOptions;
-import org.junit.Test;
+import net.ripe.rpki.ta.exception.BadOptionsException;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.*;
 
 public class ProgramOptionsTest {
-
     @Test
     public void testEnvOptNotProvided() {
         assertInvalidCombinationsOfOptions("", "Doesn't have meaningful options.");
@@ -40,7 +38,7 @@ public class ProgramOptionsTest {
 
     private void assertInvalidCombinationsOfOptions(final String args, final String message) {
         assertThatThrownBy(() -> new ProgramOptions(args.split(" ")).validateOptions())
-                .isInstanceOf(BadOptions.class)
+                .isInstanceOf(BadOptionsException.class)
                 .hasMessage(message);
     }
 

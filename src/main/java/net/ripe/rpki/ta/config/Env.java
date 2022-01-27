@@ -2,7 +2,7 @@ package net.ripe.rpki.ta.config;
 
 
 
-import net.ripe.rpki.ta.BadOptions;
+import net.ripe.rpki.ta.exception.BadOptionsException;
 import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
@@ -11,13 +11,13 @@ import java.net.URI;
 
 public class Env {
 
-    public static Config config(ProgramOptions options) throws BadOptions {
+    public static Config config(ProgramOptions options) throws BadOptionsException {
         final Config config = byEnvironment(options.getEnv());
 
         if (options.hasPersistentStoragePath()) {
             final File storageDirectory = new File(options.getPersistentStoragePath());
             if (!storageDirectory.isDirectory()) {
-                throw new BadOptions(String.format("Persistant storage directory '%s' does not exist.", storageDirectory.getAbsolutePath()));
+                throw new BadOptionsException(String.format("Persistant storage directory '%s' does not exist.", storageDirectory.getAbsolutePath()));
             }
 
             config.setPersistentStorageDir(storageDirectory.getAbsolutePath());
@@ -26,7 +26,7 @@ public class Env {
         return config;
     }
 
-    private static Config byEnvironment(String envName) throws BadOptions {
+    private static Config byEnvironment(String envName) throws BadOptionsException {
         if ("test".equals(envName)) {
             return EnvStub.test();
         }
@@ -46,7 +46,7 @@ public class Env {
             return production();
         }
 
-        throw new BadOptions("Unknown environment name: " + envName);
+        throw new BadOptionsException("Unknown environment name: " + envName);
     }
 
     public static Config production() {

@@ -38,8 +38,10 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.TAStateBuilder;
+import net.ripe.rpki.ta.exception.BadOptionsException;
+import net.ripe.rpki.ta.exception.OperationAbortedException;
 import net.ripe.rpki.ta.persistence.TAPersistence;
-import net.ripe.rpki.ta.processing.RequestProcessorException;
+import net.ripe.rpki.ta.exception.RequestProcessorException;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
@@ -238,7 +240,7 @@ public class TA {
     TAState createNewTAState(final ProgramOptions programOptions) throws Exception {
         if (programOptions.hasInitialiseOption()) {
             if (hasState()) {
-                throw new Exception("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
+                throw new OperationAbortedException("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
             }
             return initialiseTaState();
         }
@@ -246,7 +248,7 @@ public class TA {
         // there is no '--initialise' but there is '--generate-ta-certificate'
         if (programOptions.hasGenerateTACertificateOption()) {
             if (!hasState()) {
-                throw new Exception("No TA state found, please initialise it first.");
+                throw new OperationAbortedException("No TA state found, please initialise it first.");
             }
 
             // try to read and decode existing state
@@ -267,7 +269,7 @@ public class TA {
             return createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
         }
 
-        throw new BadOptions("The program options are inconsistent.");
+        throw new BadOptionsException("The program options are inconsistent.");
     }
 
     void processRequestXml(ProgramOptions options) throws Exception {
@@ -313,7 +315,7 @@ public class TA {
         final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
         if (whyReissue.isPresent()) {
             if (!forceNewTaCertificate) {
-                throw new Exception("TA certificate has to be re-issued: " + whyReissue.get() +
+                throw new OperationAbortedException("TA certificate has to be re-issued: " + whyReissue.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
             }
             final KeyPair keyPair = decoded.getLeft();

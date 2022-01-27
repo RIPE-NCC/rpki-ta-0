@@ -8,60 +8,53 @@ import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 import static net.ripe.rpki.ta.Main.EXIT_ERROR_2;
 import static net.ripe.rpki.ta.Main.EXIT_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MainIntegrationTest extends AbstractIntegrationTest {
 
     private static String taXmlPath;
     private static String talPath;
 
-    @Rule
-    public final TemporaryFolder tmp = new TemporaryFolder();
+    @BeforeEach
+    public void setUp(@TempDir Path tmpDir) throws Exception {
+        final Path absolutePath = tmpDir.toAbsolutePath();
+        EnvStub._testConfig.setPersistentStorageDir(absolutePath.toString());
 
-    @Before
-    public void setUp() throws Exception {
-        final File tmpDir = tmp.newFolder();
-        EnvStub._testConfig.setPersistentStorageDir(tmpDir.getAbsolutePath());
-
-        taXmlPath = new File(tmpDir.getAbsolutePath(), "ta.xml").getAbsolutePath();
-        talPath = new File(tmpDir.getAbsolutePath(), "test.tal").getAbsolutePath();
+        taXmlPath = absolutePath.resolve("ta.xml").toString();
+        talPath = absolutePath.resolve("test.tal").toString();
         deleteFile(taXmlPath);
         deleteFile(talPath);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         deleteFile(taXmlPath);
         deleteFile(talPath);
     }
 
     @Test
-    public void initialize_local_should_write_ta_xml() {
+    public void test_initialize_local_should_write_ta_xml() {
         assertThat(run("--initialise --env=test").exitCode).isZero();
         assertThat(readFile(taXmlPath)).contains("<TA>");
     }
 
     @Test
-    public void generate_certificate_should_rewrite_state() {
+    public void test_generate_certificate_should_rewrite_state() {
         assertThat(run("--initialise --env=test").exitCode).isZero();
         final String taXml = readFile(taXmlPath);
         assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
@@ -70,7 +63,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void process_request() throws Exception {
+    public void test_process_request() throws Exception {
         assertThat(run("--initialise --env=test").exitCode).isZero();
 
         final File tmpResponses = Files.createTempDirectory("process_request").toFile();
@@ -86,7 +79,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(1L), taState1.getLastCrlSerial());
         assertEquals(1, taState1.getSignedProductionCertificates().size());
         assertEquals(1, taState1.getSignedManifests().size());
-        assertNull(taState1.getCrl().getCrl().getRevokedCertificates());
+        assertThat(taState1.getCrl().getCrl().getRevokedCertificates()).isNull();
 
         assertEquals(0,
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
@@ -116,9 +109,9 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
 
     @Test
-    public void process_request_make_sure_ta_certificate_reissued_for_different_url() throws Exception {
-        assertEquals("initialise failed", 0, run("--initialise --env=test").exitCode);
-        assertEquals("generate-ta-certificate failed", 0, run("--generate-ta-certificate --env=test").exitCode);
+    public void test_process_request_make_sure_ta_certificate_reissued_for_different_url() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+        assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
 
         final File tmpResponses = Files.createTempDirectory("process_request_make_sure_ta_certificate_reissued_for_different_url").toFile();
         tmpResponses.deleteOnExit();
@@ -127,18 +120,17 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final TAState taState0 = reloadTaState();
         final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
-        assertEquals("signing request failed",
-                0,
+        assertThat(
                 run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
             "--response=" + response.getAbsolutePath() +
-            " --force-new-ta-certificate --env=test").exitCode);
+            " --force-new-ta-certificate --env=test").exitCode).isZero();
 
         final TAState taStateAfterRrdpChange = reloadTaState();
 
-        assertNotNull(taStateAfterRrdpChange);
+        assertThat(taStateAfterRrdpChange).isNotNull();
 
         final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterRrdpChange);
-        assertNotEquals(taCertBefore.getSerialNumber(), taCertAfter.getSerialNumber());
+        assertThat(taCertBefore.getSerialNumber()).isNotEqualTo(taCertAfter.getSerialNumber());
 
         assertEquals(URI.create("https://localhost:7788/notification.xml"), getNotifyUrl(taCertBefore));
         assertEquals(URI.create("https://new-url.ripe.net/notification.xml"), getNotifyUrl(taCertAfter));
@@ -148,7 +140,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void process_request_do_not_reissue_ta_certificate_without_force_option() throws Exception {
+    public void test_process_request_do_not_reissue_ta_certificate_without_force_option() throws Exception {
         assertEquals(0, run("--initialise --env=test").exitCode);
         assertEquals(0, run("--generate-ta-certificate --env=test").exitCode);
 
@@ -163,10 +155,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             "--response=" + response.getAbsolutePath() +
             " --env=test");
         assertEquals(EXIT_ERROR_2, run.exitCode);
-        assertTrue(run.stderr.contains("The following problem occurred: " +
+        assertThat(run.stderr).contains("The following problem occurred: " +
             "TA certificate has to be re-issued: Different notification.xml URL, " +
             "request has 'https://new-url.ripe.net/notification.xml', config has 'https://localhost:7788/notification.xml', " +
-            "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue."));
+            "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue.");
     }
 
     @Test

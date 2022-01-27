@@ -1,9 +1,8 @@
 package net.ripe.rpki.ta.util;
 
 import com.google.common.io.Files;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,12 +13,9 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileUtilTest {
-    @Rule
-    public final TemporaryFolder tmp = new TemporaryFolder();
-
     @Test
-    public void testNamingStrategy() throws IOException {
-        Path baseName = tmp.newFile("important.txt").toPath();
+    public void testNamingStrategy(@TempDir Path tempDir) throws IOException {
+        Path baseName = tempDir.resolve("important.txt");
         Instant now = Instant.parse("2007-12-03T10:15:30.51Z");
 
         // Find first file and write to it, so it will conflict
