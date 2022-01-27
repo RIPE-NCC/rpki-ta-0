@@ -11,8 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -33,8 +33,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TrustAnchorStateSerializerTest {
     private static final String TA_STATE_PATH = "src/test/resources/ta.xml";
@@ -44,9 +44,9 @@ public class TrustAnchorStateSerializerTest {
 
     private TAState state;
 
-    @Before
+    @BeforeEach
     public void loadState() throws IOException, SAXException, ParserConfigurationException {
-        final String stateXML = Files.toString(new File(TA_STATE_PATH), Charsets.UTF_8);
+        final String stateXML = Files.asCharSource(new File(TA_STATE_PATH), Charsets.UTF_8).read();
 
         final TAStateSerializer trustAnchorStateSerializer = new TAStateSerializer();
         state = trustAnchorStateSerializer.deserialize(stateXML);
@@ -66,7 +66,7 @@ public class TrustAnchorStateSerializerTest {
     }
 
     @Test
-    public void shouldMatchSimpleFields() throws XPathExpressionException {
+    public void testShouldMatchSimpleFields() throws XPathExpressionException {
         assertEquals(cleanupBase64(xpathQuery("/TA/encoded")), Base64.toBase64String(state.getEncoded()));
 
         assertEquals(cleanupBase64(xpathQuery("/TA/crl/encoded")), Base64.toBase64String(state.getCrl().getEncoded()));
@@ -85,7 +85,7 @@ public class TrustAnchorStateSerializerTest {
     }
 
     @Test
-    public void shouldMatchConfigField() throws XPathExpressionException, URISyntaxException {
+    public void testShouldMatchConfigField() throws XPathExpressionException, URISyntaxException {
         Config config = state.getConfig();
 
         assertEquals(xpathQuery("/TA/config/trustAnchorName"), config.getTrustAnchorName().getName());
@@ -117,7 +117,7 @@ public class TrustAnchorStateSerializerTest {
      * Check the signedProductionCertificates tag and its children.
      */
     @Test
-    public void shouldMatchSignedProductionCertificates() throws XPathExpressionException {
+    public void testShouldMatchSignedProductionCertificates() throws XPathExpressionException {
         List<SignedResourceCertificate> signedProductionCertificates = state.getSignedProductionCertificates();
 
         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -142,7 +142,7 @@ public class TrustAnchorStateSerializerTest {
             if (StringUtils.isNotEmpty(revocationTime)) {
                 assertEquals(DateTime.parse(revocationTime), src.getRevocationTime());
             } else {
-                assertNull(src.getRevocationTime());
+                assertThat(src.getRevocationTime()).isNull();
             }
         }
     }
@@ -151,7 +151,7 @@ public class TrustAnchorStateSerializerTest {
      * Check the signedManifests tag and its children.
      */
     @Test
-    public void shouldMatchManifests() throws XPathExpressionException {
+    public void testShouldMatchManifests() throws XPathExpressionException {
         List<SignedManifest> signedManifests = state.getSignedManifests();
 
         XPath xpath = XPathFactory.newInstance().newXPath();

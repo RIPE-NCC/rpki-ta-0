@@ -1,4 +1,4 @@
-package net.ripe.rpki.ta.processing;
+package net.ripe.rpki.ta.exception;
 
 
 public class RequestProcessorException extends RuntimeException {

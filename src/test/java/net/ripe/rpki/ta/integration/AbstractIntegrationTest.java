@@ -4,28 +4,24 @@ package net.ripe.rpki.ta.integration;
 import com.google.common.io.Files;
 import lombok.SneakyThrows;
 import net.ripe.rpki.ta.Main;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-@Ignore
 public abstract class AbstractIntegrationTest {
 
     private static final String DEFAULT_USER_DIR = System.getProperty("user.dir");
 
-    @BeforeClass
-    public static void setWorkingDirectory() throws IOException {
-        final File tempDirectory = java.nio.file.Files.createTempDirectory("abstractIntegrationtest").toFile();
-        tempDirectory.deleteOnExit();
+    @BeforeEach
+    public void setWorkingDirectory(@TempDir File tempDirectory) throws IOException {
         System.setProperty("user.dir", tempDirectory.getAbsolutePath());
     }
 
-    @AfterClass
-    public static void resetWorkingDirectory() {
+    @AfterEach
+    public void resetWorkingDirectory() {
         System.setProperty("user.dir", DEFAULT_USER_DIR);
     }
 

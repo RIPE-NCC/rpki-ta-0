@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.exception.BadOptionsException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
@@ -28,9 +29,10 @@ public class Main {
         try {
             final ProgramOptions options = new ProgramOptions(args);
             return run(Env.config(options), options, args);
-        } catch (BadOptions e) {
+        } catch (BadOptionsException e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {
+            log.error("Exiting due to uncaught exception", e);
             return Exit.of(e);
         }
     }
@@ -38,7 +40,7 @@ public class Main {
     public static Exit run(final Config config, final String... args) {
         try {
             return run(config, new ProgramOptions(args), args);
-        } catch (BadOptions e) {
+        } catch (BadOptionsException e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
         } catch (Exception e) {
             log.error("Exiting due to uncaught exception", e);

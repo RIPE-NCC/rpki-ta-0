@@ -4,14 +4,18 @@ package net.ripe.rpki.ta.persistence;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 
-@Slf4j
+@Slf4j(topic = "TAPersistence")
 public class TAPersistence {
 
     private static final String TRUST_ANCHOR_FILENAME = "ta";
@@ -27,26 +31,37 @@ public class TAPersistence {
         this.trustAnchorFile = new File(this.persistenceDirectory, TRUST_ANCHOR_FILENAME + "." + TRUST_ANCHOR_FILE_EXT);
     }
 
-    // TODO Add backing up the existing file
     public void save(String xml) throws IOException {
         final File tempFile = File.createTempFile(
                 Strings.padStart(TRUST_ANCHOR_FILENAME, 3, '_'),
                 TRUST_ANCHOR_FILE_EXT, persistenceDirectory);
         try {
-            Files.write(xml, tempFile, Charsets.UTF_8);
+            // write a backup of the trust anchor state
+            if (trustAnchorFile.exists()) {
+                final File backupFile = FileUtil.findAvailableBackupFile(trustAnchorFile.toPath(), Instant.now());
+                Files.copy(trustAnchorFile, backupFile);
+               log.info("Stored a backup of the previous trust anchor state in '{}' (sha256={})", backupFile, getTrustAnchorSha256());
+           } else {
+               log.info("Initial save of trust anchor state.");
+           }
+
+            Files.asCharSink(tempFile, Charsets.UTF_8).write(xml);
             Files.move(tempFile, trustAnchorFile);
-            log.info("Trust Anchor written to: " + trustAnchorFile);
+            log.info("Trust Anchor written to: '{}' (sha256={})", trustAnchorFile, getTrustAnchorSha256());
         } finally {
             if (tempFile.exists()) tempFile.delete();
         }
     }
 
-    public String load() throws IOException {
-        return Files.toString(trustAnchorFile, Charsets.UTF_8);
+    private HashCode getTrustAnchorSha256() throws IOException {
+        return Hashing.sha256().hashBytes(Files.asByteSource(trustAnchorFile).read());
     }
 
-    public String load(String fileName) throws IOException {
-        return Files.toString(new File(fileName), Charsets.UTF_8);
+    public String load() throws IOException {
+        byte[] content = Files.asByteSource(trustAnchorFile).read();
+
+        log.info("Loaded trust anchor state (sha256={})", Hashing.sha256().hashBytes(content));
+        return new String(content, Charsets.UTF_8);
     }
 
     public boolean taStateExists() {

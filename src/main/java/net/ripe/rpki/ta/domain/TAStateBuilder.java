@@ -5,10 +5,6 @@ import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.ta.config.Config;
 
 import java.math.BigInteger;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
 
 public class TAStateBuilder {
 
