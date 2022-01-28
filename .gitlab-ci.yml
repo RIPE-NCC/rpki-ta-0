@@ -15,18 +15,23 @@ stages:
   - qa
   - deploy
 
+# Cache the complete build directories
+cache: &global_cache
+  key:
+    files:
+      - build.gradle
+  paths:
+    - build
+    - .gradle
+  policy: pull-push
+
 variables:
   GRADLE_USER_HOME: "${CI_PROJECT_DIR}/.gradle/"
   GRADLE_OPTS: "-Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false"
 
 build:
   stage: build
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-      - .gradle/caches
-      - .gradle/wrapper
-  script: ./gradlew -i build
+  script: ./gradlew -i clean build
   artifacts:
     paths:
       - build/distributions/*
@@ -43,7 +48,7 @@ build:
 build-release:
   stage: build
   script:
-    - RELEASE_VERSION="${CI_COMMIT_TAG/rpki-ta-0-}" ./gradlew -i build
+    - RELEASE_VERSION="${CI_COMMIT_TAG/rpki-ta-0-}" ./gradlew -i clean build
   artifacts:
     paths:
       - build/distributions/*
@@ -60,15 +65,13 @@ build-release:
 ######### Test stage #########
 sonarqube:
   stage: qa
+  cache:
+    <<: *global_cache
+    policy: pull
   needs: ["build"]
   dependencies: ["build"]
   variables:
     GIT_DEPTH: 0
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-      - .gradle/caches
-      - .gradle/wrapper
   script:
     - ./gradlew -i -Dsonar.projectKey=rpki-ta-0 sonarqube
   allow_failure: true
@@ -80,6 +83,8 @@ sonarqube:
 .deploy: &deploy
   stage: deploy
   image: docker-registry.ripe.net/swe/gitlab-ci/debian-deployenv
+  # No caching of gradle data needed
+  cache: []
   before_script:
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
