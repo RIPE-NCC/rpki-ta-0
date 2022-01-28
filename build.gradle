@@ -75,6 +75,7 @@ sonarqube {
         property 'sonar.qualitygate.timeout', System.getenv('SONAR_QUALITYGATE_TIMEOUT') ?: '300'
     }
 }
+project.tasks["sonarqube"].dependsOn "test"
 
 tasks.withType(Tar) {
     compression = Compression.GZIP
