@@ -69,7 +69,7 @@ public class Env {
     }
 
     public static Config prepdev() {
-        final Config config = withNCipherConf(EnvStub.testConfig());
+        final Config config = withSunRsaConf(EnvStub.testConfig());
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
