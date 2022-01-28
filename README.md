@@ -15,10 +15,11 @@ https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 Changelog
 ---------
 
-### HEAD:
+### 0.35-SNAPSHOT:
   * Removed explicit license from all files.
   * Save backup of trust anchor state when saving
   * Print sha256 when loading or storing trust anchor state.
+  * Add github actions
 
 ### 0.3.4:
   * Add lombok
