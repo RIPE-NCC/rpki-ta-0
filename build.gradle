@@ -3,6 +3,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'io.freefair.lombok' version '6.3.0'
+    id 'org.sonarqube' version '3.3'
 }
 
 repositories {
@@ -65,6 +66,13 @@ jacocoTestReport {
     dependsOn test
     reports {
         xml.required = true
+    }
+}
+
+sonarqube {
+    properties {
+        property 'sonar.qualitygate.wait', 'true'
+        property 'sonar.qualitygate.timeout', System.getenv('SONAR_QUALITYGATE_TIMEOUT') ?: '300'
     }
 }
 
