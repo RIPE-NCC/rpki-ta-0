@@ -3,7 +3,7 @@
     <name>RIPE NCC Trust Anchor</name>
     <groupId>net.ripe.rpki-trust-anchor</groupId>
     <artifactId>rpki-ta-0</artifactId>
-    <version>0.3.4-SNAPSHOT</version>
+    <version>0.3.5-SNAPSHOT</version>
     <packaging>jar</packaging>
     <inceptionYear>2017</inceptionYear>
 
