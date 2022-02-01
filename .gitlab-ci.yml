@@ -60,7 +60,7 @@ build-release:
     refs:
       - tags@rpki/rpki-ta-0
     variables:
-      - $CI_COMMIT_TAG =~ /^rpki-ta-0-\d+\.\d+$/
+      - $CI_COMMIT_TAG =~ /^rpki-ta-0-\d+\..+$/
 
 ######### Test stage #########
 sonarqube:
