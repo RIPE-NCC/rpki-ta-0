@@ -15,10 +15,13 @@ https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 Changelog
 ---------
 
-### 0.35-SNAPSHOT:
+### 0.3.5:
   * Removed explicit license from all files.
   * Save backup of trust anchor state when saving
   * Print sha256 when loading or storing trust anchor state.
+  * Build with gradle
+  * Switch `prepdev` environment back to software keys.
+  * Switch to `junit-jupiter` and `assertj` in tests.
   * Add github actions
 
 ### 0.3.4:
