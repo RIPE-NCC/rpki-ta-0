@@ -22,7 +22,7 @@ fi
 CONF_DIR="conf"
 LIB_DIR="lib"
 CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
-CARDSET="TA"
+CARDSET="TA2022"
 MAIN_CLASS="net.ripe.rpki.ta.Main"
 
 TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
