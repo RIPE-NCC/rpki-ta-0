@@ -22,30 +22,17 @@ fi
 CONF_DIR="conf"
 LIB_DIR="lib"
 CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
-CARDSET="TA"
+CARDSET="TA2022"
 MAIN_CLASS="net.ripe.rpki.ta.Main"
 
 TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
-  #
-  # Use HSM =>
-  #  - erase passphrase to work around bug that passphrase of last card must be empty
-  #  - preload security
-  #  - reset passphrase
+  # production uses cardset protected keys
   JAVA_OPTS="-Dprotect=cardset -DignorePassphrase=true $JAVA_OPTS"
 
-  echo "Set empty passphrase on operator card please (or ctrl+c and start again)"
-  ${NFAST_BIN}/cardpp --change
-
-  echo "You have now 10 seconds to remove this card, please do so and use it as the THIRD card in pre-load"
-  sleep 10
-
+  # preload the keys (and provide OCS authorisation with 3/10 cards), then execute the trust anchor binary.
   ${NFAST_BIN}/preload -c ${CARDSET} ${TA_TOOL_COMMAND}
-
-  echo "Restore passphrase on operator card please"
-  ${NFAST_BIN}/cardpp --change
-
 else
   ${TA_TOOL_COMMAND}
 fi
