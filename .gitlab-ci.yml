@@ -103,7 +103,7 @@ sonarqube:
 localcert:
   <<: *deploy
   variables:
-    NODES: "localcert-1.rpki.ripe.net"
+    NODES: "localcert-2.rpki.ripe.net"
   environment:
     name: localcert
 
