@@ -1,6 +1,7 @@
 package net.ripe.rpki.ta.integration;
 
 
+import com.google.common.base.Predicates;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.KeyStore;
@@ -8,6 +9,8 @@ import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
+import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,11 +103,83 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
 
-        // TODO only one certificate must be current
         assertEquals(3, taState3.getSignedProductionCertificates().size());
+        assertThat(taState3.getSignedProductionCertificates())
+                .filteredOn(crt -> !crt.isRevoked())
+                .hasSize(1);
         assertEquals(3, taState3.getSignedManifests().size());
 
         assertEquals(4, taState3.getCrl().getCrl().getRevokedCertificates().size());
+    }
+
+    @Test
+    public void test_process_request_from_other_environment(@TempDir File dir) throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+        assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
+
+        final File response = new File(dir.getAbsolutePath(), "response-initial.xml");
+
+        final TAState taState0 = reloadTaState();
+        final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
+
+        assertThat(
+                run("--request=./src/test/resources/ta-request.xml" +
+                        " --force-new-ta-certificate" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterFirstSigning = reloadTaState();
+
+        assertThat(taStateAfterFirstSigning).isNotNull();
+
+        // There is a single non-revoked manifest with one certificate on it.
+        assertThat(taStateAfterFirstSigning.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .allMatch(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 1)
+                .hasSize(1);
+
+        // Now sign a request from a different environment, that will add the certificates from the other
+        // environment on the manifest.
+
+        assertThat(
+                run("--request=./src/test/resources/ta-request-prepdev-env.xml" +
+                        " --force-new-ta-certificate" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterRequestFromOtherEnvironment = reloadTaState();
+
+        assertThat(taStateAfterRequestFromOtherEnvironment).isNotNull();
+
+        // <emph>This is undesired in practice.</emph> But this checks that the default behaviour is to add.
+        assertThat(taStateAfterRequestFromOtherEnvironment.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .allMatch(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 2)
+                .hasSize(1);
+
+        // State now contains multiple certificates.
+        // Now sign a request from a different environment, that will add the certificates from the other
+        // environment on the manifest.
+
+        assertThat(
+                run("--request=./src/test/resources/ta-request-prepdev-env.xml" +
+                        " --force-new-ta-certificate" +
+                        " --revoke-non-requested-objects" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterRevokeNonRequested = reloadTaState();
+
+        assertThat(taStateAfterRevokeNonRequested).isNotNull();
+
+        // State has just one certificate file on the single manifest
+        assertThat(taStateAfterRevokeNonRequested.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .allMatch(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 1)
+                .hasSize(1);
     }
 
 

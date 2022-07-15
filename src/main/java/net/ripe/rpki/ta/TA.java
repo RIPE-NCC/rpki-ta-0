@@ -6,6 +6,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
+import lombok.extern.slf4j.Slf4j;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.ipresource.IpResourceType;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
@@ -70,6 +71,7 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 
+@Slf4j(topic = "TA")
 public class TA {
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
@@ -283,6 +285,7 @@ public class TA {
     }
 
     private InputStream requestXml(ProgramOptions options) throws IOException {
+        log.info("reading request XML from {}", options.getRequestFile());
         if ("-".equals(options.getRequestFile())) {
             return System.in;
         } else {
@@ -291,6 +294,7 @@ public class TA {
     }
 
     private PrintStream responseXml(ProgramOptions options) throws IOException {
+        log.info("writing response XML to {}", options.getResponseFile());
         if ("-".equals(options.getResponseFile())) {
             return System.out;
         } else {
