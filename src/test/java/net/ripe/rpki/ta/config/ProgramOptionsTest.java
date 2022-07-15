@@ -34,6 +34,9 @@ public class ProgramOptionsTest {
     public void testDependencyMissingOptions() {
         assertInvalidCombinationsOfOptions("--request=./test.in", "Doesn't have meaningful options.");
         assertInvalidCombinationsOfOptions("--response=./test.out", "Doesn't have meaningful options.");
+
+        assertInvalidCombinationsOfOptions("--env=dev --print-tal=./test.tal --force-new-ta-certificate", "Option --force-new-ta-certificate doesn't make sense without --request option.");
+        assertInvalidCombinationsOfOptions("--env=dev --print-tal=./test.tal --revoke-non-requested-objects", "Option --revoke-non-requested-objects doesn't make sense without --request option.");
     }
 
     private void assertInvalidCombinationsOfOptions(final String args, final String message) {
@@ -41,6 +44,4 @@ public class ProgramOptionsTest {
                 .isInstanceOf(BadOptionsException.class)
                 .hasMessage(message);
     }
-
 }
-

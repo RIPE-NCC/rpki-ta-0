@@ -46,6 +46,7 @@ import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
+import net.ripe.rpki.ta.util.PublishedObjectsUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -63,10 +64,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
@@ -277,7 +275,7 @@ public class TA {
              PrintStream out = responseXml(options)) {
             final String requestXml = CharStreams.toString(new InputStreamReader(in, Charsets.UTF_8));
             final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
-            final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate());
+            final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate(), options.hasRevokeAllIssuedResourceCertificates());
             final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
             persist(p.getRight());
             out.print(response);
@@ -300,7 +298,7 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, boolean forceNewTaCertificate) throws Exception {
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, boolean forceNewTaCertificate, boolean revokeAllIssuedResourceCertificates) throws Exception {
         final TAState taState = loadTAState();
         validateRequestSerial(request, taState);
 
@@ -310,6 +308,12 @@ public class TA {
 
         final SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
+
+        // If requested, revoke all the currently issued resource certificates that are present in the state.
+        if (revokeAllIssuedResourceCertificates) {
+            revokeAllIssuedResourceCertificates(newTAState);
+        }
+
 
         // re-issue TA certificate if some of the publication points are changed
         final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
@@ -341,7 +345,10 @@ public class TA {
             }
         }
 
-        return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), updateObjectsToBePublished(signCtx), taResponses), newTAState);
+        Map<URI, CertificateRepositoryObject> publishedObjects = updateObjectsToBePublished(signCtx);
+        PublishedObjectsUtil.logPublishedObjects(publishedObjects);
+
+        return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), publishedObjects, taResponses), newTAState);
     }
 
     private Optional<String> taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, Config taConfig) {
@@ -419,6 +426,7 @@ public class TA {
     }
 
     private Map<URI, CertificateRepositoryObject> updateObjectsToBePublished(final SignCtx signCtx) {
+        // Revoke currently issued manifests
         for (final SignedManifest signedManifest : signCtx.taState.getSignedManifests()) {
             signedManifest.revoke();
         }
@@ -436,7 +444,7 @@ public class TA {
                 result.put(taProductsPublicationUri.resolve(cert.getFileName()), cert.getCertificateRepositoryObject());
             }
         }
-        return result;
+        return Collections.unmodifiableMap(result);
     }
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
@@ -586,6 +594,15 @@ public class TA {
             }
         }
         return result;
+    }
+
+    /**
+     * Revoke all certificates signed by the TA.
+     * Needed when you intend to replace all signed objects by just those in the request.
+     * @return true if anything was revoked.
+     */
+    private void revokeAllIssuedResourceCertificates(final TAState taState) {
+        taState.getSignedProductionCertificates().forEach(SignedResourceCertificate::revoke);
     }
 
     private DateTime calculateNextUpdateTime(final DateTime now) {
