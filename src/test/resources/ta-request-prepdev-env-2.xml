@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<requests.TrustAnchorRequest>
+   <taCertificatePublicationUri>rsync://rpki.prepdev.ripe.net/ta/</taCertificatePublicationUri>
+   <creationTimestamp>1657815648107</creationTimestamp>
+   <taRequests>
+      <requests.SigningRequest>
+         <requestId>b1ebdce8-4f95-4eda-8315-6ae4ce280fe7</requestId>
+         <resourceCertificateRequest>
+            <resourceClassName>DEFAULT</resourceClassName>
+            <subjectDN>CN=10767507be165a376e5912d78529a382b2b42f3e</subjectDN>
+            <encodedSubjectPublicKey>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo+oE3b4QL9VBdgjUtYI3NvKmqwXrUr0s&#xD;
+Obzb78IJdItocQSh5FSYO28bBRfdSXq9QeQx4nXePCmDI8N3i1AIe5X5VFJ+sJFn7VWomQkx35X9&#xD;
+oIRDxgdLHgkrzzUbSikOjMGjpIy11JI1O+oiAkc7VuBH9dR/GBzttD4v8eyuLjjYc+7dHTB9tuVV&#xD;
+r0DXSeXUH1M2EpS0ak2AxFE9K4AH3be40RVToGeRM9t+Xi0E9QwxPSDjOGecECLfIi/QGvkHGmi6&#xD;
+OHDe1OtjlP5XmHaNAm2GwPmsrgdZqbFIxoBIQAtuARiCkH/eH6QUTuCg38g08Eg8DMx3wuW8wTJR&#xD;
+mX+jgQIDAQAB</encodedSubjectPublicKey>
+            <subjectInformationAccess>
+               <X509CertificateInformationAccessDescriptor>
+                  <method>1.3.6.1.5.5.7.48.5</method>
+                  <location>rsync://rpki.prepdev.ripe.net/repository/aca/</location>
+               </X509CertificateInformationAccessDescriptor>
+               <X509CertificateInformationAccessDescriptor>
+                  <method>1.3.6.1.5.5.7.48.10</method>
+                  <location>rsync://rpki.prepdev.ripe.net/repository/aca/EHZ1B74WWjduWRLXhSmjgrK0Lz4.mft</location>
+               </X509CertificateInformationAccessDescriptor>
+               <X509CertificateInformationAccessDescriptor>
+                  <method>1.3.6.1.5.5.7.48.13</method>
+                  <location>https://rrdp.prepdev.ripe.net/notification.xml</location>
+               </X509CertificateInformationAccessDescriptor>
+            </subjectInformationAccess>
+         </resourceCertificateRequest>
+      </requests.SigningRequest>
+   </taRequests>
+   <siaDescriptors>
+      <X509CertificateInformationAccessDescriptor>
+         <method>1.3.6.1.5.5.7.48.13</method>
+         <location>https://rrdp.prepdev.ripe.net/notification.xml</location>
+      </X509CertificateInformationAccessDescriptor>
+      <X509CertificateInformationAccessDescriptor>
+         <method>1.3.6.1.5.5.7.48.5</method>
+         <location>rsync://rpki.prepdev.ripe.net/repository/</location>
+      </X509CertificateInformationAccessDescriptor>
+   </siaDescriptors>
+</requests.TrustAnchorRequest>
