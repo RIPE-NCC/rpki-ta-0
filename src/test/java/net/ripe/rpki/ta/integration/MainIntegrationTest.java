@@ -3,6 +3,7 @@ package net.ripe.rpki.ta.integration;
 
 import com.google.common.base.Predicates;
 import lombok.extern.slf4j.Slf4j;
+import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
@@ -14,7 +15,6 @@ import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
-import net.ripe.rpki.ta.util.PublishedObjectsUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -118,6 +119,61 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         assertEquals(4, taState3.getCrl().getCrl().getRevokedCertificates().size());
     }
+
+    @Test
+    public void test_process_request_revokes_manifest_ee_certificates() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final File tmpResponses = Files.createTempDirectory("process_request").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
+
+        final TAState initialState = reloadTaState();
+        assertEquals(0,
+                run("--request=./src/test/resources/ta-request.xml " +
+                        "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState secondState = reloadTaState();
+
+        // The EE certs from first state should be revoked
+        final List<X509Certificate> manifestEE = initialState.getSignedManifests().stream()
+                .map(SignedManifest::getManifest)
+                .map(ManifestCms::getCertificate)
+                .map(X509ResourceCertificate::getCertificate)
+                .collect(Collectors.toList());
+        final X509Crl secondCrl = secondState.getCrl();
+
+        assertThat(manifestEE).allMatch(secondCrl::isRevoked);
+    }
+
+    @Test
+    public void test_process_request_reissue_revokes_old_cert() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final File tmpResponses = Files.createTempDirectory("process_request").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
+
+        final TAState initialState = reloadTaState();
+        assertEquals(0,
+                run("--request=./src/test/resources/ta-request.xml " +
+                        "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState secondState = reloadTaState();
+
+        // The resource certificate from initial state should be revoked.
+        final X509Crl secondCrl = secondState.getCrl();
+
+        assertThat(initialState.getSignedProductionCertificates())
+                .map(SignedResourceCertificate::getResourceCertificate)
+                .map(X509ResourceCertificate::getCertificate)
+                .allMatch(secondCrl::isRevoked);
+    }
+
 
     @Test
     public void test_process_request_from_other_environment(@TempDir File dir) throws Exception {
