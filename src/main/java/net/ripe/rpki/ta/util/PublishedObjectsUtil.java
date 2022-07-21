@@ -2,6 +2,8 @@ package net.ripe.rpki.ta.util;
 
 import com.google.common.base.Strings;
 import com.google.common.io.BaseEncoding;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import net.ripe.rpki.commons.crypto.cms.RpkiSignedObject;
@@ -17,8 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j(topic="PublishedObjects")
 public class PublishedObjectsUtil {
+    public static final String LINE_SEPARATOR = Strings.repeat("=", 40);
+
     /**
      * Log the subject information access attributes of the certificates.
      */
@@ -70,9 +75,9 @@ public class PublishedObjectsUtil {
     }
 
     private static void logObjectEntry(Map.Entry<URI, CertificateRepositoryObject> entry) {
-        log.info("================================");
+        log.info(LINE_SEPARATOR);
         log.info("location: {}", entry.getKey());
-        log.info("================================");
+        log.info(LINE_SEPARATOR);
 
         logObject(entry.getValue());
     }
@@ -83,12 +88,12 @@ public class PublishedObjectsUtil {
      */
     public static void logPublishedObjects(Map<URI, CertificateRepositoryObject> objects) {
         List<Map.Entry<URI, CertificateRepositoryObject>> sortedEntries = objects.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList());
-        log.info("================================");
+        log.info(LINE_SEPARATOR);
         log.info("Currently published files:");
-        log.info("================================");
+        log.info(LINE_SEPARATOR);
         sortedEntries.forEach((entry) -> log.info("{}:", entry.getKey()));
         // logObject adds header.
         sortedEntries.forEach(PublishedObjectsUtil::logObjectEntry);
-        log.info("================================");
+        log.info(LINE_SEPARATOR);
     }
 }
