@@ -36,7 +36,7 @@ description = 'RIPE NCC Trust Anchor'
 apply plugin: 'java'
 
 dependencies {
-    implementation 'net.ripe.rpki:rpki-commons:1.29'
+    implementation 'net.ripe.rpki:rpki-commons:1.30'
     implementation 'commons-cli:commons-cli:1.5.0'
     implementation 'org.slf4j:slf4j-api:1.7.36'
     runtimeOnly 'ch.qos.logback:logback-classic:1.2.11'
