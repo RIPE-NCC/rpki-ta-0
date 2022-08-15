@@ -278,7 +278,7 @@ public class TA {
              PrintStream out = responseXml(options)) {
             final String requestXml = CharStreams.toString(new InputStreamReader(in, Charsets.UTF_8));
             final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
-            final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options.hasForceNewTaCertificate(), options.hasRevokeAllIssuedResourceCertificates());
+            final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options);
             final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
             persist(p.getRight());
             out.print(response);
@@ -303,7 +303,7 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, boolean forceNewTaCertificate, boolean revokeAllIssuedResourceCertificates) throws Exception {
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) throws Exception {
         final TAState taState = loadTAState();
         validateRequestSerial(request, taState);
 
@@ -315,7 +315,7 @@ public class TA {
                 decoded.getRight(), decoded.getLeft());
 
         // If requested, revoke all the currently issued resource certificates that are present in the state.
-        if (revokeAllIssuedResourceCertificates) {
+        if (options.hasRevokeAllIssuedResourceCertificates()) {
             revokeAllIssuedResourceCertificates(newTAState);
         }
 
@@ -323,7 +323,7 @@ public class TA {
         // re-issue TA certificate if some of the publication points are changed
         final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
         if (whyReissue.isPresent()) {
-            if (!forceNewTaCertificate) {
+            if (!options.hasForceNewTaCertificate()) {
                 throw new OperationAbortedException("TA certificate has to be re-issued: " + whyReissue.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
             }
