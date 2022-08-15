@@ -1,6 +1,7 @@
 package net.ripe.rpki.ta.serializers.legacy;
 
 
+import lombok.ToString;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.DateTime;
@@ -9,6 +10,7 @@ import org.joda.time.DateTimeZone;
 import java.io.Serializable;
 import java.math.BigInteger;
 
+@ToString
 public abstract class SignedObjectTracker implements Serializable {
 
     private static final long serialVersionUID = 1L;

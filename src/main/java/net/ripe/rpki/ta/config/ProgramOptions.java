@@ -24,6 +24,7 @@ public class ProgramOptions {
     private static final String RESPONSE_OPT = "response";
     private static final String STORAGE_DIRECTORY = "storage-directory";
     public static final String FORCE_NEW_TA_CERT_OPT = "force-new-ta-certificate";
+    public static final String REVOKE_NON_REQUESTED_OBJECTS = "revoke-non-requested-objects";
 
     private final CommandLine commandLine;
     private final static Options options;
@@ -49,6 +50,12 @@ public class ProgramOptions {
             hasArg(false).
             desc("Force re-issuing new TA certificate if there're SIA differences between config and request").
             build());
+
+        options.addOption(Option.builder().longOpt(REVOKE_NON_REQUESTED_OBJECTS)
+                .hasArg(false)
+                .desc("Revoke all objects that are not currently requested")
+                .build()
+        );
 
         options.addOption(Option.builder().longOpt(EXPORT_TA_CERTIFICATE_OPT).
                 hasArg().
@@ -107,6 +114,7 @@ public class ProgramOptions {
         checkDependency(RESPONSE_OPT, REQUEST_OPT);
 
         checkDependency(FORCE_NEW_TA_CERT_OPT, REQUEST_OPT, RESPONSE_OPT);
+        checkDependency(REVOKE_NON_REQUESTED_OBJECTS, REQUEST_OPT, RESPONSE_OPT);
     }
 
     private void checkDependency(final String option, final String... dependencies) throws BadOptionsException {
@@ -143,6 +151,10 @@ public class ProgramOptions {
 
     public boolean hasForceNewTaCertificate() {
         return commandLine.hasOption(FORCE_NEW_TA_CERT_OPT);
+    }
+
+    public boolean hasRevokeAllIssuedResourceCertificates() {
+        return commandLine.hasOption(REVOKE_NON_REQUESTED_OBJECTS);
     }
 
     public boolean hasRequestOption() {

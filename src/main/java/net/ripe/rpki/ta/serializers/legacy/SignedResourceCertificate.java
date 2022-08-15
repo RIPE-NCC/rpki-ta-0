@@ -7,9 +7,7 @@ import java.math.BigInteger;
 
 // Do not move from `legacy` folder because qualified name is used in the XML files.
 public class SignedResourceCertificate extends SignedObjectTracker {
-
     private static final long serialVersionUID = 1L;
-
 
     public SignedResourceCertificate(String fileName, X509ResourceCertificate resourceCertificate) {
         super(fileName, resourceCertificate, resourceCertificate.getValidityPeriod().getNotValidAfter());

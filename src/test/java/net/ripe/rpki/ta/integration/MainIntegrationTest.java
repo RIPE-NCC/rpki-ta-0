@@ -1,6 +1,10 @@
 package net.ripe.rpki.ta.integration;
 
 
+import com.google.common.base.Predicates;
+import lombok.extern.slf4j.Slf4j;
+import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
+import net.ripe.rpki.commons.crypto.crl.X509Crl;
 import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.KeyStore;
@@ -8,6 +12,9 @@ import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
+import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
+import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +25,9 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 import static net.ripe.rpki.ta.Main.EXIT_ERROR_2;
@@ -25,6 +35,7 @@ import static net.ripe.rpki.ta.Main.EXIT_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Slf4j
 public class MainIntegrationTest extends AbstractIntegrationTest {
 
     private static String taXmlPath;
@@ -100,11 +111,159 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
 
-        // TODO only one certificate must be current
         assertEquals(3, taState3.getSignedProductionCertificates().size());
+        assertThat(taState3.getSignedProductionCertificates())
+                .filteredOn(crt -> !crt.isRevoked())
+                .hasSize(1);
         assertEquals(3, taState3.getSignedManifests().size());
 
         assertEquals(4, taState3.getCrl().getCrl().getRevokedCertificates().size());
+    }
+
+    @Test
+    public void test_process_request_revokes_manifest_ee_certificates() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final File tmpResponses = Files.createTempDirectory("process_request").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
+
+        final TAState initialState = reloadTaState();
+        assertEquals(0,
+                run("--request=./src/test/resources/ta-request.xml " +
+                        "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState secondState = reloadTaState();
+
+        // The EE certs from first state should be revoked
+        final List<X509Certificate> manifestEE = initialState.getSignedManifests().stream()
+                .map(SignedManifest::getManifest)
+                .map(ManifestCms::getCertificate)
+                .map(X509ResourceCertificate::getCertificate)
+                .collect(Collectors.toList());
+        final X509Crl secondCrl = secondState.getCrl();
+
+        assertThat(manifestEE).allMatch(secondCrl::isRevoked);
+    }
+
+    @Test
+    public void test_process_request_reissue_revokes_old_cert() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final File tmpResponses = Files.createTempDirectory("process_request").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
+
+        final TAState initialState = reloadTaState();
+        assertEquals(0,
+                run("--request=./src/test/resources/ta-request.xml " +
+                        "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+        final TAState secondState = reloadTaState();
+
+        // The resource certificate from initial state should be revoked.
+        final X509Crl secondCrl = secondState.getCrl();
+
+        assertThat(initialState.getSignedProductionCertificates())
+                .map(SignedResourceCertificate::getResourceCertificate)
+                .map(X509ResourceCertificate::getCertificate)
+                .allMatch(secondCrl::isRevoked);
+    }
+
+
+    @Test
+    public void test_process_request_from_other_environment(@TempDir File dir) throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+        assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
+
+        final File response = new File(dir.getAbsolutePath(), "response-initial.xml");
+
+        final TAState taState0 = reloadTaState();
+        final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
+
+        assertThat(
+                run("--request=./src/test/resources/ta-request.xml" +
+                        " --force-new-ta-certificate" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterFirstSigning = reloadTaState();
+
+        assertThat(taStateAfterFirstSigning).isNotNull();
+
+        // There is a single non-revoked manifest with one certificate on it.
+        assertThat(taStateAfterFirstSigning.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .allMatch(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 1)
+                .hasSize(1);
+
+        // Now sign a request from a different environment, that will add the certificates from the other
+        // environment on the manifest.
+
+        assertThat(
+                run("--request=./src/test/resources/ta-request-prepdev-env.xml" +
+                        " --force-new-ta-certificate" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterRequestFromOtherEnvironment = reloadTaState();
+
+        assertThat(taStateAfterRequestFromOtherEnvironment).isNotNull();
+
+        // <emph>This is undesired in practice.</emph> But this checks that the default behaviour is to add
+        // the second resource certificate
+        assertThat(taStateAfterRequestFromOtherEnvironment.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .map(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 2)
+                .hasSize(1);
+
+        // That is not revoked
+        List<SignedResourceCertificate> signedProductionCertificatesAfterRequestFromOtherEnvironment = taStateAfterRequestFromOtherEnvironment.getSignedProductionCertificates();
+        assertThat(signedProductionCertificatesAfterRequestFromOtherEnvironment)
+                .allMatch(Predicates.not(SignedObjectTracker::isRevoked));
+
+        // Now sign another, different, request, requesting revocation of the old objects.
+        assertThat(
+                run("--request=./src/test/resources/ta-request-prepdev-env-2.xml" +
+                        " --force-new-ta-certificate" +
+                        " --revoke-non-requested-objects" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterRevokeNonRequested = reloadTaState();
+
+        assertThat(taStateAfterRevokeNonRequested).isNotNull();
+
+        // State has just one certificate file on the single manifest
+        assertThat(taStateAfterRevokeNonRequested.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .allMatch(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 1)
+                .hasSize(1);
+
+        final X509Crl crlAfterRevoke = taStateAfterRevokeNonRequested.getCrl();
+
+        // All previously present certificates are on the CRL
+        assertThat(taStateAfterRequestFromOtherEnvironment.getSignedProductionCertificates())
+                .map(SignedResourceCertificate::getResourceCertificate)
+                .map(X509ResourceCertificate::getCertificate)
+                .allMatch(crlAfterRevoke::isRevoked);
+
+        List<SignedResourceCertificate> signedResourceCertificatesAfterRevokeNonRequested = taStateAfterRevokeNonRequested.getSignedProductionCertificates();
+
+        // There is one additional certificate
+        assertThat(signedResourceCertificatesAfterRevokeNonRequested)
+                .hasSize(signedProductionCertificatesAfterRequestFromOtherEnvironment.size() + 1);
+        // All **published** certificates are not revoked.
+        assertThat(signedProductionCertificatesAfterRequestFromOtherEnvironment)
+                .filteredOn(obj -> obj.isPublishable())
+                .allMatch(Predicates.not(SignedObjectTracker::isRevoked));
     }
 
 
