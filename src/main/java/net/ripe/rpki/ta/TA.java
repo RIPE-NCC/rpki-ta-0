@@ -4,6 +4,7 @@ package net.ripe.rpki.ta;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import lombok.extern.slf4j.Slf4j;
@@ -437,17 +438,24 @@ public class TA {
         final URI taProductsPublicationUri = config.getTaProductsPublicationUri();
         final URI taCertificatePublicationUri = config.getTaCertificatePublicationUri();
 
-        final Map<URI, CertificateRepositoryObject> result = new HashMap<URI, CertificateRepositoryObject>();
+        final Map<URI, CertificateRepositoryObject> result = new HashMap<>();
         result.put(taCertificatePublicationUri.resolve(TaNames.certificateFileName(signCtx.taCertificate.getSubject())), signCtx.taCertificate);
         final X509Crl newCrl = createNewCrl(signCtx);
         signCtx.taState.setCrl(newCrl);
         result.put(taProductsPublicationUri.resolve(TaNames.crlFileName(signCtx.taCertificate.getSubject())), newCrl);
         result.put(taProductsPublicationUri.resolve(TaNames.manifestFileName(signCtx.taCertificate.getSubject())), createNewManifest(signCtx));
+
+        int expectedSize = 3;
+
         for (final SignedResourceCertificate cert : signCtx.taState.getSignedProductionCertificates()) {
             if (cert.isPublishable()) {
                 result.put(taProductsPublicationUri.resolve(cert.getFileName()), cert.getCertificateRepositoryObject());
+                expectedSize++;
             }
         }
+
+        // Track the objects and verify that they do not have overlapping names.
+        Verify.verify(expectedSize == result.size());
         return Collections.unmodifiableMap(result);
     }
 
