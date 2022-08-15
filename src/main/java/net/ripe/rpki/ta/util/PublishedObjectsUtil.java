@@ -83,13 +83,12 @@ public class PublishedObjectsUtil {
      * @param objects objects to log
      */
     public static void logPublishedObjects(Map<URI, CertificateRepositoryObject> objects) {
-        List<Map.Entry<URI, CertificateRepositoryObject>> sortedEntries = objects.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList());
         log.info(LINE_SEPARATOR);
         log.info("Currently published files:");
         log.info(LINE_SEPARATOR);
-        sortedEntries.forEach((entry) -> log.info("{}:", entry.getKey()));
+        objects.entrySet().forEach((entry) -> log.info("{}:", entry.getKey()));
         // logObject adds header.
-        sortedEntries.forEach(PublishedObjectsUtil::logObjectEntry);
+        objects.entrySet().forEach(PublishedObjectsUtil::logObjectEntry);
         log.info(LINE_SEPARATOR);
     }
 }
