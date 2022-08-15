@@ -2,8 +2,7 @@ package net.ripe.rpki.ta.util;
 
 import com.google.common.base.Strings;
 import com.google.common.io.BaseEncoding;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import net.ripe.rpki.commons.crypto.cms.RpkiSignedObject;
@@ -14,12 +13,9 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 
 import javax.annotation.CheckForNull;
 import java.net.URI;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 @Slf4j(topic="PublishedObjects")
 public class PublishedObjectsUtil {
     public static final String LINE_SEPARATOR = Strings.repeat("=", 40);
