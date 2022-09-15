@@ -41,7 +41,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36'
     runtimeOnly 'ch.qos.logback:logback-classic:1.2.11'
 
-    testImplementation(platform('org.junit:junit-bom:5.8.2'))
+    testImplementation(platform('org.junit:junit-bom:5.9.0'))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation 'org.assertj:assertj-core:3.23.1'
 }
