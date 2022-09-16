@@ -15,6 +15,11 @@ https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 Changelog
 ---------
 
+### main:
+  * Updated github actions
+  * Add feature to revoke objects that TA0 knows off, but are not requested
+    (e.g. leftover files on manifest).
+
 ### 0.3.5:
   * Removed explicit license from all files.
   * Save backup of trust anchor state when saving
