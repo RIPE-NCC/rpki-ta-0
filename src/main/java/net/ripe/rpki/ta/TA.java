@@ -71,6 +71,8 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 
+// Suppress warning about a non-serializable class having a transient field.
+// Transient feeld is needed to exclude it from XML serialisation.
 @SuppressWarnings("java:S2065")
 @Slf4j(topic = "TA")
 public class TA {
