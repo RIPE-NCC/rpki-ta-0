@@ -39,7 +39,7 @@ dependencies {
     implementation 'net.ripe.rpki:rpki-commons:1.30'
     implementation 'commons-cli:commons-cli:1.5.0'
     implementation 'org.slf4j:slf4j-api:2.0.1'
-    runtimeOnly 'ch.qos.logback:logback-classic:1.2.11'
+    runtimeOnly 'org.slf4j:slf4j-simple:2.0.1'
 
     testImplementation(platform('org.junit:junit-bom:5.9.0'))
     testImplementation('org.junit.jupiter:junit-jupiter')
