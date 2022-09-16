@@ -2,6 +2,7 @@ package net.ripe.rpki.ta.config;
 
 
 
+import lombok.experimental.UtilityClass;
 import net.ripe.rpki.ta.exception.BadOptionsException;
 import org.joda.time.Period;
 
@@ -9,6 +10,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.net.URI;
 
+@UtilityClass
 public class Env {
 
     public static Config config(ProgramOptions options) throws BadOptionsException {
@@ -17,7 +19,7 @@ public class Env {
         if (options.hasPersistentStoragePath()) {
             final File storageDirectory = new File(options.getPersistentStoragePath());
             if (!storageDirectory.isDirectory()) {
-                throw new BadOptionsException(String.format("Persistant storage directory '%s' does not exist.", storageDirectory.getAbsolutePath()));
+                throw new BadOptionsException(String.format("Persistent storage directory '%s' does not exist.", storageDirectory.getAbsolutePath()));
             }
 
             config.setPersistentStorageDir(storageDirectory.getAbsolutePath());

@@ -1,8 +1,6 @@
 package net.ripe.rpki.ta;
 
 
-import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
@@ -64,6 +62,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.*;
@@ -72,6 +71,7 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
 
+@SuppressWarnings("java:S2065")
 @Slf4j(topic = "TA")
 public class TA {
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
@@ -142,7 +142,7 @@ public class TA {
     private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
             X509CertificateInformationAccessDescriptor... siaDescriptors) {
 
-        final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> descriptorsMap = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
+        final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> descriptorsMap = new HashMap<>();
         for (final X509CertificateInformationAccessDescriptor descriptor : siaDescriptors) {
             descriptorsMap.put(descriptor.getMethod(), descriptor);
         }
@@ -215,7 +215,7 @@ public class TA {
             return subjectInformationAccess;
         }
 
-        final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> result = new HashMap<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor>();
+        final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> result = new HashMap<>();
 
         for (final X509CertificateInformationAccessDescriptor descriptor : subjectInformationAccess) {
             result.put(descriptor.getMethod(), descriptor);
@@ -276,7 +276,7 @@ public class TA {
     void processRequestXml(ProgramOptions options) throws Exception {
         try (InputStream in = requestXml(options);
              PrintStream out = responseXml(options)) {
-            final String requestXml = CharStreams.toString(new InputStreamReader(in, Charsets.UTF_8));
+            final String requestXml = CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
             final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
             final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options);
             final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
@@ -370,7 +370,7 @@ public class TA {
                     descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     /**
