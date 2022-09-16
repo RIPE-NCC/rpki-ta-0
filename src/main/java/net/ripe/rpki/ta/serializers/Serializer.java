@@ -18,10 +18,12 @@ public abstract class Serializer<T> implements XmlSerializer<T> {
 
     protected abstract Class<T> clazz();
 
+    @Override
     public String serialize(final T taState) {
         return this.xStreamXmlSerializer.serialize(taState);
     }
 
+    @Override
     public T deserialize(final String xml) {
         return this.xStreamXmlSerializer.deserialize(xml);
     }
