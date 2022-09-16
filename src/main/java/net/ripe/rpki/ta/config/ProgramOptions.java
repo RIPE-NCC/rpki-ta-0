@@ -26,6 +26,10 @@ public class ProgramOptions {
     public static final String FORCE_NEW_TA_CERT_OPT = "force-new-ta-certificate";
     public static final String REVOKE_NON_REQUESTED_OBJECTS = "revoke-non-requested-objects";
 
+    public static final String TA_CERTIFICATE_PUBLICATION_URI = "ta-certificate-publication-uri";
+    public static final String TA_PRODUCTS_PUBLICATION_URI = "ta-products-publication-uri";
+    public static final String NOTIFICATION_URI = "notification-uri";
+
     private final CommandLine commandLine;
     private final static Options options;
 
@@ -81,6 +85,19 @@ public class ProgramOptions {
                 hasArg(true).
                 desc("Path to the persistent storage directory").
                 build());
+
+        options.addOption(Option.builder().longOpt(TA_CERTIFICATE_PUBLICATION_URI)
+                .hasArg()
+                .desc("Publication URI of this TA (only valid when initializing a new TA)")
+                .build());
+        options.addOption(Option.builder().longOpt(TA_PRODUCTS_PUBLICATION_URI)
+                .hasArg()
+                .desc("Publication URI for objects (only valid when initializing a new TA)")
+                .build());
+        options.addOption(Option.builder().longOpt(NOTIFICATION_URI)
+                .hasArg()
+                .desc("URI of the notification.xml in the RRDP repository (only valid when initializing a new TA)")
+                .build());
     }
 
     public ProgramOptions(String... args) throws BadOptionsException {
@@ -115,6 +132,10 @@ public class ProgramOptions {
 
         checkDependency(FORCE_NEW_TA_CERT_OPT, REQUEST_OPT, RESPONSE_OPT);
         checkDependency(REVOKE_NON_REQUESTED_OBJECTS, REQUEST_OPT, RESPONSE_OPT);
+
+        checkIncompatible(GENERATE_TA_CERTIFICATE_OPT, TA_CERTIFICATE_PUBLICATION_URI, TA_PRODUCTS_PUBLICATION_URI, NOTIFICATION_URI);
+        checkIncompatible(PRINT_TAL_OPT, TA_CERTIFICATE_PUBLICATION_URI, TA_PRODUCTS_PUBLICATION_URI, NOTIFICATION_URI);
+        checkIncompatible(EXPORT_TA_CERTIFICATE_OPT, TA_CERTIFICATE_PUBLICATION_URI, TA_PRODUCTS_PUBLICATION_URI, NOTIFICATION_URI);
     }
 
     private void checkDependency(final String option, final String... dependencies) throws BadOptionsException {
@@ -195,6 +216,30 @@ public class ProgramOptions {
 
     public String getResponseFile() {
         return commandLine.getOptionValue(RESPONSE_OPT);
+    }
+
+    public boolean hasTaCertificatePublicationUri() {
+        return commandLine.hasOption(TA_CERTIFICATE_PUBLICATION_URI);
+    }
+
+    public String getTaCertificatePublicationUri() {
+        return commandLine.getOptionValue(TA_CERTIFICATE_PUBLICATION_URI);
+    }
+
+    public boolean hasTaProductsPublicationUri() {
+        return commandLine.hasOption(TA_PRODUCTS_PUBLICATION_URI);
+    }
+
+    public String getTaProductsPublicationUri() {
+        return commandLine.getOptionValue(TA_PRODUCTS_PUBLICATION_URI);
+    }
+
+    public boolean hasNotificationUri() {
+        return commandLine.hasOption(NOTIFICATION_URI);
+    }
+
+    public String getNotificationUri() {
+        return commandLine.getOptionValue(NOTIFICATION_URI);
     }
 
     public static String getUsageString() {

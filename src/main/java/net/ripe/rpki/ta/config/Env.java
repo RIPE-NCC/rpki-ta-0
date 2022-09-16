@@ -9,6 +9,7 @@ import org.joda.time.Period;
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 @UtilityClass
 public class Env {
@@ -24,8 +25,25 @@ public class Env {
 
             config.setPersistentStorageDir(storageDirectory.getAbsolutePath());
         }
+        if (options.hasTaCertificatePublicationUri()) {
+            config.setTaCertificatePublicationUri(tryParseUri(options.getTaCertificatePublicationUri()));
+        }
+        if (options.hasTaProductsPublicationUri()) {
+            config.setTaProductsPublicationUri(tryParseUri(options.getTaProductsPublicationUri()));
+        }
+        if (options.hasNotificationUri()) {
+            config.setNotificationUri(tryParseUri(options.getNotificationUri()));
+        }
 
         return config;
+    }
+
+    private static URI tryParseUri(String uri) throws BadOptionsException {
+        try {
+            return new URI(uri);
+        } catch (URISyntaxException e) {
+            throw new BadOptionsException(String.format("Invalid URI: %s", uri));
+        }
     }
 
     private static Config byEnvironment(String envName) throws BadOptionsException {
