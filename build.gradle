@@ -36,7 +36,7 @@ description = 'RIPE NCC Trust Anchor'
 dependencies {
     implementation 'net.ripe.rpki:rpki-commons:1.30'
     implementation 'commons-cli:commons-cli:1.5.0'
-    implementation 'org.slf4j:slf4j-api:2.0.1'
+    implementation 'org.slf4j:slf4j-api:2.0.2'
     runtimeOnly 'org.slf4j:slf4j-simple:2.0.1'
 
     testImplementation(platform('org.junit:junit-bom:5.9.0'))
