@@ -3,6 +3,7 @@ plugins {
     id 'jacoco'
     id 'io.freefair.lombok' version '6.5.1'
     id 'org.sonarqube' version '3.4.0.2513'
+    id 'com.google.cloud.tools.jib' version '3.3.0'
 }
 
 repositories {
@@ -109,4 +110,9 @@ distributions {
       }
     }
   }
+}
+
+jib {
+    from { image = "eclipse-temurin:17-jammy" }
+    to { image = "ripencc/rpki-ta-0" }
 }
