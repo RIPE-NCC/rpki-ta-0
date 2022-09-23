@@ -19,6 +19,7 @@ Changelog
   * Updated github actions
   * Add feature to revoke objects that TA0 knows off, but are not requested
     (e.g. leftover files on manifest).
+  * Publish docker image `ripencc/rpki-ta-0`
 
 ### 0.3.5:
   * Removed explicit license from all files.
