@@ -59,7 +59,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void test_initialize_local_should_write_ta_xml() {
+    public void test_initialise_local_should_write_ta_xml() {
         assertThat(run("--initialise --env=test").exitCode).isZero();
         assertThat(readFile(taXmlPath)).contains("<TA>");
     }
@@ -80,7 +80,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final File tmpResponses = Files.createTempDirectory("process_request").toFile();
         tmpResponses.deleteOnExit();
         final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
-        
+
         assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
 
@@ -360,6 +360,6 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     private TAState reloadTaState() throws Exception {
-        return new TA(EnvStub.test()).loadTAState();
+        return TA.load(EnvStub.test()).getState();
     }
 }

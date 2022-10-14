@@ -4,6 +4,7 @@ import net.ripe.rpki.ta.TA;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.domain.TAStateBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,14 +20,13 @@ public class TAPersistenceTest {
         final Config testConfig = Env.dev();
         testConfig.setPersistentStorageDir(tempFolder.getAbsolutePath());
 
-        final TA ta = new TA(testConfig);
-        final TAState taState = ta.initialiseTaState();
-        ta.persist(taState);
+        final TA ta = TA.initialise(testConfig);
+        ta.persist();
 
-        assertThat(taState).isEqualTo(ta.loadTAState());
+        assertThat(ta.getState()).isEqualTo(TA.load(testConfig).getState());
 
         // TA serial should be set to 1 upon initialisation:
-        assertThat(taState.getLastIssuedCertificateSerial()).isOne();
+        assertThat(ta.getState().getLastIssuedCertificateSerial()).isOne();
     }
 
 }

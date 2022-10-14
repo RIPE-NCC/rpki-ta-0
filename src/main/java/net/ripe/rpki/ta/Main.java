@@ -6,6 +6,7 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.exception.BadOptionsException;
+import net.ripe.rpki.ta.exception.OperationAbortedException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
@@ -48,36 +49,36 @@ public class Main {
         }
     }
 
-    private static Exit run(final Config config, final ProgramOptions options, final String... args) throws Exception {
+    private static Exit run(final Config cliConfig, final ProgramOptions options, final String... args) throws Exception {
         options.validateOptions();
 
-        final TA ta = new TA(config);
+        if (options.hasInitialiseOption() && TA.hasState(cliConfig)) {
+            throw new OperationAbortedException("TA state is already serialised to " + cliConfig.getPersistentStorageDir() + ".");
+        }
+
+        TA ta = options.hasInitialiseOption() ? TA.initialise(cliConfig) : TA.load(cliConfig);
+        if (options.hasGenerateTACertificateOption()) {
+            ta.generateTACertificate();
+        }
 
         if (options.hasExportCertificateOption()) {
             try (final FileOutputStream out = new FileOutputStream(options.getPrintCertificateFileName())) {
                 out.write(ta.getCertificateDER());
             }
-            return new Exit(EXIT_OK);
         }
 
         if (options.hasRequestOption() && options.hasResponseOption()) {
             ta.processRequestXml(options);
-            return new Exit(EXIT_OK);
         }
 
         if (options.hasPrintTALOption()) {
             try (final FileOutputStream out = new FileOutputStream(options.getTalFilePath())) {
                 out.write(ta.getCurrentTrustAnchorLocator().getBytes());
             }
-            return new Exit(EXIT_OK);
         }
 
-        if (options.hasInitialiseOption() || options.hasGenerateTACertificateOption()) {
-            ta.persist(ta.createNewTAState(options));
-            return new Exit(EXIT_OK);
-        }
-
-        return new Exit(EXIT_ERROR_2, ProgramOptions.getUsageString());
+        ta.persist();
+        return new Exit(EXIT_OK);
     }
 
     public static class Exit {
