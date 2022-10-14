@@ -62,7 +62,7 @@ public class TA {
     @Getter
     private TAState state;
 
-    public static TA initialise(Config config) throws Exception {
+    public static TA initialise(Config config) throws GeneralSecurityException, IOException {
         final KeyPairFactory keyPairFactory = new KeyPairFactory(config.getKeystoreProvider());
         final KeyPair rootKeyPair = keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
         final TAState state = createTaState(config, rootKeyPair);
@@ -79,7 +79,7 @@ public class TA {
         this.state = state;
     }
 
-    private static TAState createTaState(Config config, KeyPair keyPair) throws Exception {
+    private static TAState createTaState(Config config, KeyPair keyPair) throws GeneralSecurityException, IOException {
         final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config, config.getTaProductsPublicationUri());
         final KeyStore keyStore = KeyStore.of(config);
