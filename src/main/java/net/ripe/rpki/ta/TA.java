@@ -135,8 +135,9 @@ public class TA {
     }
 
     String getCurrentTrustAnchorLocator() throws Exception {
+        final TAState taState = loadTAState();
         X509ResourceCertificate certificate = getTaCertificate();
-        return config.getTaCertificatePublicationUri()
+        return taState.getConfig().getTaCertificatePublicationUri()
                 + TaNames.certificateFileName(certificate.getSubject()) + "\n\n"
                 + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate()) + "\n";
     }
