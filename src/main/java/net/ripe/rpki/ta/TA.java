@@ -155,7 +155,7 @@ public class TA {
         final URI manifestUri = TaNames.manifestPublicationUri(productsPublication.getLocation(), config.getTrustAnchorName());
 
         descriptorsMap.put(ID_AD_RPKI_MANIFEST, aiaDescriptor(ID_AD_RPKI_MANIFEST, manifestUri));
-        descriptorsMap.put(ID_AD_RPKI_NOTIFY, aiaDescriptor(ID_AD_RPKI_NOTIFY, getConfig().getNotificationUri()));
+        descriptorsMap.put(ID_AD_RPKI_NOTIFY, aiaDescriptor(ID_AD_RPKI_NOTIFY, config.getNotificationUri()));
 
         return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[descriptorsMap.size()]);
     }
@@ -418,7 +418,7 @@ public class TA {
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
 
         final URI publicationPoint = TaNames.certificatePublicationUri(
-            getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
+            signCtx.taState.getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
 
         return new SigningResponse(signingRequest.getRequestId(), requestData.getResourceClassName(), publicationPoint, allResourcesCertificate);
     }
@@ -433,6 +433,7 @@ public class TA {
     }
 
     private Map<URI, CertificateRepositoryObject> updateObjectsToBePublished(final SignCtx signCtx) {
+        final Config config = signCtx.taState.getConfig();
         // Revoke currently issued manifests
         for (final SignedManifest signedManifest : signCtx.taState.getSignedManifests()) {
             signedManifest.revoke();
@@ -510,10 +511,11 @@ public class TA {
 
     private X509ResourceCertificate signAllResourcesCertificate(final ResourceCertificateRequestData request,
                                                                 final SignCtx signCtx) {
+        final Config config = signCtx.taState.getConfig();
         final X500Principal issuer = signCtx.taCertificate.getSubject();
 
-        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
-        final URI taProductsPublicationUri = getConfig().getTaProductsPublicationUri();
+        final URI taCertificatePublicationUri = config.getTaCertificatePublicationUri();
+        final URI taProductsPublicationUri = config.getTaProductsPublicationUri();
         final X509CertificateInformationAccessDescriptor[] taAIA = { aiaDescriptor(
                 X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
                 URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer)))
@@ -552,7 +554,7 @@ public class TA {
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
 
         final X500Principal caName = signCtx.taCertificate.getSubject();
-        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
+        final URI taCertificatePublicationUri = config.getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
