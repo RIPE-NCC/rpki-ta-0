@@ -10,6 +10,8 @@ import net.ripe.rpki.ta.exception.OperationAbortedException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -61,13 +63,22 @@ public class Main {
         }
 
         if (options.hasPrintTALOption()) {
-            try (final FileOutputStream out = new FileOutputStream(options.getTalFilePath())) {
-                out.write(ta.getCurrentTrustAnchorLocator().getBytes());
+            try (PrintStream out = getOutput(options.getTalFilePath())) {
+                String tal = new String(ta.getCurrentTrustAnchorLocator().getBytes(), "UTF-8");
+                out.print(tal);
             }
         }
 
         ta.persist();
         return new Exit(EXIT_OK);
+    }
+
+    private static PrintStream getOutput(String filename) throws IOException {
+        if (filename.equals("-")) {
+            return System.out;
+        } else {
+            return new PrintStream(new FileOutputStream(filename));
+        }
     }
 
     public static class Exit {
