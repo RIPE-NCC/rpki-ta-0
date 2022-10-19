@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.ipresource.IpResourceType;
@@ -17,31 +18,18 @@ import net.ripe.rpki.commons.crypto.crl.X509CrlBuilder;
 import net.ripe.rpki.commons.crypto.util.EncodedPublicKey;
 import net.ripe.rpki.commons.crypto.util.KeyPairFactory;
 import net.ripe.rpki.commons.crypto.util.KeyPairUtil;
-import net.ripe.rpki.commons.crypto.x509cert.RpkiSignedObjectEeCertificateBuilder;
-import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
-import net.ripe.rpki.commons.crypto.x509cert.X509CertificateUtil;
-import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
-import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
-import net.ripe.rpki.commons.ta.domain.request.ResourceCertificateRequestData;
-import net.ripe.rpki.commons.ta.domain.request.RevocationRequest;
-import net.ripe.rpki.commons.ta.domain.request.SigningRequest;
-import net.ripe.rpki.commons.ta.domain.request.TaRequest;
-import net.ripe.rpki.commons.ta.domain.request.TrustAnchorRequest;
-import net.ripe.rpki.commons.ta.domain.response.ErrorResponse;
-import net.ripe.rpki.commons.ta.domain.response.RevocationResponse;
-import net.ripe.rpki.commons.ta.domain.response.SigningResponse;
-import net.ripe.rpki.commons.ta.domain.response.TaResponse;
-import net.ripe.rpki.commons.ta.domain.response.TrustAnchorResponse;
+import net.ripe.rpki.commons.crypto.x509cert.*;
+import net.ripe.rpki.commons.ta.domain.request.*;
+import net.ripe.rpki.commons.ta.domain.response.*;
 import net.ripe.rpki.commons.ta.serializers.TrustAnchorRequestSerializer;
 import net.ripe.rpki.commons.ta.serializers.TrustAnchorResponseSerializer;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.TAStateBuilder;
-import net.ripe.rpki.ta.exception.BadOptionsException;
 import net.ripe.rpki.ta.exception.OperationAbortedException;
-import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.exception.RequestProcessorException;
+import net.ripe.rpki.ta.persistence.TAPersistence;
 import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
@@ -54,53 +42,53 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.*;
 
-import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_CA_REPOSITORY;
-import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_MANIFEST;
-import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.ID_AD_RPKI_NOTIFY;
+import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.*;
 
-// Suppress warning about a non-serializable class having a transient field.
-// Transient feeld is needed to exclude it from XML serialisation.
-@SuppressWarnings("java:S2065")
 @Slf4j(topic = "TA")
 public class TA {
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
     public static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
 
-    private final Config config;
-    private final transient KeyPairFactory keyPairFactory;
+    @Getter
+    private TAState state;
 
-    public TA(Config config) {
-        this.config = config;
-        this.keyPairFactory = new KeyPairFactory(config.getKeypairGeneratorProvider());
+    public static TA initialise(Config config) throws GeneralSecurityException, IOException {
+        final KeyPairFactory keyPairFactory = new KeyPairFactory(config.getKeystoreProvider());
+        final KeyPair rootKeyPair = keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
+        final TAState state = createTaState(config, rootKeyPair);
+        return new TA(state);
     }
 
-    public TAState initialiseTaState() throws Exception {
-        return createTaState(new TAStateBuilder(config), generateRootKeyPair(), BigInteger.ONE);
+    public static TA load(Config config) throws IOException {
+        final String xml = new TAPersistence(config).load();
+        final TAState state = new TAStateSerializer().deserialize(xml);
+        return new TA(state);
     }
 
-    private TAState createTaState(final TAStateBuilder taStateBuilder, KeyPair keyPair, final BigInteger serial) throws Exception {
-        final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config.getTaProductsPublicationUri());
+    private TA(TAState state) {
+        this.state = state;
+    }
+
+    private static TAState createTaState(Config config, KeyPair keyPair) throws GeneralSecurityException, IOException {
+        final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
+        final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config, config.getTaProductsPublicationUri());
         final KeyStore keyStore = KeyStore.of(config);
-        final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(keyPair, descriptors, serial));
+        final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(config.getTrustAnchorName(), keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider()));
 
-        return createTaState(taStateBuilder, encoded, keyStore, serial);
+        return createTaState(taStateBuilder, encoded, keyStore, BigInteger.ONE);
     }
 
-    private TAState createTaState(final TAStateBuilder taStateBuilder, byte[] encoded, KeyStore keyStore, final BigInteger serial) throws Exception {
+    private static TAState createTaState(final TAStateBuilder taStateBuilder, byte[] encoded, KeyStore keyStore, final BigInteger serial) {
         return taStateBuilder.
                 withEncoded(encoded).
                 withKeyStoreKeyAlias(keyStore.getKeyStoreKeyAlias()).
@@ -113,17 +101,12 @@ public class TA {
         return serial == null ? BigInteger.ONE : serial.add(BigInteger.ONE);
     }
 
-    static String serialize(final TAState taState) {
-        return new TAStateSerializer().serialize(taState);
+    public String serialize() {
+        return new TAStateSerializer().serialize(state);
     }
 
-    public void persist(TAState taState) throws IOException {
-        new TAPersistence(config).save(serialize(taState));
-    }
-
-    public TAState loadTAState() throws Exception {
-        final String xml = new TAPersistence(config).load();
-        return new TAStateSerializer().deserialize(xml);
+    public void persist() throws IOException {
+        new TAPersistence(state.getConfig()).save(serialize());
     }
 
     byte[] getCertificateDER() throws Exception {
@@ -131,19 +114,21 @@ public class TA {
     }
 
     public X509ResourceCertificate getTaCertificate() throws Exception {
-        return KeyStore.of(config).decode(loadTAState().getEncoded()).getRight();
+        return KeyStore.of(state.getConfig()).decode(state.getEncoded()).getRight();
     }
 
     String getCurrentTrustAnchorLocator() throws Exception {
         X509ResourceCertificate certificate = getTaCertificate();
-        return config.getTaCertificatePublicationUri()
+        return state.getConfig().getTaCertificatePublicationUri()
                 + TaNames.certificateFileName(certificate.getSubject()) + "\n\n"
                 + X509CertificateUtil.getEncodedSubjectPublicKeyInfo(certificate.getCertificate()) + "\n";
     }
 
-    private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
-            X509CertificateInformationAccessDescriptor... siaDescriptors) {
-
+    private static X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(
+            final X500Principal trustAnchorName,
+            final URI notificationUri,
+            final X509CertificateInformationAccessDescriptor... siaDescriptors
+    ) {
         final Map<ASN1ObjectIdentifier, X509CertificateInformationAccessDescriptor> descriptorsMap = new HashMap<>();
         for (final X509CertificateInformationAccessDescriptor descriptor : siaDescriptors) {
             descriptorsMap.put(descriptor.getMethod(), descriptor);
@@ -152,28 +137,32 @@ public class TA {
         final X509CertificateInformationAccessDescriptor productsPublication =
                 Preconditions.checkNotNull(descriptorsMap.get(ID_AD_CA_REPOSITORY), "SIA descriptors must include 'CA Repository'");
 
-        final URI manifestUri = TaNames.manifestPublicationUri(productsPublication.getLocation(), config.getTrustAnchorName());
+        final URI manifestUri = TaNames.manifestPublicationUri(productsPublication.getLocation(), trustAnchorName);
 
-        descriptorsMap.put(ID_AD_RPKI_MANIFEST, aiaDescriptor(ID_AD_RPKI_MANIFEST, manifestUri));
-        descriptorsMap.put(ID_AD_RPKI_NOTIFY, aiaDescriptor(ID_AD_RPKI_NOTIFY, getConfig().getNotificationUri()));
+        descriptorsMap.put(ID_AD_RPKI_MANIFEST, new X509CertificateInformationAccessDescriptor(ID_AD_RPKI_MANIFEST, manifestUri));
+        descriptorsMap.put(ID_AD_RPKI_NOTIFY, new X509CertificateInformationAccessDescriptor(ID_AD_RPKI_NOTIFY, notificationUri));
 
-        return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[descriptorsMap.size()]);
+        return descriptorsMap.values().toArray(new X509CertificateInformationAccessDescriptor[0]);
     }
 
-    private X509ResourceCertificate issueRootCertificate(final KeyPair rootKeyPair,
-                                                         final X509CertificateInformationAccessDescriptor[] descriptors,
-                                                         final BigInteger serial) {
+    private static X509ResourceCertificate issueRootCertificate(
+            final X500Principal trustAnchorName,
+            final KeyPair rootKeyPair,
+            final X509CertificateInformationAccessDescriptor[] descriptors,
+            final BigInteger serial,
+            final String signatureProvider
+    ) {
         final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
 
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-        taBuilder.withIssuerDN(config.getTrustAnchorName());
-        taBuilder.withSubjectDN(config.getTrustAnchorName());
+        taBuilder.withIssuerDN(trustAnchorName);
+        taBuilder.withSubjectDN(trustAnchorName);
         taBuilder.withSerial(serial);
         taBuilder.withResources(ALL_RESOURCES_SET);
         taBuilder.withPublicKey(rootKeyPair.getPublic());
         taBuilder.withSigningKeyPair(rootKeyPair);
-        taBuilder.withSignatureProvider(getSignatureProvider());
+        taBuilder.withSignatureProvider(signatureProvider);
         taBuilder.withAuthorityKeyIdentifier(false);
 
         final DateTime now = DateTime.now(DateTimeZone.UTC);
@@ -192,8 +181,8 @@ public class TA {
 
         taCertificateBuilder.withCa(true);
         taCertificateBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-        taCertificateBuilder.withIssuerDN(config.getTrustAnchorName());
-        taCertificateBuilder.withSubjectDN(config.getTrustAnchorName());
+        taCertificateBuilder.withIssuerDN(state.getConfig().getTrustAnchorName());
+        taCertificateBuilder.withSubjectDN(state.getConfig().getTrustAnchorName());
         taCertificateBuilder.withSerial(serial);
         taCertificateBuilder.withResources(ALL_RESOURCES_SET);
         taCertificateBuilder.withPublicKey(rootKeyPair.getPublic());
@@ -228,90 +217,76 @@ public class TA {
         return result.values().toArray(new X509CertificateInformationAccessDescriptor[0]);
     }
 
-    private X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(URI taProductsPublicationUri) {
-        return generateSiaDescriptors(aiaDescriptor(ID_AD_CA_REPOSITORY, taProductsPublicationUri));
+    private static X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(Config config, URI taProductsPublicationUri) {
+        return generateSiaDescriptors(
+                config.getTrustAnchorName(),
+                config.getNotificationUri(),
+                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, taProductsPublicationUri)
+        );
     }
 
-    private KeyPair generateRootKeyPair() {
-        return keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
-    }
-
-    private boolean hasState() {
+    public static boolean hasState(Config config) {
         return new TAPersistence(config).taStateExists();
     }
 
-    TAState createNewTAState(final ProgramOptions programOptions) throws Exception {
-        if (programOptions.hasInitialiseOption()) {
-            if (hasState()) {
-                throw new OperationAbortedException("TA state is already serialised to " + config.getPersistentStorageDir() + ".");
-            }
-            return initialiseTaState();
-        }
+    public void generateTACertificate() throws GeneralSecurityException, IOException {
+        // try to read and decode existing state
+        final KeyStore keyStore = KeyStore.of(state.getConfig());
+        final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
 
-        // there is no '--initialise' but there is '--generate-ta-certificate'
-        if (programOptions.hasGenerateTACertificateOption()) {
-            if (!hasState()) {
-                throw new OperationAbortedException("No TA state found, please initialise it first.");
-            }
+        // re-issue the TA certificate
+        final KeyPair keyPair = decoded.getLeft();
+        final X509ResourceCertificate taCertificate = decoded.getRight();
+        final BigInteger nextSerial = nextIssuedCertSerial(state);
+        final X509ResourceCertificate newTACertificate = reIssueRootCertificate(
+                keyPair,
+                generateSiaDescriptors(state.getConfig(), state.getConfig().getTaProductsPublicationUri()),
+                taCertificate,
+                nextSerial
+        );
 
-            // try to read and decode existing state
-            final KeyStore keyStore = KeyStore.of(config);
-            final TAState taState = loadTAState();
-            final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(taState.getEncoded());
+        final TAStateBuilder taStateBuilder = new TAStateBuilder(state.getConfig());
+        taStateBuilder.withCrl(state.getCrl());
 
-            // re-issue the TA certificate
-            final KeyPair keyPair = decoded.getLeft();
-            final X509ResourceCertificate taCertificate = decoded.getRight();
-            final BigInteger nextSerial = nextIssuedCertSerial(taState);
-            final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
-                    generateSiaDescriptors(config.getTaProductsPublicationUri()), taCertificate, nextSerial);
-
-            final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
-            taStateBuilder.withCrl(taState.getCrl());
-
-            return createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
-        }
-
-        throw new BadOptionsException("The program options are inconsistent.");
+        this.state = createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
     }
 
     void processRequestXml(ProgramOptions options) throws Exception {
-        try (InputStream in = requestXml(options);
-             PrintStream out = responseXml(options)) {
+        try (InputStream in = requestXml(options.getRequestFile());
+             PrintStream out = responseXml(options.getResponseFile())) {
             final String requestXml = CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
             final TrustAnchorRequest request = new TrustAnchorRequestSerializer().deserialize(requestXml);
             final Pair<TrustAnchorResponse, TAState> p = processRequest(request, options);
             final String response = new TrustAnchorResponseSerializer().serialize(p.getLeft());
-            persist(p.getRight());
+            this.state = p.getRight();
             out.print(response);
         }
     }
 
-    private InputStream requestXml(ProgramOptions options) throws IOException {
-        log.info("reading request XML from {}", options.getRequestFile());
-        if ("-".equals(options.getRequestFile())) {
+    private InputStream requestXml(String file) throws IOException {
+        log.info("reading request XML from {}", file);
+        if ("-".equals(file)) {
             return System.in;
         } else {
-            return new FileInputStream(options.getRequestFile());
+            return new FileInputStream(file);
         }
     }
 
-    private PrintStream responseXml(ProgramOptions options) throws IOException {
-        log.info("writing response XML to {}", options.getResponseFile());
-        if ("-".equals(options.getResponseFile())) {
+    private PrintStream responseXml(String file) throws IOException {
+        log.info("writing response XML to {}", file);
+        if ("-".equals(file)) {
             return System.out;
         } else {
-            return new PrintStream(new FileOutputStream(options.getResponseFile()));
+            return new PrintStream(new FileOutputStream(file));
         }
     }
 
     private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) throws Exception {
-        final TAState taState = loadTAState();
-        validateRequestSerial(request, taState);
+        validateRequestSerial(request, state);
 
-        final KeyStore keyStore = KeyStore.of(config);
-        final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(taState.getEncoded());
-        TAState newTAState = copyTAState(taState);
+        final KeyStore keyStore = KeyStore.of(state.getConfig());
+        final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
+        TAState newTAState = copyTAState(state);
 
         final SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
@@ -331,7 +306,7 @@ public class TA {
             }
             final KeyPair keyPair = decoded.getLeft();
             final X509ResourceCertificate taCertificate = decoded.getRight();
-            final BigInteger nextSerial = nextIssuedCertSerial(taState);
+            final BigInteger nextSerial = nextIssuedCertSerial(state);
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
                 request.getSiaDescriptors(), taCertificate, nextSerial);
 
@@ -412,13 +387,13 @@ public class TA {
         final ResourceCertificateRequestData requestData = signingRequest.getResourceCertificateRequest();
 
         final X509ResourceCertificate allResourcesCertificate = signAllResourcesCertificate(requestData, signCtx);
-        revokeAllCertificatesForKey(allResourcesCertificate.getPublicKey(), signCtx.taState);
+        revokeAllCertificatesForKey(KeyPairUtil.getEncodedKeyIdentifier(allResourcesCertificate.getPublicKey()), signCtx.taState);
 
         signCtx.taState.getSignedProductionCertificates().add(new SignedResourceCertificate(
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
 
         final URI publicationPoint = TaNames.certificatePublicationUri(
-            getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
+            signCtx.taState.getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
 
         return new SigningResponse(signingRequest.getRequestId(), requestData.getResourceClassName(), publicationPoint, allResourcesCertificate);
     }
@@ -433,6 +408,7 @@ public class TA {
     }
 
     private Map<URI, CertificateRepositoryObject> updateObjectsToBePublished(final SignCtx signCtx) {
+        final Config config = signCtx.taState.getConfig();
         // Revoke currently issued manifests
         for (final SignedManifest signedManifest : signCtx.taState.getSignedManifests()) {
             signedManifest.revoke();
@@ -492,6 +468,7 @@ public class TA {
 
         // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
         // re-use in the future, and prevents keys from piling up in the HSM 'security world'
+        final KeyPairFactory keyPairFactory = new KeyPairFactory(state.getConfig().getKeystoreProvider());
         final KeyPair eeKeyPair = keyPairFactory.withProvider("SunRsaSign").generate();
         final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, nextUpdateTime, signCtx);
 
@@ -510,13 +487,16 @@ public class TA {
 
     private X509ResourceCertificate signAllResourcesCertificate(final ResourceCertificateRequestData request,
                                                                 final SignCtx signCtx) {
+        final Config config = signCtx.taState.getConfig();
         final X500Principal issuer = signCtx.taCertificate.getSubject();
 
-        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
-        final URI taProductsPublicationUri = getConfig().getTaProductsPublicationUri();
-        final X509CertificateInformationAccessDescriptor[] taAIA = { aiaDescriptor(
-                X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
-                URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer)))
+        final URI taCertificatePublicationUri = config.getTaCertificatePublicationUri();
+        final URI taProductsPublicationUri = config.getTaProductsPublicationUri();
+        final X509CertificateInformationAccessDescriptor[] taAIA = {
+                new X509CertificateInformationAccessDescriptor(
+                        X509CertificateInformationAccessDescriptor.ID_CA_CA_ISSUERS,
+                        URI.create(taCertificatePublicationUri.toString() + TaNames.certificateFileName(issuer))
+                )
         };
 
         final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
@@ -552,7 +532,7 @@ public class TA {
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
 
         final X500Principal caName = signCtx.taCertificate.getSubject();
-        final URI taCertificatePublicationUri = getConfig().getTaCertificatePublicationUri();
+        final URI taCertificatePublicationUri = state.getConfig().getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
@@ -560,8 +540,8 @@ public class TA {
         builder.withSigningKeyPair(signCtx.keyPair);
         builder.withValidityPeriod(validityPeriod);
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
-        builder.withCrlUri(TaNames.crlPublicationUri(getConfig().getTaProductsPublicationUri(), caName));
-        builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(getConfig().getTaProductsPublicationUri(), caName));
+        builder.withCrlUri(TaNames.crlPublicationUri(state.getConfig().getTaProductsPublicationUri(), caName));
+        builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(state.getConfig().getTaProductsPublicationUri(), caName));
         builder.withInheritedResourceTypes(EnumSet.allOf(IpResourceType.class));
         builder.withSignatureProvider(getSignatureProvider());
         return builder.build();
@@ -594,10 +574,6 @@ public class TA {
         return next;
     }
 
-    private boolean revokeAllCertificatesForKey(PublicKey publicKey, final TAState taState) {
-        return revokeAllCertificatesForKey(KeyPairUtil.getEncodedKeyIdentifier(publicKey), taState);
-    }
-
     private boolean revokeAllCertificatesForKey(String encodedPublicKey, final TAState taState) {
         boolean result = false;
         for (final SignedResourceCertificate certificate : taState.getSignedProductionCertificates()) {
@@ -620,34 +596,22 @@ public class TA {
     }
 
     private DateTime calculateNextUpdateTime(final DateTime now) {
-        final DateTime minimum = now.plus(getConfig().getMinimumValidityPeriod());
+        final DateTime minimum = now.plus(state.getConfig().getMinimumValidityPeriod());
         DateTime result = now;
         while (result.isBefore(minimum)) {
-            result = result.plus(getConfig().getUpdatePeriod());
+            result = result.plus(state.getConfig().getUpdatePeriod());
         }
         return result;
     }
 
     private String getSignatureProvider() {
-        return getConfig().getSignatureProvider();
-    }
-
-    private String getKeypairGeneratorProvider() {
-        return getConfig().getKeypairGeneratorProvider();
-    }
-
-    public Config getConfig() {
-        return config;
-    }
-
-    private X509CertificateInformationAccessDescriptor aiaDescriptor(ASN1ObjectIdentifier method, URI location) {
-        return new X509CertificateInformationAccessDescriptor(method, location);
+        return state.getConfig().getSignatureProvider();
     }
 
     /**
      * Just an utility class to carry the environment around when doing the signing.
      */
-    private class SignCtx {
+    private static class SignCtx {
         final TrustAnchorRequest request;
         final TAState taState;
         final DateTime now;
