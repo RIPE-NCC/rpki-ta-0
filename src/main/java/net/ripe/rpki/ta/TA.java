@@ -288,7 +288,7 @@ public class TA {
         final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
         TAState newTAState = copyTAState(state);
 
-        final SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
+        SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
 
         // If requested, revoke all the currently issued resource certificates that are present in the state.
@@ -313,6 +313,7 @@ public class TA {
             TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
             taStateBuilder.withCrl(newTAState.getCrl());
             newTAState = createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
+            signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC), newTACertificate, keyPair);
         }
 
         // copy new SIAs to the TA config
