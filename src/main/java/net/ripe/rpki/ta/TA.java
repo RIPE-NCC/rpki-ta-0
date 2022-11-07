@@ -220,7 +220,7 @@ public class TA {
         return generateSiaDescriptors(
                 config.getTrustAnchorName(),
                 config.getNotificationUri(),
-                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, config.getTaCertificatePublicationUri())
+                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, config.getTaProductsPublicationUri())
         );
     }
 
