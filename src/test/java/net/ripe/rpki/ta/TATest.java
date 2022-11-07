@@ -1,8 +1,14 @@
 package net.ripe.rpki.ta;
 
+import net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor;
 import net.ripe.rpki.ta.config.Env;
+import net.ripe.rpki.ta.config.ProgramOptions;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
+import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TATest {
@@ -36,4 +42,29 @@ public class TATest {
         assertThat(xml).endsWith("</TA>");
     }
 
-}
+    @Test
+    public void resignTaCertificate() throws Exception {
+        TA ta = TA.initialise(Env.local());
+        String request = getClass().getResource("/ta-request.xml").getFile();
+        ProgramOptions options = new ProgramOptions(
+                "--force-new-ta-certificate",
+                "--request", request,
+                "--response", "-"
+        );
+        ta.processRequestXml(options);
+
+        X509CertificateInformationAccessDescriptor[] siaDescriptors = ta.getTaCertificate().getSubjectInformationAccess();
+        assertThat(siaLocationFor(ID_AD_CA_REPOSITORY, siaDescriptors)).hasValue("rsync://rpki.ripe.net/repository/");
+        assertThat(siaLocationFor(ID_AD_RPKI_NOTIFY, siaDescriptors)).hasValue("https://rrdp.ripe.net/notification.xml");
+        assertThat(siaLocationFor(ID_AD_RPKI_MANIFEST, siaDescriptors)).hasValue("rsync://rpki.ripe.net/ta/RIPE-NCC-TA-TEST.mft");
+    }
+
+    private Optional<String> siaLocationFor(ASN1ObjectIdentifier identifier, X509CertificateInformationAccessDescriptor[] descriptors) {
+        for (X509CertificateInformationAccessDescriptor descriptor : descriptors) {
+            if (identifier.equals(descriptor.getMethod())) {
+                return Optional.of(descriptor.getLocation().toString());
+            }
+        }
+        return Optional.empty();
+    }
+ }
