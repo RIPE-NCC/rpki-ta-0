@@ -81,7 +81,7 @@ public class TA {
 
     private static TAState createTaState(Config config, KeyPair keyPair) throws GeneralSecurityException, IOException {
         final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
-        final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config, config.getTaProductsPublicationUri());
+        final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config);
         final KeyStore keyStore = KeyStore.of(config);
         final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(config.getTrustAnchorName(), keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider()));
 
@@ -193,7 +193,6 @@ public class TA {
         final DateTime now = DateTime.now(DateTimeZone.UTC);
         taCertificateBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
-        // TODO Normally extraSiaDescriptors come from the request
         taCertificateBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
 
         return taCertificateBuilder.build();
@@ -217,11 +216,11 @@ public class TA {
         return result.values().toArray(new X509CertificateInformationAccessDescriptor[0]);
     }
 
-    private static X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(Config config, URI taProductsPublicationUri) {
+    private static X509CertificateInformationAccessDescriptor[] generateSiaDescriptors(Config config) {
         return generateSiaDescriptors(
                 config.getTrustAnchorName(),
                 config.getNotificationUri(),
-                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, taProductsPublicationUri)
+                new X509CertificateInformationAccessDescriptor(ID_AD_CA_REPOSITORY, config.getTaCertificatePublicationUri())
         );
     }
 
@@ -240,7 +239,7 @@ public class TA {
         final BigInteger nextSerial = nextIssuedCertSerial(state);
         final X509ResourceCertificate newTACertificate = reIssueRootCertificate(
                 keyPair,
-                generateSiaDescriptors(state.getConfig(), state.getConfig().getTaProductsPublicationUri()),
+                generateSiaDescriptors(state.getConfig()),
                 taCertificate,
                 nextSerial
         );
@@ -296,7 +295,6 @@ public class TA {
             revokeAllIssuedResourceCertificates(newTAState);
         }
 
-
         // re-issue TA certificate if some of the publication points are changed
         final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
         if (whyReissue.isPresent()) {
@@ -304,20 +302,25 @@ public class TA {
                 throw new OperationAbortedException("TA certificate has to be re-issued: " + whyReissue.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
             }
+
+            // copy new SIAs to the TA config
+            updateTaConfigUrls(request, signCtx);
+
             final KeyPair keyPair = decoded.getLeft();
             final X509ResourceCertificate taCertificate = decoded.getRight();
             final BigInteger nextSerial = nextIssuedCertSerial(state);
+
+            X509CertificateInformationAccessDescriptor[] ta0SiaDescriptors = generateSiaDescriptors(
+                    signCtx.taState.getConfig()
+            );
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
-                request.getSiaDescriptors(), taCertificate, nextSerial);
+                merge(ta0SiaDescriptors, request.getSiaDescriptors()), taCertificate, nextSerial);
 
             TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
             taStateBuilder.withCrl(newTAState.getCrl());
             newTAState = createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
             signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC), newTACertificate, keyPair);
         }
-
-        // copy new SIAs to the TA config
-        updateTaConfigUrls(request, signCtx);
 
         final List<TaResponse> taResponses = Lists.newArrayList();
         for (final TaRequest r : request.getTaRequests()) {
