@@ -516,7 +516,6 @@ public class TA {
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
         builder.withResources(ALL_RESOURCES_SET);
         builder.withSubjectInformationAccess(request.getSubjectInformationAccess());
-        builder.withCrlDistributionPoints(TaNames.clrPublicationUriForParentCertificate(signCtx.taCertificate));
         builder.withSignatureProvider(getSignatureProvider());
         builder.withAuthorityInformationAccess(taAIA);
         return builder.build();
@@ -536,7 +535,7 @@ public class TA {
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
 
         final X500Principal caName = signCtx.taCertificate.getSubject();
-        final URI taCertificatePublicationUri = state.getConfig().getTaCertificatePublicationUri();
+        final URI taCertificatePublicationUri = signCtx.taState.getConfig().getTaCertificatePublicationUri();
         builder.withIssuerDN(caName);
         builder.withSubjectDN(eeSubject);
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
@@ -544,8 +543,8 @@ public class TA {
         builder.withSigningKeyPair(signCtx.keyPair);
         builder.withValidityPeriod(validityPeriod);
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
-        builder.withCrlUri(TaNames.crlPublicationUri(state.getConfig().getTaProductsPublicationUri(), caName));
-        builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(state.getConfig().getTaProductsPublicationUri(), caName));
+        builder.withCrlUri(TaNames.crlPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
+        builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
         builder.withInheritedResourceTypes(EnumSet.allOf(IpResourceType.class));
         builder.withSignatureProvider(getSignatureProvider());
         return builder.build();
