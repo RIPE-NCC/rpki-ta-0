@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,15 +66,14 @@ public class TATest {
     @Nested
     @DisplayName("Re-issue TA certificate")
     class ReIssueTest {
+        @TempDir Path storageDir;
+
         TA ta;
         TrustAnchorRequest taRequest;
         TrustAnchorResponse taResponse;
 
         @BeforeEach
         void prepare() throws Exception {
-            Path storageDir = Files.createTempDirectory("ta-0");
-            storageDir.toFile().deleteOnExit();
-
             File request = new File(getClass().getResource("/ta-request.xml").getFile());
             File response = File.createTempFile("ta-0", "response.xml");
             response.deleteOnExit();
