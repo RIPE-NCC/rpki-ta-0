@@ -66,7 +66,7 @@ public class TrustAnchorStateSerializerTest {
     }
 
     @Test
-    public void testShouldMatchSimpleFields() throws XPathExpressionException {
+    public void testShouldMatchSimpleFields() throws XPathExpressionException, NumberFormatException {
         assertEquals(cleanupBase64(xpathQuery("/TA/encoded")), Base64.toBase64String(state.getEncoded()));
 
         assertEquals(cleanupBase64(xpathQuery("/TA/crl/encoded")), Base64.toBase64String(state.getCrl().getEncoded()));

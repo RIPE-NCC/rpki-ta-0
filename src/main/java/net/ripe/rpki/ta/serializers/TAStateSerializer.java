@@ -13,6 +13,7 @@ import javax.security.auth.x500.X500Principal;
 
 public class TAStateSerializer extends Serializer<TAState> {
 
+    @Override
     protected XStreamXmlSerializerBuilder<TAState> configureBuilder(XStreamXmlSerializerBuilder<TAState> builder) {
         return builder
                 .withAliasType("TA", TAState.class)
@@ -23,6 +24,7 @@ public class TAStateSerializer extends Serializer<TAState> {
                 .withAllowedTypeHierarchy(SignedObjectTracker.class);
     }
 
+    @Override
     protected Class<TAState> clazz() {
         return TAState.class;
     }
