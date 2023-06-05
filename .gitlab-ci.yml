@@ -103,13 +103,13 @@ sonarqube:
 localcert:
   <<: *deploy
   variables:
-    NODES: "localcert-2.rpki.ripe.net"
+    NODES: "localcert-3.rpki.ripe.net"
   environment:
     name: localcert
 
 prepdev:
   <<: *deploy
   variables:
-    NODES: "core-1.rpki.prepdev.ripe.net"
+    NODES: "core-3.rpki.prepdev.ripe.net"
   environment:
     name: prepdev
