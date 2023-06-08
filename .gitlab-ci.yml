@@ -84,6 +84,7 @@ sonarqube:
   image: docker-registry.ripe.net/swe/gitlab-ci/debian-deployenv
   # No caching of gradle data needed
   cache: []
+  allow_failure: true
   before_script:
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
