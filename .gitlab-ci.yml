@@ -1,5 +1,5 @@
 ---
-image: gradle:jdk8
+image: gradle:jdk11
 
 include:
   # Run pipeline on main branch, merge requests, tags.
