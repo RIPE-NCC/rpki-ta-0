@@ -289,9 +289,9 @@ public class TA {
         SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
 
-        // First process revocation requests, before revoking everything when the revoke all command line option is used.
-        // Otherwise an error response is generated for revocation requests since the certificate was already revoked
-        // by the command line option.
+        // First process revocation requests, before processing the "revoke all issued resource certificates" command
+        // line option. Otherwise error responses are generated due to requesting a revocation for an already revoked
+        // certificate.
         final List<TaResponse> taResponses = new ArrayList<>();
         for (final TaRequest r : request.getTaRequests()) {
             if (r instanceof RevocationRequest) {
