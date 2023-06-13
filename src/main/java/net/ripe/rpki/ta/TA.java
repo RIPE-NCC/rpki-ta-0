@@ -3,7 +3,6 @@ package net.ripe.rpki.ta;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
-import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -290,6 +289,16 @@ public class TA {
         SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
                 decoded.getRight(), decoded.getLeft());
 
+        // First process revocation requests, before processing the "revoke all issued resource certificates" command
+        // line option. Otherwise error responses are generated due to requesting a revocation for an already revoked
+        // certificate.
+        final List<TaResponse> taResponses = new ArrayList<>();
+        for (final TaRequest r : request.getTaRequests()) {
+            if (r instanceof RevocationRequest) {
+                taResponses.add(processRevocationRequest((RevocationRequest) r, signCtx));
+            }
+        }
+
         // If requested, revoke all the currently issued resource certificates that are present in the state.
         if (options.hasRevokeAllIssuedResourceCertificates()) {
             revokeAllIssuedResourceCertificates(newTAState);
@@ -322,12 +331,11 @@ public class TA {
             signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC), newTACertificate, keyPair);
         }
 
-        final List<TaResponse> taResponses = Lists.newArrayList();
+        // Process sign requests _after_ revoking all issued certificates (command line option), to avoid immediately
+        // revoking the certificates that we just issued...
         for (final TaRequest r : request.getTaRequests()) {
             if (r instanceof SigningRequest) {
                 taResponses.add(processSignRequest((SigningRequest) r, signCtx));
-            } else if (r instanceof RevocationRequest) {
-                taResponses.add(processRevocationRequest((RevocationRequest) r, signCtx));
             }
         }
 
