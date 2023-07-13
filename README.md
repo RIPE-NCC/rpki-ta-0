@@ -16,6 +16,7 @@ Changelog
 ---------
 
 ### main:
+  * Publish docker image to GHCR insetead of dockerhub
   * Updated github actions
   * Add feature to revoke objects that TA0 knows off, but are not requested
     (e.g. leftover files on manifest).
