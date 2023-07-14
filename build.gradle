@@ -126,5 +126,5 @@ jib {
         }
       }
     }
-    to { image = "ripencc/rpki-ta-0" }
+    to { image = "ghcr.io/ripe-ncc/rpki-ta-0" }
 }
