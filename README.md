@@ -21,6 +21,8 @@ Changelog
   * Add feature to revoke objects that TA0 knows off, but are not requested
     (e.g. leftover files on manifest).
   * Publish docker image `ghcr.io/ripe-ncc/rpki-ta-0`
+  * Use rpki-commons 1.35
+  * Compile with JDK 11
 
 ### 0.3.5:
   * Removed explicit license from all files.
