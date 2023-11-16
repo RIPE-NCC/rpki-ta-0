@@ -16,6 +16,7 @@ Changelog
 ---------
 
 ### main:
+  * Use the same timestamp for signing all the objects (TA certificate, MFT, CRL)
   * Publish docker image to GHCR insetead of dockerhub
   * Updated github actions
   * Add feature to revoke objects that TA0 knows off, but are not requested
