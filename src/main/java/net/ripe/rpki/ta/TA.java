@@ -82,7 +82,9 @@ public class TA {
         final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config);
         final KeyStore keyStore = KeyStore.of(config);
-        final byte[] encoded = keyStore.encode(keyPair, issueRootCertificate(config.getTrustAnchorName(), keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider()));
+        final X509ResourceCertificate rootCert = issueRootCertificate(config.getTrustAnchorName(),
+                    keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider());
+        final byte[] encoded = keyStore.encode(keyPair, rootCert);
 
         return createTaState(taStateBuilder, encoded, keyStore, BigInteger.ONE);
     }
@@ -164,7 +166,7 @@ public class TA {
         taBuilder.withSignatureProvider(signatureProvider);
         taBuilder.withAuthorityKeyIdentifier(false);
 
-        final DateTime now = DateTime.now(DateTimeZone.UTC);
+        final DateTime now = SignCtx.globalNow();
         taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
         taBuilder.withSubjectInformationAccess(descriptors);
@@ -189,7 +191,7 @@ public class TA {
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
         taCertificateBuilder.withAuthorityKeyIdentifier(false);
 
-        final DateTime now = DateTime.now(DateTimeZone.UTC);
+        final DateTime now = SignCtx.globalNow();
         taCertificateBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
         taCertificateBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
@@ -286,8 +288,7 @@ public class TA {
         final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
         TAState newTAState = copyTAState(state);
 
-        SignCtx signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC),
-                decoded.getRight(), decoded.getLeft());
+        SignCtx signCtx = new SignCtx(request, newTAState, decoded.getRight(), decoded.getLeft());
 
         // First process revocation requests, before processing the "revoke all issued resource certificates" command
         // line option. Otherwise error responses are generated due to requesting a revocation for an already revoked
@@ -328,7 +329,7 @@ public class TA {
             TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
             taStateBuilder.withCrl(newTAState.getCrl());
             newTAState = createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
-            signCtx = new SignCtx(request, newTAState, DateTime.now(DateTimeZone.UTC), newTACertificate, keyPair);
+            signCtx = new SignCtx(request, newTAState, newTACertificate, keyPair);
         }
 
         // Process sign requests _after_ revoking all issued certificates (command line option), to avoid immediately
@@ -453,7 +454,7 @@ public class TA {
         return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.taCertificate.getSubject(), signCtx.now);
     }
 
-    private X509Crl createNewCrl(final KeyPair keyPair, final TAState taState, final X500Principal issuer, final  DateTime now) {
+    private X509Crl createNewCrl(final KeyPair keyPair, final TAState taState, final X500Principal issuer, final DateTime now) {
         final X509CrlBuilder builder = new X509CrlBuilder()
                 .withAuthorityKeyIdentifier(keyPair.getPublic())
                 .withNumber(nextCrlNumber(taState))
@@ -629,12 +630,23 @@ public class TA {
         final X509ResourceCertificate taCertificate;
         final KeyPair keyPair;
 
-        private SignCtx(TrustAnchorRequest request, TAState taState, DateTime now, X509ResourceCertificate taCertificate, KeyPair keyPair) {
+        private SignCtx(TrustAnchorRequest request, TAState taState, X509ResourceCertificate taCertificate, KeyPair keyPair) {
             this.request = request;
             this.taState = taState;
-            this.now = now;
+            this.now = SignCtx.globalNow();
             this.taCertificate = taCertificate;
             this.keyPair = keyPair;
+        }
+
+        static DateTime globalNow;
+
+        // Since this program runs within a script, we can safely assume that all
+        // calls to "now" can be replaced with a value calculated only once.
+        static synchronized DateTime globalNow() {
+            if (globalNow == null) {
+                globalNow = DateTime.now(DateTimeZone.UTC);
+            }
+            return globalNow;
         }
     }
 
