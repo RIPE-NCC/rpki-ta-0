@@ -451,7 +451,7 @@ public class TA {
     }
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
-        return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.taCertificate.getSubject(), signCtx.now);
+        return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.taCertificate.getSubject(), SignCtx.globalNow());
     }
 
     private X509Crl createNewCrl(final KeyPair keyPair, final TAState taState, final X500Principal issuer, final DateTime now) {
@@ -477,7 +477,7 @@ public class TA {
     }
 
     private ManifestCms createNewManifest(final SignCtx signCtx) {
-        final DateTime nextUpdateTime = calculateNextUpdateTime(signCtx.now);
+        final DateTime nextUpdateTime = calculateNextUpdateTime(SignCtx.globalNow());
 
         // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
         // re-use in the future, and prevents keys from piling up in the HSM 'security world'
@@ -519,7 +519,7 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(new EncodedPublicKey(request.getEncodedSubjectPublicKey()));
         builder.withSigningKeyPair(signCtx.keyPair);
-        builder.withValidityPeriod(new ValidityPeriod(signCtx.now, calculateValidityNotAfter(signCtx.now)));
+        builder.withValidityPeriod(new ValidityPeriod(SignCtx.globalNow(), calculateValidityNotAfter(SignCtx.globalNow())));
         builder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
         builder.withAuthorityKeyIdentifier(true);
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
@@ -538,7 +538,7 @@ public class TA {
     }
 
     private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair, DateTime nextUpdateTime, final SignCtx signCtx) {
-        ValidityPeriod validityPeriod = new ValidityPeriod(signCtx.now, nextUpdateTime);
+        ValidityPeriod validityPeriod = new ValidityPeriod(SignCtx.globalNow(), nextUpdateTime);
         X500Principal eeSubject = new X500Principal("CN=" + KeyPairUtil.getAsciiHexEncodedPublicKeyHash(eeKeyPair.getPublic()));
 
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
@@ -562,7 +562,7 @@ public class TA {
     private ManifestCmsBuilder createBasicManifestBuilder(DateTime nextUpdateTime, X509ResourceCertificate eeCertificate, final SignCtx signCtx) {
         return new ManifestCmsBuilder().
                 withCertificate(eeCertificate).
-                withThisUpdateTime(signCtx.now).
+                withThisUpdateTime(SignCtx.globalNow()).
                 withNextUpdateTime(nextUpdateTime).
                 withManifestNumber(nextManifestNumber(signCtx.taState)).
                 withSignatureProvider(getSignatureProvider());
@@ -626,14 +626,12 @@ public class TA {
     private static class SignCtx {
         final TrustAnchorRequest request;
         final TAState taState;
-        final DateTime now;
         final X509ResourceCertificate taCertificate;
         final KeyPair keyPair;
 
         private SignCtx(TrustAnchorRequest request, TAState taState, X509ResourceCertificate taCertificate, KeyPair keyPair) {
             this.request = request;
             this.taState = taState;
-            this.now = SignCtx.globalNow();
             this.taCertificate = taCertificate;
             this.keyPair = keyPair;
         }
