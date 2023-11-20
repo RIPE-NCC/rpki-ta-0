@@ -1,28 +1,25 @@
 package net.ripe.rpki.ta.serializers.legacy;
 
-
+import lombok.Getter;
 import lombok.ToString;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
+import net.ripe.rpki.ta.util.Timing;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 
 @ToString
+@Getter
 public abstract class SignedObjectTracker implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final CertificateRepositoryObject certificateRepositoryObject;
-
     private final String fileName;
-
+    private final CertificateRepositoryObject certificateRepositoryObject;
+    private final DateTime notValidAfter;
     private DateTime revocationTime;
-
-    private DateTime notValidAfter;
-
 
     public SignedObjectTracker(CertificateRepositoryObject certificateRepositoryObject, DateTime notValidAfter) {
         Validate.notNull(certificateRepositoryObject, "certificateRepositoryObject is required");
@@ -41,17 +38,9 @@ public abstract class SignedObjectTracker implements Serializable {
         this.notValidAfter = notValidAfter;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
-    public CertificateRepositoryObject getCertificateRepositoryObject() {
-        return certificateRepositoryObject;
-    }
-
     public void revoke() {
         if (revocationTime == null) {
-            revocationTime = now();
+            revocationTime = Timing.now();
         }
     }
 
@@ -64,19 +53,11 @@ public abstract class SignedObjectTracker implements Serializable {
     }
 
     private boolean isExpired() {
-        return now().isAfter(notValidAfter);
-    }
-
-    private DateTime now() {
-        return DateTime.now(DateTimeZone.UTC);
+        return Timing.now().isAfter(notValidAfter);
     }
 
     public boolean isRevoked() {
         return revocationTime != null;
-    }
-
-    public DateTime getRevocationTime() {
-        return revocationTime;
     }
 
     public abstract BigInteger getCertificateSerial();

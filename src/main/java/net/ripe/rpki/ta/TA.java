@@ -34,6 +34,7 @@ import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
 import net.ripe.rpki.ta.util.PublishedObjectsUtil;
+import net.ripe.rpki.ta.util.Timing;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -166,9 +167,8 @@ public class TA {
         taBuilder.withSignatureProvider(signatureProvider);
         taBuilder.withAuthorityKeyIdentifier(false);
 
-        final DateTime now = SignCtx.globalNow();
-        taBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
-
+        final DateTime notValidBefore = Timing.now();
+        taBuilder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
         taBuilder.withSubjectInformationAccess(descriptors);
 
         return taBuilder.build();
@@ -191,8 +191,8 @@ public class TA {
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
         taCertificateBuilder.withAuthorityKeyIdentifier(false);
 
-        final DateTime now = SignCtx.globalNow();
-        taCertificateBuilder.withValidityPeriod(new ValidityPeriod(now, now.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
+        final DateTime notValidBefore = Timing.now();
+        taCertificateBuilder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
 
         taCertificateBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
 
@@ -451,21 +451,19 @@ public class TA {
     }
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
-        return createNewCrl(signCtx.keyPair, signCtx.taState, signCtx.taCertificate.getSubject(), SignCtx.globalNow());
-    }
-
-    private X509Crl createNewCrl(final KeyPair keyPair, final TAState taState, final X500Principal issuer, final DateTime now) {
+        final X500Principal issuer = signCtx.taCertificate.getSubject();
+        final DateTime thisUpdateTime = Timing.now();
         final X509CrlBuilder builder = new X509CrlBuilder()
-                .withAuthorityKeyIdentifier(keyPair.getPublic())
-                .withNumber(nextCrlNumber(taState))
+                .withAuthorityKeyIdentifier(signCtx.keyPair.getPublic())
+                .withNumber(nextCrlNumber(signCtx.taState))
                 .withIssuerDN(issuer)
-                .withThisUpdateTime(now)
-                .withNextUpdateTime(calculateNextUpdateTime(now))
+                .withThisUpdateTime(thisUpdateTime)
+                .withNextUpdateTime(calculateNextUpdateTime(thisUpdateTime))
                 .withSignatureProvider(getSignatureProvider());
-        fillRevokedObjects(builder, taState.getSignedProductionCertificates());
-        fillRevokedObjects(builder, taState.getPreviousTaCertificates());
-        fillRevokedObjects(builder, taState.getSignedManifests());
-        return builder.build(keyPair.getPrivate());
+        fillRevokedObjects(builder, signCtx.taState.getSignedProductionCertificates());
+        fillRevokedObjects(builder, signCtx.taState.getPreviousTaCertificates());
+        fillRevokedObjects(builder, signCtx.taState.getSignedManifests());
+        return builder.build(signCtx.keyPair.getPrivate());
     }
 
     private void fillRevokedObjects(X509CrlBuilder builder, List<? extends SignedObjectTracker> revokedObjects) {
@@ -477,15 +475,16 @@ public class TA {
     }
 
     private ManifestCms createNewManifest(final SignCtx signCtx) {
-        final DateTime nextUpdateTime = calculateNextUpdateTime(SignCtx.globalNow());
+        final DateTime thisUpdateTime = Timing.now();
+        final DateTime nextUpdateTime = calculateNextUpdateTime(thisUpdateTime);
 
         // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
         // re-use in the future, and prevents keys from piling up in the HSM 'security world'
         final KeyPairFactory keyPairFactory = new KeyPairFactory(state.getConfig().getKeystoreProvider());
         final KeyPair eeKeyPair = keyPairFactory.withProvider("SunRsaSign").generate();
-        final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, nextUpdateTime, signCtx);
+        final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, thisUpdateTime, nextUpdateTime, signCtx);
 
-        final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(nextUpdateTime, eeCertificate, signCtx);
+        final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(thisUpdateTime, nextUpdateTime, eeCertificate, signCtx);
         manifestBuilder.addFile(TaNames.crlFileName(signCtx.taCertificate.getSubject()), signCtx.taState.getCrl().getEncoded());
         for (final SignedResourceCertificate signedProductionCertificate : signCtx.taState.getSignedProductionCertificates()) {
             if (signedProductionCertificate.isPublishable()) {
@@ -519,7 +518,8 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(new EncodedPublicKey(request.getEncodedSubjectPublicKey()));
         builder.withSigningKeyPair(signCtx.keyPair);
-        builder.withValidityPeriod(new ValidityPeriod(SignCtx.globalNow(), calculateValidityNotAfter(SignCtx.globalNow())));
+        final DateTime notValidBefore = Timing.now();
+        builder.withValidityPeriod(new ValidityPeriod(notValidBefore, calculateValidityNotAfter(notValidBefore)));
         builder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
         builder.withAuthorityKeyIdentifier(true);
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
@@ -537,8 +537,11 @@ public class TA {
         return new DateTime(dateTime.getYear() + 1, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC).plusMonths(6);
     }
 
-    private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair, DateTime nextUpdateTime, final SignCtx signCtx) {
-        ValidityPeriod validityPeriod = new ValidityPeriod(SignCtx.globalNow(), nextUpdateTime);
+    private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair,
+                                                                   DateTime thisUpdateTime,
+                                                                   DateTime nextUpdateTime,
+                                                                   final SignCtx signCtx) {
+        ValidityPeriod validityPeriod = new ValidityPeriod(thisUpdateTime, nextUpdateTime);
         X500Principal eeSubject = new X500Principal("CN=" + KeyPairUtil.getAsciiHexEncodedPublicKeyHash(eeKeyPair.getPublic()));
 
         RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
@@ -559,10 +562,13 @@ public class TA {
         return builder.build();
     }
 
-    private ManifestCmsBuilder createBasicManifestBuilder(DateTime nextUpdateTime, X509ResourceCertificate eeCertificate, final SignCtx signCtx) {
+    private ManifestCmsBuilder createBasicManifestBuilder(DateTime thisUpdateTime,
+                                                          DateTime nextUpdateTime,
+                                                          X509ResourceCertificate eeCertificate,
+                                                          final SignCtx signCtx) {
         return new ManifestCmsBuilder().
                 withCertificate(eeCertificate).
-                withThisUpdateTime(SignCtx.globalNow()).
+                withThisUpdateTime(thisUpdateTime).
                 withNextUpdateTime(nextUpdateTime).
                 withManifestNumber(nextManifestNumber(signCtx.taState)).
                 withSignatureProvider(getSignatureProvider());
@@ -634,17 +640,6 @@ public class TA {
             this.taState = taState;
             this.taCertificate = taCertificate;
             this.keyPair = keyPair;
-        }
-
-        static DateTime globalNow;
-
-        // Since this program runs within a script, we can safely assume that all
-        // calls to "now" can be replaced with a value calculated only once.
-        static synchronized DateTime globalNow() {
-            if (globalNow == null) {
-                globalNow = DateTime.now(DateTimeZone.UTC);
-            }
-            return globalNow;
         }
     }
 
