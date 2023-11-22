@@ -94,7 +94,7 @@ sonarqube:
     - ssh-keygen -y -l -f ${SSH_KEY}
     - >
       src/main/scripts/deploy.sh ${SSH_KEY}
-      rpki-ta-0-*.tgz ${NODES}
+      rpki-ta-0-*.tgz "${NODES}"
   rules:
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -111,6 +111,6 @@ localcert:
 prepdev:
   <<: *deploy
   variables:
-    NODES: "core-3.rpki.prepdev.ripe.net,core-5.rpki.prepdev.ripe.net"
-  environment:
+    # Use spaces to separate hosts
+    NODES: "core-3.rpki.prepdev.ripe.net core-5.rpki.prepdev.ripe.net"
     name: prepdev
