@@ -3,7 +3,7 @@ package net.ripe.rpki.ta.serializers.legacy;
 import lombok.Getter;
 import lombok.ToString;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
-import net.ripe.rpki.ta.util.Timing;
+import net.ripe.rpki.ta.util.ValidityPeriods;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.DateTime;
 
@@ -40,7 +40,7 @@ public abstract class SignedObjectTracker implements Serializable {
 
     public void revoke() {
         if (revocationTime == null) {
-            revocationTime = Timing.now();
+            revocationTime = ValidityPeriods.now();
         }
     }
 
@@ -53,7 +53,7 @@ public abstract class SignedObjectTracker implements Serializable {
     }
 
     private boolean isExpired() {
-        return Timing.now().isAfter(notValidAfter);
+        return ValidityPeriods.now().isAfter(notValidAfter);
     }
 
     public boolean isRevoked() {

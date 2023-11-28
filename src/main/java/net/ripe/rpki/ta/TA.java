@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.ipresource.IpResourceType;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
-import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCmsBuilder;
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
@@ -34,7 +33,7 @@ import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
 import net.ripe.rpki.ta.util.PublishedObjectsUtil;
-import net.ripe.rpki.ta.util.Timing;
+import net.ripe.rpki.ta.util.ValidityPeriods;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -55,7 +54,6 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 
 @Slf4j(topic = "TA")
 public class TA {
-    private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
     public static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
 
@@ -154,7 +152,7 @@ public class TA {
             final BigInteger serial,
             final String signatureProvider
     ) {
-        final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
+        final X509ResourceCertificateBuilder taBuilder = ValidityPeriods.taCertificateBuilder();
 
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
@@ -166,9 +164,6 @@ public class TA {
         taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(signatureProvider);
         taBuilder.withAuthorityKeyIdentifier(false);
-
-        final DateTime notValidBefore = Timing.now();
-        taBuilder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
         taBuilder.withSubjectInformationAccess(descriptors);
 
         return taBuilder.build();
@@ -178,7 +173,7 @@ public class TA {
                                                            final X509CertificateInformationAccessDescriptor[] extraSiaDescriptors,
                                                            final X509ResourceCertificate currentTaCertificate,
                                                            final BigInteger serial) {
-        final X509ResourceCertificateBuilder taCertificateBuilder = new X509ResourceCertificateBuilder();
+        final X509ResourceCertificateBuilder taCertificateBuilder = ValidityPeriods.taCertificateBuilder();
 
         taCertificateBuilder.withCa(true);
         taCertificateBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
@@ -190,10 +185,6 @@ public class TA {
         taCertificateBuilder.withSigningKeyPair(rootKeyPair);
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
         taCertificateBuilder.withAuthorityKeyIdentifier(false);
-
-        final DateTime notValidBefore = Timing.now();
-        taCertificateBuilder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
-
         taCertificateBuilder.withSubjectInformationAccess(merge(currentTaCertificate.getSubjectInformationAccess(), extraSiaDescriptors));
 
         return taCertificateBuilder.build();
@@ -452,7 +443,7 @@ public class TA {
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
         final X500Principal issuer = signCtx.taCertificate.getSubject();
-        final DateTime thisUpdateTime = Timing.now();
+        final DateTime thisUpdateTime = ValidityPeriods.now();
         final X509CrlBuilder builder = new X509CrlBuilder()
                 .withAuthorityKeyIdentifier(signCtx.keyPair.getPublic())
                 .withNumber(nextCrlNumber(signCtx.taState))
@@ -475,16 +466,13 @@ public class TA {
     }
 
     private ManifestCms createNewManifest(final SignCtx signCtx) {
-        final DateTime thisUpdateTime = Timing.now();
-        final DateTime nextUpdateTime = calculateNextUpdateTime(thisUpdateTime);
-
         // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
         // re-use in the future, and prevents keys from piling up in the HSM 'security world'
         final KeyPairFactory keyPairFactory = new KeyPairFactory(state.getConfig().getKeystoreProvider());
         final KeyPair eeKeyPair = keyPairFactory.withProvider("SunRsaSign").generate();
-        final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, thisUpdateTime, nextUpdateTime, signCtx);
+        final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, signCtx);
 
-        final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(thisUpdateTime, nextUpdateTime, eeCertificate, signCtx);
+        final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(eeCertificate, signCtx);
         manifestBuilder.addFile(TaNames.crlFileName(signCtx.taCertificate.getSubject()), signCtx.taState.getCrl().getEncoded());
         for (final SignedResourceCertificate signedProductionCertificate : signCtx.taState.getSignedProductionCertificates()) {
             if (signedProductionCertificate.isPublishable()) {
@@ -511,15 +499,13 @@ public class TA {
                 )
         };
 
-        final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
+        final X509ResourceCertificateBuilder builder = ValidityPeriods.allResourcesCertificateBuilder();
         builder.withCa(true);
         builder.withIssuerDN(issuer);
         builder.withSubjectDN(request.getSubjectDN());
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(new EncodedPublicKey(request.getEncodedSubjectPublicKey()));
         builder.withSigningKeyPair(signCtx.keyPair);
-        final DateTime notValidBefore = Timing.now();
-        builder.withValidityPeriod(new ValidityPeriod(notValidBefore, calculateValidityNotAfter(notValidBefore)));
         builder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
         builder.withAuthorityKeyIdentifier(true);
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
@@ -530,21 +516,10 @@ public class TA {
         return builder.build();
     }
 
-    /**
-     * Set end of validity period to 1st of July next year.
-     */
-    private static DateTime calculateValidityNotAfter(final DateTime dateTime) {
-        return new DateTime(dateTime.getYear() + 1, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC).plusMonths(6);
-    }
-
-    private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair,
-                                                                   DateTime thisUpdateTime,
-                                                                   DateTime nextUpdateTime,
-                                                                   final SignCtx signCtx) {
-        ValidityPeriod validityPeriod = new ValidityPeriod(thisUpdateTime, nextUpdateTime);
+    private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair, final SignCtx signCtx) {
         X500Principal eeSubject = new X500Principal("CN=" + KeyPairUtil.getAsciiHexEncodedPublicKeyHash(eeKeyPair.getPublic()));
 
-        RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
+        RpkiSignedObjectEeCertificateBuilder builder = ValidityPeriods.eeCertBuilder(state.getConfig());
 
         final X500Principal caName = signCtx.taCertificate.getSubject();
         final URI taCertificatePublicationUri = signCtx.taState.getConfig().getTaCertificatePublicationUri();
@@ -553,7 +528,6 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(eeKeyPair.getPublic());
         builder.withSigningKeyPair(signCtx.keyPair);
-        builder.withValidityPeriod(validityPeriod);
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
         builder.withCrlUri(TaNames.crlPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
         builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
@@ -562,14 +536,9 @@ public class TA {
         return builder.build();
     }
 
-    private ManifestCmsBuilder createBasicManifestBuilder(DateTime thisUpdateTime,
-                                                          DateTime nextUpdateTime,
-                                                          X509ResourceCertificate eeCertificate,
-                                                          final SignCtx signCtx) {
-        return new ManifestCmsBuilder().
+    private ManifestCmsBuilder createBasicManifestBuilder(X509ResourceCertificate eeCertificate, final SignCtx signCtx) {
+        return ValidityPeriods.manifestBuilder(state.getConfig()).
                 withCertificate(eeCertificate).
-                withThisUpdateTime(thisUpdateTime).
-                withNextUpdateTime(nextUpdateTime).
                 withManifestNumber(nextManifestNumber(signCtx.taState)).
                 withSignatureProvider(getSignatureProvider());
     }
