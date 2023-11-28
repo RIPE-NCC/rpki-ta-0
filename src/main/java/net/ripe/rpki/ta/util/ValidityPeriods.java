@@ -2,6 +2,7 @@ package net.ripe.rpki.ta.util;
 
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCmsBuilder;
+import net.ripe.rpki.commons.crypto.crl.X509CrlBuilder;
 import net.ripe.rpki.commons.crypto.x509cert.RpkiSignedObjectEeCertificateBuilder;
 import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
@@ -40,8 +41,6 @@ public class ValidityPeriods {
         return builder;
     }
 
-    //
-
     public static X509ResourceCertificateBuilder allResourcesCertificateBuilder() {
         final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
         final DateTime notValidBefore = ValidityPeriods.now();
@@ -53,7 +52,6 @@ public class ValidityPeriods {
         final DateTime notValidBefore = ValidityPeriods.now();
         return builder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
     }
-
 
     /**
      * Set end of validity period to 1st of July next year.
@@ -71,4 +69,10 @@ public class ValidityPeriods {
         return result;
     }
 
+    public static X509CrlBuilder crlBuilder(Config config) {
+        final DateTime thisUpdateTime = ValidityPeriods.now();
+        return new X509CrlBuilder()
+                .withThisUpdateTime(thisUpdateTime)
+                .withNextUpdateTime(calculateNextUpdateTime(config, thisUpdateTime));
+    }
 }

@@ -443,13 +443,10 @@ public class TA {
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
         final X500Principal issuer = signCtx.taCertificate.getSubject();
-        final DateTime thisUpdateTime = ValidityPeriods.now();
-        final X509CrlBuilder builder = new X509CrlBuilder()
+        final X509CrlBuilder builder = ValidityPeriods.crlBuilder(state.getConfig())
                 .withAuthorityKeyIdentifier(signCtx.keyPair.getPublic())
                 .withNumber(nextCrlNumber(signCtx.taState))
                 .withIssuerDN(issuer)
-                .withThisUpdateTime(thisUpdateTime)
-                .withNextUpdateTime(calculateNextUpdateTime(thisUpdateTime))
                 .withSignatureProvider(getSignatureProvider());
         fillRevokedObjects(builder, signCtx.taState.getSignedProductionCertificates());
         fillRevokedObjects(builder, signCtx.taState.getPreviousTaCertificates());
