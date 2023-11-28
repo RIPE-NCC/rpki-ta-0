@@ -53,6 +53,13 @@ public class ValidityPeriods {
         return builder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
     }
 
+    public static X509CrlBuilder crlBuilder(Config config) {
+        final DateTime thisUpdateTime = ValidityPeriods.now();
+        return new X509CrlBuilder()
+                .withThisUpdateTime(thisUpdateTime)
+                .withNextUpdateTime(calculateNextUpdateTime(config, thisUpdateTime));
+    }
+
     /**
      * Set end of validity period to 1st of July next year.
      */
@@ -67,12 +74,5 @@ public class ValidityPeriods {
             result = result.plus(config.getUpdatePeriod());
         }
         return result;
-    }
-
-    public static X509CrlBuilder crlBuilder(Config config) {
-        final DateTime thisUpdateTime = ValidityPeriods.now();
-        return new X509CrlBuilder()
-                .withThisUpdateTime(thisUpdateTime)
-                .withNextUpdateTime(calculateNextUpdateTime(config, thisUpdateTime));
     }
 }
