@@ -1,10 +1,6 @@
 package net.ripe.rpki.ta.util;
 
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
-import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCmsBuilder;
-import net.ripe.rpki.commons.crypto.crl.X509CrlBuilder;
-import net.ripe.rpki.commons.crypto.x509cert.RpkiSignedObjectEeCertificateBuilder;
-import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificateBuilder;
 import net.ripe.rpki.ta.config.Config;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -24,40 +20,38 @@ public class ValidityPeriods {
         return globalNow;
     }
 
-    public static ManifestCmsBuilder manifestBuilder(Config config) {
-        final ManifestCmsBuilder builder = new ManifestCmsBuilder();
-        final DateTime thisUpdateTime = ValidityPeriods.now();
-        final DateTime nextUpdateTime = calculateNextUpdateTime(config, thisUpdateTime);
-        return builder
-                .withNextUpdateTime(nextUpdateTime)
-                .withThisUpdateTime(thisUpdateTime);
+    private final Config config;
+
+    public ValidityPeriods(Config config) {
+        this.config = config;
     }
 
-    public static RpkiSignedObjectEeCertificateBuilder eeCertBuilder(Config config) {
-        final RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
-        final DateTime thisUpdateTime = ValidityPeriods.now();
-        final DateTime nextUpdateTime = calculateNextUpdateTime(config, thisUpdateTime);
-        builder.withValidityPeriod(new ValidityPeriod(thisUpdateTime, nextUpdateTime));
-        return builder;
-    }
-
-    public static X509ResourceCertificateBuilder allResourcesCertificateBuilder() {
-        final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
+    public ValidityPeriod allResourcesCertificate() {
         final DateTime notValidBefore = ValidityPeriods.now();
-        return builder.withValidityPeriod(new ValidityPeriod(notValidBefore, calculateTaCertValidityNotAfter(notValidBefore)));
+        return new ValidityPeriod(notValidBefore, calculateTaCertValidityNotAfter(notValidBefore));
     }
 
-    public static X509ResourceCertificateBuilder taCertificateBuilder() {
-        final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
+    public static ValidityPeriod taCertificate() {
         final DateTime notValidBefore = ValidityPeriods.now();
-        return builder.withValidityPeriod(new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS)));
+        return new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS));
     }
 
-    public static X509CrlBuilder crlBuilder(Config config) {
+    public ValidityPeriod crl() {
+        return cmsValidityPeriod();
+    }
+
+    public ValidityPeriod manifest() {
+        return cmsValidityPeriod();
+    }
+
+    public ValidityPeriod eeCert() {
+        return cmsValidityPeriod();
+    }
+
+    private ValidityPeriod cmsValidityPeriod() {
         final DateTime thisUpdateTime = ValidityPeriods.now();
-        return new X509CrlBuilder()
-                .withThisUpdateTime(thisUpdateTime)
-                .withNextUpdateTime(calculateNextUpdateTime(config, thisUpdateTime));
+        final DateTime nextUpdateTime = calculateNextUpdateTime(thisUpdateTime);
+        return new ValidityPeriod(thisUpdateTime, nextUpdateTime);
     }
 
     /**
@@ -67,7 +61,7 @@ public class ValidityPeriods {
         return new DateTime(dateTime.getYear() + 1, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC).plusMonths(6);
     }
 
-    private static DateTime calculateNextUpdateTime(Config config, final DateTime now) {
+    private DateTime calculateNextUpdateTime(final DateTime now) {
         final DateTime minimum = now.plus(config.getMinimumValidityPeriod());
         DateTime result = now;
         while (result.isBefore(minimum)) {

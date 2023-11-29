@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.ripe.ipresource.IpResourceSet;
 import net.ripe.ipresource.IpResourceType;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
+import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCmsBuilder;
 import net.ripe.rpki.commons.crypto.crl.X509Crl;
@@ -60,6 +61,8 @@ public class TA {
     @Getter
     private TAState state;
 
+    private final ValidityPeriods validityPeriods;
+
     public static TA initialise(Config config) throws GeneralSecurityException, IOException {
         final KeyPairFactory keyPairFactory = new KeyPairFactory(config.getKeystoreProvider());
         final KeyPair rootKeyPair = keyPairFactory.withProvider(config.getKeypairGeneratorProvider()).generate();
@@ -75,6 +78,7 @@ public class TA {
 
     private TA(TAState state) {
         this.state = state;
+        this.validityPeriods = new ValidityPeriods(state.getConfig());
     }
 
     private static TAState createTaState(Config config, KeyPair keyPair) throws GeneralSecurityException, IOException {
@@ -152,7 +156,7 @@ public class TA {
             final BigInteger serial,
             final String signatureProvider
     ) {
-        final X509ResourceCertificateBuilder taBuilder = ValidityPeriods.taCertificateBuilder();
+        final X509ResourceCertificateBuilder taBuilder = new X509ResourceCertificateBuilder();
 
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
@@ -160,6 +164,7 @@ public class TA {
         taBuilder.withSubjectDN(trustAnchorName);
         taBuilder.withSerial(serial);
         taBuilder.withResources(ALL_RESOURCES_SET);
+        taBuilder.withValidityPeriod(ValidityPeriods.taCertificate());
         taBuilder.withPublicKey(rootKeyPair.getPublic());
         taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(signatureProvider);
@@ -173,7 +178,7 @@ public class TA {
                                                            final X509CertificateInformationAccessDescriptor[] extraSiaDescriptors,
                                                            final X509ResourceCertificate currentTaCertificate,
                                                            final BigInteger serial) {
-        final X509ResourceCertificateBuilder taCertificateBuilder = ValidityPeriods.taCertificateBuilder();
+        final X509ResourceCertificateBuilder taCertificateBuilder = new X509ResourceCertificateBuilder();
 
         taCertificateBuilder.withCa(true);
         taCertificateBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
@@ -181,6 +186,7 @@ public class TA {
         taCertificateBuilder.withSubjectDN(state.getConfig().getTrustAnchorName());
         taCertificateBuilder.withSerial(serial);
         taCertificateBuilder.withResources(ALL_RESOURCES_SET);
+        taCertificateBuilder.withValidityPeriod(ValidityPeriods.taCertificate());
         taCertificateBuilder.withPublicKey(rootKeyPair.getPublic());
         taCertificateBuilder.withSigningKeyPair(rootKeyPair);
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
@@ -443,10 +449,13 @@ public class TA {
 
     private X509Crl createNewCrl(final SignCtx signCtx) {
         final X500Principal issuer = signCtx.taCertificate.getSubject();
-        final X509CrlBuilder builder = ValidityPeriods.crlBuilder(state.getConfig())
+        final ValidityPeriod validityPeriod = validityPeriods.crl();
+        final X509CrlBuilder builder = new X509CrlBuilder()
                 .withAuthorityKeyIdentifier(signCtx.keyPair.getPublic())
                 .withNumber(nextCrlNumber(signCtx.taState))
                 .withIssuerDN(issuer)
+                .withThisUpdateTime(validityPeriod.getNotValidBefore())
+                .withNextUpdateTime(validityPeriod.getNotValidAfter())
                 .withSignatureProvider(getSignatureProvider());
         fillRevokedObjects(builder, signCtx.taState.getSignedProductionCertificates());
         fillRevokedObjects(builder, signCtx.taState.getPreviousTaCertificates());
@@ -496,7 +505,7 @@ public class TA {
                 )
         };
 
-        final X509ResourceCertificateBuilder builder = ValidityPeriods.allResourcesCertificateBuilder();
+        final X509ResourceCertificateBuilder builder = new X509ResourceCertificateBuilder();
         builder.withCa(true);
         builder.withIssuerDN(issuer);
         builder.withSubjectDN(request.getSubjectDN());
@@ -507,6 +516,7 @@ public class TA {
         builder.withAuthorityKeyIdentifier(true);
         builder.withCrlDistributionPoints(TaNames.crlPublicationUri(taProductsPublicationUri, issuer));
         builder.withResources(ALL_RESOURCES_SET);
+        builder.withValidityPeriod(validityPeriods.allResourcesCertificate());
         builder.withSubjectInformationAccess(request.getSubjectInformationAccess());
         builder.withSignatureProvider(getSignatureProvider());
         builder.withAuthorityInformationAccess(taAIA);
@@ -516,7 +526,7 @@ public class TA {
     private X509ResourceCertificate createEeCertificateForManifest(KeyPair eeKeyPair, final SignCtx signCtx) {
         X500Principal eeSubject = new X500Principal("CN=" + KeyPairUtil.getAsciiHexEncodedPublicKeyHash(eeKeyPair.getPublic()));
 
-        RpkiSignedObjectEeCertificateBuilder builder = ValidityPeriods.eeCertBuilder(state.getConfig());
+        RpkiSignedObjectEeCertificateBuilder builder = new RpkiSignedObjectEeCertificateBuilder();
 
         final X500Principal caName = signCtx.taCertificate.getSubject();
         final URI taCertificatePublicationUri = signCtx.taState.getConfig().getTaCertificatePublicationUri();
@@ -525,6 +535,7 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(eeKeyPair.getPublic());
         builder.withSigningKeyPair(signCtx.keyPair);
+        builder.withValidityPeriod(validityPeriods.eeCert());
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
         builder.withCrlUri(TaNames.crlPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
         builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
@@ -534,10 +545,13 @@ public class TA {
     }
 
     private ManifestCmsBuilder createBasicManifestBuilder(X509ResourceCertificate eeCertificate, final SignCtx signCtx) {
-        return ValidityPeriods.manifestBuilder(state.getConfig()).
-                withCertificate(eeCertificate).
-                withManifestNumber(nextManifestNumber(signCtx.taState)).
-                withSignatureProvider(getSignatureProvider());
+        ValidityPeriod validityPeriod = validityPeriods.manifest();
+        return new ManifestCmsBuilder().
+                withCertificate(eeCertificate)
+                .withNextUpdateTime(validityPeriod.getNotValidBefore())
+                .withThisUpdateTime(validityPeriod.getNotValidAfter())
+                .withManifestNumber(nextManifestNumber(signCtx.taState))
+                .withSignatureProvider(getSignatureProvider());
     }
 
     private BigInteger nextCrlNumber(final TAState taState) {
@@ -577,15 +591,6 @@ public class TA {
      */
     private void revokeAllIssuedResourceCertificates(final TAState taState) {
         taState.getSignedProductionCertificates().forEach(SignedResourceCertificate::revoke);
-    }
-
-    private DateTime calculateNextUpdateTime(final DateTime now) {
-        final DateTime minimum = now.plus(state.getConfig().getMinimumValidityPeriod());
-        DateTime result = now;
-        while (result.isBefore(minimum)) {
-            result = result.plus(state.getConfig().getUpdatePeriod());
-        }
-        return result;
     }
 
     private String getSignatureProvider() {
