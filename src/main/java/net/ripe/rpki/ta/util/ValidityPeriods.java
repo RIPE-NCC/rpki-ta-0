@@ -9,14 +9,11 @@ public class ValidityPeriods {
 
     private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
 
-    static DateTime globalNow;
-
     // Since this program runs within a script, we can safely assume that all
     // calls to "now" can be replaced with a value calculated only once.
-    public static synchronized DateTime now() {
-        if (globalNow == null) {
-            globalNow = DateTime.now(DateTimeZone.UTC);
-        }
+    private static final DateTime globalNow = DateTime.now(DateTimeZone.UTC);
+
+    public static DateTime now() {
         return globalNow;
     }
 
