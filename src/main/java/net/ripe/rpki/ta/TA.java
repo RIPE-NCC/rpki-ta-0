@@ -548,8 +548,8 @@ public class TA {
         ValidityPeriod validityPeriod = validityPeriods.manifest();
         return new ManifestCmsBuilder().
                 withCertificate(eeCertificate)
-                .withNextUpdateTime(validityPeriod.getNotValidBefore())
-                .withThisUpdateTime(validityPeriod.getNotValidAfter())
+                .withThisUpdateTime(validityPeriod.getNotValidBefore())
+                .withNextUpdateTime(validityPeriod.getNotValidAfter())
                 .withManifestNumber(nextManifestNumber(signCtx.taState))
                 .withSignatureProvider(getSignatureProvider());
     }
