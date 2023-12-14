@@ -15,7 +15,9 @@ https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 Changelog
 ---------
 
-### main:
+### main
+
+### v0.4.0
   * **hotfix** fix bug in manifest this/nextUpdate calculation
   * Use the same timestamp for signing all the objects (TA certificate, MFT, CRL)
   * Publish docker image to GHCR insetead of dockerhub
