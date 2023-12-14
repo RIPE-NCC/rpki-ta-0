@@ -24,6 +24,10 @@ Changelog
   * Use rpki-commons 1.35
   * Compile with JDK 11
 
+### 0.3.6
+
+  * Latest known working version
+
 ### 0.3.5:
   * Removed explicit license from all files.
   * Save backup of trust anchor state when saving
