@@ -16,6 +16,7 @@ Changelog
 ---------
 
 ### main:
+  * **hotfix** fix bug in manifest this/nextUpdate calculation
   * Use the same timestamp for signing all the objects (TA certificate, MFT, CRL)
   * Publish docker image to GHCR insetead of dockerhub
   * Updated github actions

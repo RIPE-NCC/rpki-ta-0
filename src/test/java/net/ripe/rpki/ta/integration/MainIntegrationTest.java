@@ -10,11 +10,14 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.KeyStore;
 import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
+import net.ripe.rpki.ta.config.Config;
+import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
+import org.joda.time.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -146,6 +149,49 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final X509Crl secondCrl = secondState.getCrl();
 
         assertThat(manifestEE).allMatch(secondCrl::isRevoked);
+    }
+
+    /**
+     * Check the manifest and CRL invariants that should hold.
+     *   * manifest and CRL validity period match
+     *   * no CRL entries are after thisUpdate
+     * @param state
+     */
+    private void validateManifestAndCrlInvariants(TAState state) {
+        // sanity check on config
+        assertThat(state.getConfig().getMinimumValidityPeriod().toDurationFrom(Instant.now()).toDuration()).isGreaterThan(Duration.standardDays(1));
+
+        var crl = state.getCrl();
+        if (crl != null) {
+            // Check CRL lifetime is at least the minimum period
+            assertThat(crl.getThisUpdateTime().plus(state.getConfig().getMinimumValidityPeriod())).isLessThanOrEqualTo(crl.getNextUpdateTime());
+            // check that CRL does not contain entries in the future
+            crl.getRevokedCertificates().forEach(revokedEntry -> {
+                assertThat(revokedEntry.getRevocationDateTime()).isLessThanOrEqualTo(crl.getThisUpdateTime());
+            });
+        }
+
+        /**
+         * Check the manifest(s) against CRL validity. There are two parts here:
+         *   * Manifest thisUpdate/nextUpdate
+         *   * EE cert validity
+         */
+
+        // check manifest against CRL validity
+        state.getSignedManifests().forEach(manifestWrapper -> {
+            var manifest = manifestWrapper.getManifest();
+            assertThat(manifestWrapper.getNotValidAfter()).isEqualTo(manifest.getNotValidAfter());
+
+            // thisUpdate/nextUpdate
+            assertThat(manifest.getThisUpdateTime()).isEqualTo(crl.getThisUpdateTime());
+            assertThat(manifest.getNextUpdateTime()).isEqualTo(crl.getNextUpdateTime());
+
+            // EE validity
+            var eeValidityPeriod = manifest.getValidityPeriod();
+
+            assertThat(eeValidityPeriod.getNotValidBefore()).isEqualTo(crl.getThisUpdateTime());
+            assertThat(eeValidityPeriod.getNotValidAfter()).isEqualTo(crl.getNextUpdateTime());
+        });
     }
 
     @Test
@@ -360,6 +406,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
     }
 
     private TAState reloadTaState() throws Exception {
-        return TA.load(EnvStub.test()).getState();
+        var state = TA.load(EnvStub.test()).getState();
+        validateManifestAndCrlInvariants(state);
+        return state;
     }
 }
