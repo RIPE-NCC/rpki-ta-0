@@ -14,6 +14,7 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.exception.OperationAbortedException;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
@@ -36,6 +37,7 @@ import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAc
 import static net.ripe.rpki.ta.Main.EXIT_ERROR_2;
 import static net.ripe.rpki.ta.Main.EXIT_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
@@ -218,6 +220,52 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
                 .map(SignedResourceCertificate::getResourceCertificate)
                 .map(X509ResourceCertificate::getCertificate)
                 .allMatch(secondCrl::isRevoked);
+    }
+
+    /**
+     * Initialise this with one environment, try signing a request from a different environment.
+     *
+     * TA0 must reject this.
+     * <emph>Note that if we force the re-issuance of a certificate, this will be overridden.</emph>
+     */
+    @Test
+    public void test_process_rejects_request_from_other_environment(@TempDir File dir) throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+        assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
+
+        final File response = new File(dir.getAbsolutePath(), "response-initial.xml");
+
+        final TAState taState0 = reloadTaState();
+        final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
+
+        assertThat(
+                run("--request=./src/test/resources/ta-request.xml" +
+                        " --force-new-ta-certificate" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode).isZero();
+
+        final TAState taStateAfterFirstSigning = reloadTaState();
+
+        assertThat(taStateAfterFirstSigning).isNotNull();
+
+        // There is a single non-revoked manifest with one certificate on it.
+        assertThat(taStateAfterFirstSigning.getSignedManifests())
+                .filteredOn(Predicates.not(SignedObjectTracker::isRevoked))
+                .map(SignedManifest::getManifest)
+                .allMatch(manifest -> manifest.getFiles().keySet().stream().filter(s -> s.endsWith(".cer")).count() == 1)
+                .hasSize(1);
+
+        // Now sign a request from a different environment.
+        // This MUST be rejected.
+
+        assertThat(run("--request=./src/test/resources/ta-request-prepdev-env.xml" +
+                        " --response=" + response.getAbsolutePath() +
+                        " --env=test").exitCode
+                ).isEqualTo(EXIT_ERROR_2);
+
+        final TAState taStateAfterRejectedSigning = reloadTaState();
+        // And TA state was not  modified by rejection
+        assertThat(taStateAfterFirstSigning).isEqualTo(taStateAfterRejectedSigning);
     }
 
 
