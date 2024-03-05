@@ -1,5 +1,6 @@
 package net.ripe.rpki.ta.serializers.legacy;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
@@ -12,6 +13,7 @@ import java.math.BigInteger;
 
 @ToString
 @Getter
+@EqualsAndHashCode
 public abstract class SignedObjectTracker implements Serializable {
 
     private static final long serialVersionUID = 1L;

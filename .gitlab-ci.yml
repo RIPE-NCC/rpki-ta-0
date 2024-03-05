@@ -111,6 +111,5 @@ localcert:
 prepdev:
   <<: *deploy
   variables:
-    # Use spaces to separate hosts
     NODES: "core-5.rpki.prepdev.ripe.net"
     name: prepdev
