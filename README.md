@@ -17,6 +17,8 @@ Changelog
 
 ### main
   * rpki-commons 1.39.1
+  * Updated gradle plugins (to fix build warnings)
+  * Updated gradle version in gradle wrapper
 
 ### v0.4.0
   * **hotfix** fix bug in manifest this/nextUpdate calculation
