@@ -16,6 +16,7 @@ Changelog
 ---------
 
 ### main
+  * rpki-commons 1.39.1
 
 ### v0.4.0
   * **hotfix** fix bug in manifest this/nextUpdate calculation
