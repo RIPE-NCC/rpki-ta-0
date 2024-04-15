@@ -454,8 +454,7 @@ public class TA {
                 .withAuthorityKeyIdentifier(signCtx.keyPair.getPublic())
                 .withNumber(nextCrlNumber(signCtx.taState))
                 .withIssuerDN(issuer)
-                .withThisUpdateTime(validityPeriod.getNotValidBefore())
-                .withNextUpdateTime(validityPeriod.getNotValidAfter())
+                .withValidityPeriod(validityPeriod)
                 .withSignatureProvider(getSignatureProvider());
         fillRevokedObjects(builder, signCtx.taState.getSignedProductionCertificates());
         fillRevokedObjects(builder, signCtx.taState.getPreviousTaCertificates());
@@ -548,8 +547,7 @@ public class TA {
         ValidityPeriod validityPeriod = validityPeriods.manifest();
         return new ManifestCmsBuilder().
                 withCertificate(eeCertificate)
-                .withThisUpdateTime(validityPeriod.getNotValidBefore())
-                .withNextUpdateTime(validityPeriod.getNotValidAfter())
+                .withValidityPeriod(validityPeriod)
                 .withManifestNumber(nextManifestNumber(signCtx.taState))
                 .withSignatureProvider(getSignatureProvider());
     }
