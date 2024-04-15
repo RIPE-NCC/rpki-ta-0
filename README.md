@@ -15,10 +15,11 @@ https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 Changelog
 ---------
 
-### main
+### v0.5.0
   * rpki-commons 1.39.1
   * Updated gradle plugins (to fix build warnings)
   * Updated gradle version in gradle wrapper
+  * Fixed deployment
 
 ### v0.4.0
   * **hotfix** fix bug in manifest this/nextUpdate calculation
