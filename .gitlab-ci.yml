@@ -85,11 +85,12 @@ sonarqube:
   # No caching of gradle data needed
   cache: []
   allow_failure: true
-  before_script:
+  script:
+    # Preparation: Include in scripts because we want the output.
+    - echo "Using SSH key from ${SSH_KEY}"
     - chmod 400 ${SSH_KEY}
     - chmod +x src/main/scripts/*.sh
     - mv build/distributions/rpki-ta-0-*.tgz .
-  script:
     # Print public key
     - ssh-keygen -y -l -f ${SSH_KEY}
     - >
@@ -112,4 +113,5 @@ prepdev:
   <<: *deploy
   variables:
     NODES: "core-5.rpki.prepdev.ripe.net"
+  environment:
     name: prepdev
