@@ -28,8 +28,10 @@ MAIN_CLASS="net.ripe.rpki.ta.Main"
 TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} --module-path /opt/nfast/java/classes -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
-  # production uses cardset protected keys
-  JAVA_OPTS="-Dprotect=cardset -DignorePassphrase=true $JAVA_OPTS"
+  # production:
+  # * load the JCE provider from the module path
+  # * uses cardset protected keys
+  JAVA_OPTS="--module-path=/opt/nfast/java/classes -Dprotect=cardset -DignorePassphrase=true $JAVA_OPTS"
 
   # preload the keys (and provide OCS authorisation with 3/10 cards), then execute the trust anchor binary.
   ${NFAST_BIN}/preload -c ${CARDSET} ${TA_TOOL_COMMAND}

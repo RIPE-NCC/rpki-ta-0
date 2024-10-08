@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.math.BigInteger;
@@ -471,10 +472,12 @@ public class TA {
     }
 
     private ManifestCms createNewManifest(final SignCtx signCtx) {
-        // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
-        // re-use in the future, and prevents keys from piling up in the HSM 'security world'
+        // Generate a new key pair for the one-time-use EE certificate
+        // this key _needs_ to be stored in the HSM (and thus use the HSM keypair factory) because otherwise
+        // the operation triggers an import of the key _into_ the security world, which is not allowed
+        // in FIPS 140-[23] level 3 mode.
         final KeyPairFactory keyPairFactory = new KeyPairFactory(state.getConfig().getKeystoreProvider());
-        final KeyPair eeKeyPair = keyPairFactory.withProvider("SunRsaSign").generate();
+        final KeyPair eeKeyPair = keyPairFactory.withProvider(state.getConfig().getKeypairGeneratorProvider()).generate();
         final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, signCtx);
 
         final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(eeCertificate, signCtx);
@@ -486,6 +489,12 @@ public class TA {
             }
         }
         final ManifestCms manifest = manifestBuilder.build(eeKeyPair.getPrivate());
+        // Destroy the keypair to prevent it from being kept.
+        try {
+            eeKeyPair.getPrivate().destroy();
+        } catch (DestroyFailedException e) {
+            log.error("Failed to destroy private key", e);
+        }
         signCtx.taState.getSignedManifests().add(new SignedManifest(manifest));
         return manifest;
     }
