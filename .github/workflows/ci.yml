@@ -31,13 +31,13 @@ jobs:
         run: ./gradlew build
 
       - name: Rename the package
-        run: mkdir -p artifacts && mv $(find build/distributions -name rpki-ta-0\*.zip) artifacts/rpki-ta-0-${{ matrix.java }}.zip
+        run: mv $(find build/distributions -name rpki-ta-0\*.zip) rpki-ta-0-${{ matrix.java }}.zip
 
       - name: Upload zip
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
-          path: artifacts        
+          name: rpki-ta-0-${{ matrix.java }}.zip
+          path: dist
 
   docker:
     runs-on: ubuntu-latest
