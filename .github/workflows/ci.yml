@@ -37,6 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rpki-ta-0-${{ matrix.java }}.zip
+          path: .
 
   docker:
     runs-on: ubuntu-latest
