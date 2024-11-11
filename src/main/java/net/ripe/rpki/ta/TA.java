@@ -493,7 +493,7 @@ public class TA {
         try {
             eeKeyPair.getPrivate().destroy();
         } catch (DestroyFailedException e) {
-            log.error("Failed to destroy private key", e);
+            log.error("Failed to destroy private key: private key for {} provider not deleted.", state.getConfig().getKeypairGeneratorProvider(), e);
         }
         signCtx.taState.getSignedManifests().add(new SignedManifest(manifest));
         return manifest;
