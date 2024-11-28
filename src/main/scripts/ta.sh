@@ -25,13 +25,11 @@ CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
 CARDSET="OCS2024"
 MAIN_CLASS="net.ripe.rpki.ta.Main"
 
-MODULE_PATH="/opt/nfast/java/classes"
-
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
   # production:
   # * uses cardset protected keys
   # * load the JCE provider from the module path
-  JAVA_OPTS="-Dprotect=cardset -DignorePassphrase=true --module-path=${MODULE_PATH} $JAVA_OPTS"
+  JAVA_OPTS="-Dprotect=cardset -DignorePassphrase=true --module-path=/opt/nfast/java/classes $JAVA_OPTS"
 fi
 
 TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
