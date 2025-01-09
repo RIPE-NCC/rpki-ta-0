@@ -30,7 +30,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: rpki-ta-0-java-11.tgz
+          files: rpki-ta-0-${{github.ref_name}}-java-11.tgz
           draft: true
           body: It needs to be filled in manually
       
