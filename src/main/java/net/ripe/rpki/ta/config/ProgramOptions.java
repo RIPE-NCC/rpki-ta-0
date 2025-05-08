@@ -48,7 +48,7 @@ public class ProgramOptions {
 
         options.addOption(Option.builder().longOpt(FORCE_NEW_TA_CERT_OPT).
             hasArg(false).
-            desc("Force re-issuing new TA certificate if there're SIA differences between config and request").
+            desc("Force re-issuing new TA certificate. This option is mandatory if there are SIA differences between request and config (or request and stored TA state)").
             build());
 
         options.addOption(Option.builder().longOpt(REVOKE_NON_REQUESTED_OBJECTS)

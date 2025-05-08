@@ -54,14 +54,13 @@ import java.util.*;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.*;
 
+@Getter
 @Slf4j(topic = "TA")
 public class TA {
 
     public static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
 
-    @Getter
     private TAState state;
-
     private final ValidityPeriods validityPeriods;
 
     public static TA initialise(Config config) throws GeneralSecurityException, IOException {
@@ -303,17 +302,22 @@ public class TA {
             revokeAllIssuedResourceCertificates(newTAState);
         }
 
+        // There are two cases when we need to re-issue the TA certificate:
+        // 1. We explicitly ask for it by providing the --force-new-ta-certificate option
+        // 2. The TA certificate publication point or the notification.xml URL has changed
+
         // re-issue TA certificate if some of the publication points are changed
-        final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
-        if (whyReissue.isPresent()) {
-            if (!options.hasForceNewTaCertificate()) {
-                throw new OperationAbortedException("TA certificate has to be re-issued: " + whyReissue.get() +
+        final Optional<String> differentLocations = locationsAreDifferent(request, signCtx.taState.getConfig());
+
+        if (differentLocations.isPresent() && !options.hasForceNewTaCertificate()) {
+            throw new OperationAbortedException("TA certificate has to be re-issued: " + differentLocations.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
+        }
+
+        if (options.hasForceNewTaCertificate() || differentLocations.isPresent()) {
+            if (differentLocations.isPresent()) {
+                updateTaConfigUrls(request, signCtx);
             }
-
-            // copy new SIAs to the TA config
-            updateTaConfigUrls(request, signCtx);
-
             final KeyPair keyPair = decoded.getLeft();
             final X509ResourceCertificate taCertificate = decoded.getRight();
             final BigInteger nextSerial = nextIssuedCertSerial(state);
@@ -322,7 +326,7 @@ public class TA {
                     signCtx.taState.getConfig()
             );
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
-                merge(ta0SiaDescriptors, request.getSiaDescriptors()), taCertificate, nextSerial);
+                    merge(ta0SiaDescriptors, request.getSiaDescriptors()), taCertificate, nextSerial);
 
             TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
             taStateBuilder.withCrl(newTAState.getCrl());
@@ -344,7 +348,7 @@ public class TA {
         return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), publishedObjects, taResponses), newTAState);
     }
 
-    private Optional<String> taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, Config taConfig) {
+    private Optional<String> locationsAreDifferent(TrustAnchorRequest taRequest, Config taConfig) {
         if (!taConfig.getTaCertificatePublicationUri().equals(taRequest.getTaCertificatePublicationUri())) {
             return Optional.of("Different TA certificate location, request has '" +
                     taRequest.getTaCertificatePublicationUri() + "', config has '" + taConfig.getTaCertificatePublicationUri() + "'");

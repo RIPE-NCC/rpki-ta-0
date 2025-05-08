@@ -7,7 +7,7 @@ import org.joda.time.DateTimeZone;
 
 public class ValidityPeriods {
 
-    private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS = 100;
+    private static final int TA_CERTIFICATE_VALIDITY_TIME_IN_MONTHS = 6;
 
     // Since this program runs within a script, we can safely assume that all
     // calls to "now" can be replaced with a value calculated only once.
@@ -30,7 +30,7 @@ public class ValidityPeriods {
 
     public static ValidityPeriod taCertificate() {
         final DateTime notValidBefore = ValidityPeriods.now();
-        return new ValidityPeriod(notValidBefore, notValidBefore.plusYears(TA_CERTIFICATE_VALIDITY_TIME_IN_YEARS));
+        return new ValidityPeriod(notValidBefore, notValidBefore.plusMonths(TA_CERTIFICATE_VALIDITY_TIME_IN_MONTHS));
     }
 
     public ValidityPeriod crl() {

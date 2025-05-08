@@ -101,7 +101,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState2 = reloadTaState();
-        assertEquals(BigInteger.valueOf(6L), taState2.getLastIssuedCertificateSerial());
+        // TA certificate will be reissued, so serial numbers will be incremented
+        assertEquals(BigInteger.valueOf(7L), taState2.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastMftSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastCrlSerial());
         assertEquals(2, taState2.getSignedProductionCertificates().size());
@@ -112,7 +113,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState taState3 = reloadTaState();
-        assertEquals(BigInteger.valueOf(8L), taState3.getLastIssuedCertificateSerial());
+        // TA certificate will be re-issued simply because of the -force-new-ta-certificate
+        assertEquals(BigInteger.valueOf(10L), taState3.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
 
