@@ -85,8 +85,8 @@ public class TA {
         final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config);
         final KeyStore keyStore = KeyStore.of(config);
-        final X509ResourceCertificate rootCert = issueRootCertificate(config.getTrustAnchorName(),
-                    keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider());
+        final X509ResourceCertificate rootCert = issueRootCertificate(
+                config, keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider());
         final byte[] encoded = keyStore.encode(keyPair, rootCert);
 
         return createTaState(taStateBuilder, encoded, keyStore, BigInteger.ONE);
@@ -150,7 +150,7 @@ public class TA {
     }
 
     private static X509ResourceCertificate issueRootCertificate(
-            final X500Principal trustAnchorName,
+            final Config config,
             final KeyPair rootKeyPair,
             final X509CertificateInformationAccessDescriptor[] descriptors,
             final BigInteger serial,
@@ -160,11 +160,11 @@ public class TA {
 
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-        taBuilder.withIssuerDN(trustAnchorName);
-        taBuilder.withSubjectDN(trustAnchorName);
+        taBuilder.withIssuerDN(config.getTrustAnchorName());
+        taBuilder.withSubjectDN(config.getTrustAnchorName());
         taBuilder.withSerial(serial);
         taBuilder.withResources(ALL_RESOURCES_SET);
-        taBuilder.withValidityPeriod(ValidityPeriods.taCertificate());
+        taBuilder.withValidityPeriod(new ValidityPeriods(config).taCertificate());
         taBuilder.withPublicKey(rootKeyPair.getPublic());
         taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(signatureProvider);
@@ -186,7 +186,7 @@ public class TA {
         taCertificateBuilder.withSubjectDN(state.getConfig().getTrustAnchorName());
         taCertificateBuilder.withSerial(serial);
         taCertificateBuilder.withResources(ALL_RESOURCES_SET);
-        taCertificateBuilder.withValidityPeriod(ValidityPeriods.taCertificate());
+        taCertificateBuilder.withValidityPeriod(validityPeriods.taCertificate());
         taCertificateBuilder.withPublicKey(rootKeyPair.getPublic());
         taCertificateBuilder.withSigningKeyPair(rootKeyPair);
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
@@ -548,7 +548,7 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(eeKeyPair.getPublic());
         builder.withSigningKeyPair(signCtx.keyPair);
-        builder.withValidityPeriod(validityPeriods.eeCert());
+        builder.withValidityPeriod(validityPeriods.manifest());
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
         builder.withCrlUri(TaNames.crlPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
         builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
