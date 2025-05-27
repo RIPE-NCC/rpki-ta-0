@@ -15,6 +15,7 @@ import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
+import net.ripe.rpki.ta.util.ValidityPeriods;
 import org.joda.time.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -372,6 +373,12 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final TAState taState0 = reloadTaState();
         final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
+        // Check that it only works with the --force-new-ta-certificate option
+        assertThat(
+                run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
+            "--response=" + response.getAbsolutePath() +
+            " --env=test").exitCode).isNotZero();
+
         assertThat(
                 run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
             "--response=" + response.getAbsolutePath() +
@@ -389,6 +396,58 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         assertEquals(taCertBefore.getResources(), taCertAfter.getResources());
         assertEquals(taCertBefore.getPublicKey(), taCertAfter.getPublicKey());
+    }
+
+
+    @Test
+    public void test_process_request_make_sure_ta_certificate_reissued_if_its_too_close_to_expiration() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        try {
+            // Set the time to be more than one minimal validity period before now.
+            var state = TA.load(EnvStub.test()).getState();
+            var withinMinimalValidityPeriod = state.getConfig().getMinimumValidityPeriod().minusWeeks(1);
+            DateTime faketime = DateTime.now().minus(withinMinimalValidityPeriod).minusWeeks(2);
+            ValidityPeriods.setGlobalNow(faketime);
+
+            assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
+
+            final File tmpResponses = Files.createTempDirectory("process_request_make_sure_ta_certificate_reissued_because_its_too_old").toFile();
+            tmpResponses.deleteOnExit();
+            final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+            final TAState taState0 = reloadTaState();
+            final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
+
+            // With the normal current time the TA certificate should get into the state of
+            // "it's about to expire soon" and should be re-issued.
+            ValidityPeriods.setGlobalNow(DateTime.now());
+
+            // It shouldn't work without the --force-new-ta-certificate option
+            assertThat(
+                    run("--request=./src/test/resources/ta-request.xml " +
+                            "--response=" + response.getAbsolutePath() +
+                            " --env=test").exitCode).isNotZero();
+
+            assertThat(
+                    run("--request=./src/test/resources/ta-request.xml " +
+                            "--response=" + response.getAbsolutePath() +
+                            " --force-new-ta-certificate --env=test").exitCode).isZero();
+
+            final TAState taStateAfterRrdpChange = reloadTaState();
+
+            assertThat(taStateAfterRrdpChange).isNotNull();
+
+            final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterRrdpChange);
+            assertThat(taCertBefore.getSerialNumber()).isNotEqualTo(taCertAfter.getSerialNumber());
+
+            // Check that TA certificate was re-issued
+            assertThat(taCertAfter.getValidityPeriod().getNotValidBefore().isAfter(taCertBefore.getValidityPeriod().getNotValidBefore())).isTrue();
+            assertThat(taCertAfter.getValidityPeriod().getNotValidAfter().isAfter(taCertBefore.getValidityPeriod().getNotValidAfter())).isTrue();
+
+        } finally {
+            ValidityPeriods.setGlobalNow(DateTime.now());
+        }
     }
 
     @Test

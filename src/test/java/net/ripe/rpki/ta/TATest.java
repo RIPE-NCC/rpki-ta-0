@@ -176,6 +176,6 @@ public class TATest {
     }
 
     private String readFile(File f) throws IOException {
-        return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+        return Files.readString(f.toPath());
     }
 }

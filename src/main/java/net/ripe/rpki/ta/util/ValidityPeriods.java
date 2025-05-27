@@ -1,5 +1,6 @@
 package net.ripe.rpki.ta.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.ta.config.Config;
 import org.joda.time.DateTime;
@@ -9,10 +10,16 @@ public class ValidityPeriods {
 
     // Since this program runs within a script, we can safely assume that all
     // calls to "now" can be replaced with a value calculated only once.
-    private static final DateTime globalNow = DateTime.now(DateTimeZone.UTC);
+    private static DateTime globalNow = DateTime.now(DateTimeZone.UTC);
 
     public static DateTime now() {
         return globalNow;
+    }
+
+    // This is for testing purposes only.
+    @VisibleForTesting
+    public static void setGlobalNow(final DateTime now) {
+        ValidityPeriods.globalNow = now;
     }
 
     private final Config config;

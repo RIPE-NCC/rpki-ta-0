@@ -314,6 +314,15 @@ public class TA {
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
         }
 
+        // If the TA certificate is about to expire, we want to scream about it and require re-run with --force-new-ta-certificate
+        var expiresAt = signCtx.taCertificate.getValidityPeriod().getNotValidAfter();
+        boolean taCertCloseToExpiration = expiresAt.isBefore(ValidityPeriods.now().plus(signCtx.taState.getConfig().getMinimumValidityPeriod()));
+
+        if (taCertCloseToExpiration && !options.hasForceNewTaCertificate()) {
+            throw new OperationAbortedException("TA certificate is about to expire, please re-run with " +
+                    ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to re-issue the TA certificate.");
+        }
+
         if (options.hasForceNewTaCertificate() || differentLocations.isPresent()) {
             if (differentLocations.isPresent()) {
                 updateTaConfigUrls(request, signCtx);
@@ -356,7 +365,7 @@ public class TA {
         for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
             if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getTaProductsPublicationUri())) {
                 return Optional.of("Different TA products URL, request has '" +
-                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
+                    descriptor.getLocation() + "', config has '" + taConfig.getTaProductsPublicationUri() + "'");
             } else if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getNotificationUri())) {
                 return Optional.of("Different notification.xml URL, request has '" +
                     descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
