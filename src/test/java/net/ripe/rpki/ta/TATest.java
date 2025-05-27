@@ -138,21 +138,21 @@ public class TATest {
             String subject = signingRequest.getResourceCertificateRequest().getSubjectDN().getName();
             String cn = subject.replaceFirst("^CN=", "");
             assertThat(taResponse.getPublishedObjects()).containsOnlyKeys(
-                    new URI("rsync://rpki.ripe.net/ta/RIPE-NCC-TA-TEST.cer"),
-                    new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.crl"),
-                    new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.mft"),
-                    new URI("rsync://rpki.ripe.net/repository/" + cn + ".cer")
+                    new URI("rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer"),
+                    new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.crl"),
+                    new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft"),
+                    new URI("rsync://localhost:10873/repository/" + cn + ".cer")
             );
         }
 
         @Test
         void crl_location() throws Exception {
-            URI taCrl = new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.crl");
+            URI taCrl = new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.crl");
             SigningResponse signingResponse = (SigningResponse) taResponse.getTaResponses().get(0);
             assertThat(signingResponse.getCertificate().getCrlDistributionPoints()).isEqualTo(new URI[] { taCrl });
 
             CertificateRepositoryObject manifest = taResponse.getPublishedObjects().get(
-                    new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.mft")
+                    new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft")
             );
             assertThat(manifest.getCrlUri()).isEqualTo(taCrl);
         }
@@ -160,9 +160,9 @@ public class TATest {
         @Test
         void sia_descriptor_uris() throws Exception {
             X509CertificateInformationAccessDescriptor[] siaDescriptors = ta.getTaCertificate().getSubjectInformationAccess();
-            assertThat(siaLocationFor(ID_AD_CA_REPOSITORY, siaDescriptors)).hasValue("rsync://rpki.ripe.net/repository/");
-            assertThat(siaLocationFor(ID_AD_RPKI_NOTIFY, siaDescriptors)).hasValue("https://rrdp.ripe.net/notification.xml");
-            assertThat(siaLocationFor(ID_AD_RPKI_MANIFEST, siaDescriptors)).hasValue("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.mft");
+            assertThat(siaLocationFor(ID_AD_CA_REPOSITORY, siaDescriptors)).hasValue("rsync://localhost:10873/repository/");
+            assertThat(siaLocationFor(ID_AD_RPKI_NOTIFY, siaDescriptors)).hasValue("https://localhost:7788/notification.xml");
+            assertThat(siaLocationFor(ID_AD_RPKI_MANIFEST, siaDescriptors)).hasValue("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft");
         }
     }
 
