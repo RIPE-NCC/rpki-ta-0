@@ -436,11 +436,11 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
                             "--response=" + response.getAbsolutePath() +
                             " --force-new-ta-certificate --env=test").exitCode).isZero();
 
-            final TAState taStateAfterRrdpChange = reloadTaState();
+            final TAState taStateAfterReissue = reloadTaState();
 
-            assertThat(taStateAfterRrdpChange).isNotNull();
+            assertThat(taStateAfterReissue).isNotNull();
 
-            final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterRrdpChange);
+            final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterReissue);
             assertThat(taCertBefore.getSerialNumber()).isNotEqualTo(taCertAfter.getSerialNumber());
 
             // Check that TA certificate was re-issued
@@ -469,7 +469,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             " --env=test");
         assertEquals(EXIT_ERROR_2, run.exitCode);
         assertThat(run.stderr).contains("The following problem occurred: " +
-            "TA certificate has to be re-issued: Different notification.xml URL, " +
+            "The TA certificate has to be re-issued: Different notification.xml URL, " +
             "request has 'https://new-url.ripe.net/notification.xml', config has 'https://localhost:7788/notification.xml', " +
             "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue.");
     }

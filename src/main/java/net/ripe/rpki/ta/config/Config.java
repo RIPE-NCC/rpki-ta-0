@@ -1,19 +1,16 @@
 package net.ripe.rpki.ta.config;
 
 import com.google.common.base.Preconditions;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.joda.time.Period;
 
 import javax.security.auth.x500.X500Principal;
 import java.net.URI;
 
-
 @Getter
 @EqualsAndHashCode
 @ToString
+@NoArgsConstructor
 public class Config {
     @Setter
     private X500Principal trustAnchorName;
@@ -45,6 +42,7 @@ public class Config {
     private Period minimumValidityPeriod;
 
     private final String minimalValidityErrorMessage = "Minimum validity period cannot be null";
+
     public Period getMinimumValidityPeriod() {
         return Preconditions.checkNotNull(minimumValidityPeriod, minimalValidityErrorMessage);
     }
