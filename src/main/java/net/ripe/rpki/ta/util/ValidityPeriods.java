@@ -18,8 +18,8 @@ public class ValidityPeriods {
 
     // This is for testing purposes only.
     @VisibleForTesting
-    public static void setGlobalNow(final DateTime now) {
-        ValidityPeriods.globalNow = now;
+    public static void setGlobalNow(final DateTime dateTime) {
+        ValidityPeriods.globalNow = dateTime;
     }
 
     private final Config config;

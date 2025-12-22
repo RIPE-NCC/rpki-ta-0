@@ -98,6 +98,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0,
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+
         final TAState taState2 = reloadTaState();
         // TA certificate will be reissued, so serial numbers will be incremented
         assertEquals(BigInteger.valueOf(7L), taState2.getLastIssuedCertificateSerial());
@@ -110,6 +111,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0,
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+
         final TAState taState3 = reloadTaState();
         // TA certificate will be re-issued simply because of the -force-new-ta-certificate
         assertEquals(BigInteger.valueOf(10L), taState3.getLastIssuedCertificateSerial());
@@ -400,7 +402,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
 
     @Test
-    public void test_process_request_make_sure_ta_certificate_reissued_if_its_too_close_to_expiration() throws Exception {
+    public void test_process_request_make_sure_ta_certificate_reissued_if_it_is_too_close_to_expiration() throws Exception {
         assertThat(run("--initialise --env=test").exitCode).isZero();
 
         try {
@@ -420,7 +422,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
             // With the normal current time the TA certificate should get into the state of
-            // "it's about to expire soon" and should be re-issued.
+            // "it is about to expire soon" and should be re-issued.
             ValidityPeriods.setGlobalNow(DateTime.now());
 
             // It shouldn't work without the --force-new-ta-certificate option

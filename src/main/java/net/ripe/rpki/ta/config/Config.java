@@ -44,12 +44,13 @@ public class Config {
 
     private Period minimumValidityPeriod;
 
+    private final String minimalValidityErrorMessage = "Minimum validity period cannot be null";
     public Period getMinimumValidityPeriod() {
-        return Preconditions.checkNotNull(minimumValidityPeriod, "Manifest and CRL validity period cannot be null");
+        return Preconditions.checkNotNull(minimumValidityPeriod, minimalValidityErrorMessage);
     }
 
     public void setMinimumValidityPeriod(Period minimumValidityPeriod) {
-        this.minimumValidityPeriod = Preconditions.checkNotNull(minimumValidityPeriod, "Manifest and CRL validity period cannot be null");
+        this.minimumValidityPeriod = Preconditions.checkNotNull(minimumValidityPeriod, minimalValidityErrorMessage);
     }
 
 }

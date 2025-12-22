@@ -302,27 +302,29 @@ public class TA {
             revokeAllIssuedResourceCertificates(newTAState);
         }
 
-        // There are two cases when we need to re-issue the TA certificate:
-        // 1. We explicitly ask for it by providing the --force-new-ta-certificate option
-        // 2. The TA certificate publication point or the notification.xml URL has changed
-
-        // re-issue TA certificate if some of the publication points are changed
         final Optional<String> differentLocations = locationsAreDifferent(request, signCtx.taState.getConfig());
 
+        // If the TA certificate publication point or the notification.xml URL has changed,
+        // we need to re-issue the TA certificate, but we don't want to do it implicitly,
+        // so we require the --force-new-ta-certificate option to be provided.
         if (differentLocations.isPresent() && !options.hasForceNewTaCertificate()) {
-            throw new OperationAbortedException("TA certificate has to be re-issued: " + differentLocations.get() +
+            throw new OperationAbortedException("The TA certificate has to be re-issued: " + differentLocations.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
         }
 
-        // If the TA certificate is about to expire, we want to scream about it and require re-run with --force-new-ta-certificate
         var expiresAt = signCtx.taCertificate.getValidityPeriod().getNotValidAfter();
         boolean taCertCloseToExpiration = expiresAt.isBefore(ValidityPeriods.now().plus(signCtx.taState.getConfig().getMinimumValidityPeriod()));
 
+        // The same comes to the TA certificate being close to expiration: require --force-new-ta-certificate
+        // option to be provided and when it is provided re-issue the certificate.
         if (taCertCloseToExpiration && !options.hasForceNewTaCertificate()) {
-            throw new OperationAbortedException("TA certificate is about to expire, please re-run with " +
+            throw new OperationAbortedException("The TA certificate is about to expire, please re-run with " +
                     ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to re-issue the TA certificate.");
         }
 
+        // There are two cases when we will re-issue the TA certificate:
+        // 1. We explicitly ask for it by providing the --force-new-ta-certificate option
+        // 2. The TA certificate publication point or the notification.xml URL has changed
         if (options.hasForceNewTaCertificate() || differentLocations.isPresent()) {
             if (differentLocations.isPresent()) {
                 updateTaConfigUrls(request, signCtx);
