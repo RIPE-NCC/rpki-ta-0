@@ -39,28 +39,23 @@ build:
     reports:
       junit:
         - build/test-results/test/*.xml
-  except:
-    refs:
-      - tags@rpki/rpki-ta-0
-    variables:
-      - $CI_COMMIT_TAG =~ /^rpki-ta-0-\d+\.\d+$/
+  rules:
+    - if: '$CI_COMMIT_BRANCH != "main"'
 
 build-release:
   stage: build
   script:
-    - RELEASE_VERSION="${CI_COMMIT_TAG/rpki-ta-0-}" ./gradlew -i clean build
+    - ./gradlew -i clean build
   artifacts:
     paths:
       - build/distributions/*
       - src/main/scripts/deploy.sh
+    expire_in: never
     reports:
       junit:
         - build/test-results/test/*.xml
-  only:
-    refs:
-      - tags@rpki/rpki-ta-0
-    variables:
-      - $CI_COMMIT_TAG =~ /^rpki-ta-0-\d+\..+$/
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 ######### Test stage #########
 sonarqube:
