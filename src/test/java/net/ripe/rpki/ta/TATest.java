@@ -10,7 +10,10 @@ import net.ripe.rpki.commons.ta.serializers.TrustAnchorRequestSerializer;
 import net.ripe.rpki.commons.ta.serializers.TrustAnchorResponseSerializer;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.domain.TAState;
+import net.ripe.rpki.ta.serializers.TAStateSerializer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.joda.time.Period;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +26,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Optional;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.*;
@@ -54,7 +58,6 @@ public class TATest {
         // Constructed differently from implementation
         assertThat(xml).contains("<persistentStorageDir>" + HOME + "/export/bad/certification/ta/data</persistentStorageDir>");
         assertThat(xml).contains("<minimumValidityPeriod>P1M</minimumValidityPeriod>");
-        assertThat(xml).contains("<updatePeriod>P3M</updatePeriod>");
         assertThat(xml).contains("<keyStorePassphrase>");
         assertThat(xml).contains("</keyStorePassphrase>");
         assertThat(xml).contains("<keyStoreKeyAlias>");
@@ -62,6 +65,43 @@ public class TATest {
         assertThat(xml).startsWith("<TA>");
         assertThat(xml).endsWith("</TA>");
     }
+
+    @Test
+    public void deserialize_ta() throws Exception {
+
+        // Do no store big base64 blob in the code, generate it every time
+        var encodedState = TA.initialise(Env.local()).getState().getEncoded();
+        var encoded = Base64.getEncoder().encodeToString(encodedState);
+
+        final String xml = "<TA>" +
+              "<encoded>" + encoded + "</encoded>" +
+              "<config>" +
+                "<trustAnchorName>CN=RIPE-NCC-TA-TEST</trustAnchorName>" +
+                "<keystoreProvider>SUN</keystoreProvider>" +
+                "<keypairGeneratorProvider>SunRsaSign</keypairGeneratorProvider>" +
+                "<signatureProvider>SunRsaSign</signatureProvider>" +
+                "<keystoreType>JKS</keystoreType>" +
+                "<persistentStorageDir>/export/certification/ta/data</persistentStorageDir>" +
+                "<taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>" +
+                "<taProductsPublicationUri>rsync://localhost:10873/repository/</taProductsPublicationUri>" +
+                "<notificationUri>https://localhost:7788/notification.xml</notificationUri>" +
+                "<minimumValidityPeriod>P6M</minimumValidityPeriod>" +
+                "<updatePeriod>P3M</updatePeriod>" +
+              "</config>" +
+              "<keyStorePassphrase>2fe5a028-861a-47a0-a27f-7c657ea6ed49</keyStorePassphrase>" +
+              "<keyStoreKeyAlias>RTA2</keyStoreKeyAlias>" +
+              "<lastIssuedCertificateSerial>1</lastIssuedCertificateSerial>" +
+              "<lastProcessedRequestTimestamp>0</lastProcessedRequestTimestamp>" +
+              "<previousTaCertificates/>" +
+              "<signedProductionCertificates/>" +
+              "<signedManifests/>" +
+            "</TA>";
+
+        final TAState state = new TAStateSerializer().deserialize(xml);
+        assertThat(state).isNotNull();
+        assertThat(state.getConfig().getMinimumValidityPeriod()).isEqualTo(Period.months(6));
+    }
+
 
     @Nested
     @DisplayName("Re-issue TA certificate")
@@ -98,21 +138,21 @@ public class TATest {
             String subject = signingRequest.getResourceCertificateRequest().getSubjectDN().getName();
             String cn = subject.replaceFirst("^CN=", "");
             assertThat(taResponse.getPublishedObjects()).containsOnlyKeys(
-                    new URI("rsync://rpki.ripe.net/ta/RIPE-NCC-TA-TEST.cer"),
-                    new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.crl"),
-                    new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.mft"),
-                    new URI("rsync://rpki.ripe.net/repository/" + cn + ".cer")
+                    new URI("rsync://localhost:10873/ta/RIPE-NCC-TA-TEST.cer"),
+                    new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.crl"),
+                    new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft"),
+                    new URI("rsync://localhost:10873/repository/" + cn + ".cer")
             );
         }
 
         @Test
         void crl_location() throws Exception {
-            URI taCrl = new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.crl");
+            URI taCrl = new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.crl");
             SigningResponse signingResponse = (SigningResponse) taResponse.getTaResponses().get(0);
             assertThat(signingResponse.getCertificate().getCrlDistributionPoints()).isEqualTo(new URI[] { taCrl });
 
             CertificateRepositoryObject manifest = taResponse.getPublishedObjects().get(
-                    new URI("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.mft")
+                    new URI("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft")
             );
             assertThat(manifest.getCrlUri()).isEqualTo(taCrl);
         }
@@ -120,9 +160,9 @@ public class TATest {
         @Test
         void sia_descriptor_uris() throws Exception {
             X509CertificateInformationAccessDescriptor[] siaDescriptors = ta.getTaCertificate().getSubjectInformationAccess();
-            assertThat(siaLocationFor(ID_AD_CA_REPOSITORY, siaDescriptors)).hasValue("rsync://rpki.ripe.net/repository/");
-            assertThat(siaLocationFor(ID_AD_RPKI_NOTIFY, siaDescriptors)).hasValue("https://rrdp.ripe.net/notification.xml");
-            assertThat(siaLocationFor(ID_AD_RPKI_MANIFEST, siaDescriptors)).hasValue("rsync://rpki.ripe.net/repository/RIPE-NCC-TA-TEST.mft");
+            assertThat(siaLocationFor(ID_AD_CA_REPOSITORY, siaDescriptors)).hasValue("rsync://localhost:10873/repository/");
+            assertThat(siaLocationFor(ID_AD_RPKI_NOTIFY, siaDescriptors)).hasValue("https://localhost:7788/notification.xml");
+            assertThat(siaLocationFor(ID_AD_RPKI_MANIFEST, siaDescriptors)).hasValue("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft");
         }
     }
 
@@ -136,6 +176,6 @@ public class TATest {
     }
 
     private String readFile(File f) throws IOException {
-        return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+        return Files.readString(f.toPath());
     }
 }
