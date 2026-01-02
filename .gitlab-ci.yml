@@ -1,5 +1,15 @@
----
-image: gradle:jdk11
+stages:
+  - build
+  - test
+  - qa
+  - security
+  - deploy
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "external"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 include:
   - project: swe/gitlab-support
@@ -12,13 +22,6 @@ include:
     inputs:
       stage: .post
       access-token: "$APPROVAL_BOT_ACCESS_TOKEN"
-
-stages:
-  - build
-  - test
-  - qa
-  - security
-  - deploy
 
 # Cache the complete build directories
 cache: &global_cache
@@ -33,6 +36,9 @@ cache: &global_cache
 variables:
   GRADLE_USER_HOME: "${CI_PROJECT_DIR}/.gradle/"
   GRADLE_OPTS: "-Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false"
+
+default:
+  image: gradle:jdk11
 
 lockfile:
   stage: .pre
