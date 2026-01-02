@@ -17,6 +17,7 @@ stages:
   - build
   - test
   - qa
+  - security
   - deploy
 
 # Cache the complete build directories
