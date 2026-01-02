@@ -2,12 +2,16 @@
 image: gradle:jdk11
 
 include:
-  # Run pipeline on main branch, merge requests, tags.
-  # this is equivalent to `workflow.rules:` that set this up.
-  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
-  # Whitesource
-  - project: 'swe/gitlab-ci'
-    file: '/templates/whitesource-scanning.yml'
+  - project: swe/gitlab-support
+    file: /templates/security.yml
+    inputs:
+      stage: security
+      needs: ["lockfile"]
+  - project: swe/gitlab-support
+    file: /templates/approval.yml
+    inputs:
+      stage: .post
+      access-token: "$APPROVAL_BOT_ACCESS_TOKEN"
 
 stages:
   - build
@@ -28,6 +32,17 @@ cache: &global_cache
 variables:
   GRADLE_USER_HOME: "${CI_PROJECT_DIR}/.gradle/"
   GRADLE_OPTS: "-Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false"
+
+lockfile:
+  stage: .pre
+  cache:
+    <<: *global_cache
+    policy: pull-push
+  script:
+    - gradle dependencies --write-locks
+  artifacts:
+    paths:
+      - "gradle.lockfile"
 
 build:
   stage: build
