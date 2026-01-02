@@ -40,7 +40,7 @@ lockfile:
     <<: *global_cache
     policy: pull-push
   script:
-    - gradle dependencies --write-locks
+    - ./gradlew dependencies --write-locks
   artifacts:
     paths:
       - "gradle.lockfile"
