@@ -22,15 +22,19 @@ fi
 CONF_DIR="conf"
 LIB_DIR="lib"
 CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
-CARDSET="TA2022"
+CARDSET="OCS2024"
 MAIN_CLASS="net.ripe.rpki.ta.Main"
 
-TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} --module-path /opt/nfast/java/classes -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
+if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
+  # production:
+  # * uses cardset protected keys
+  # * load the JCE provider from the module path
+  JAVA_OPTS="-Dprotect=cardset -DignorePassphrase=true --module-path=/opt/nfast/java/classes $JAVA_OPTS"
+fi
+
+TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
 
 if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
-  # production uses cardset protected keys
-  JAVA_OPTS="-Dprotect=cardset -DignorePassphrase=true $JAVA_OPTS"
-
   # preload the keys (and provide OCS authorisation with 3/10 cards), then execute the trust anchor binary.
   ${NFAST_BIN}/preload -c ${CARDSET} ${TA_TOOL_COMMAND}
 else

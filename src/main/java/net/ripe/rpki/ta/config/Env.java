@@ -54,8 +54,7 @@ public class Env {
     public static Config production() {
         final Config config = nCipherConf();
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
-        config.setMinimumValidityPeriod(Period.months(1));
-        config.setUpdatePeriod(Period.months(3));
+        config.setMinimumValidityPeriod(Period.months(3));
         config.setTrustAnchorName(new X500Principal("CN=ripe-ncc-ta"));
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.ripe.net/repository/"));
@@ -72,6 +71,7 @@ public class Env {
 
     public static Config prepdev() {
         final Config config = withSunRsaConf(EnvStub.testConfig());
+        config.setMinimumValidityPeriod(Period.months(3));
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://rpki.prepdev.ripe.net/repository/"));
@@ -81,6 +81,7 @@ public class Env {
 
     public static Config pilot() {
         final Config config = withSunRsaConf(EnvStub.testConfig());
+        config.setMinimumValidityPeriod(Period.months(3));
         config.setPersistentStorageDir("/export/bad/ta-ca/data/");
         config.setTaCertificatePublicationUri(URI.create("rsync://localcert.ripe.net/ta/"));
         config.setTaProductsPublicationUri(URI.create("rsync://localcert.ripe.net/repository/"));

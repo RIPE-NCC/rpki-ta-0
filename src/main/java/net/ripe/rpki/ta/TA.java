@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.math.BigInteger;
@@ -53,14 +54,13 @@ import java.util.*;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.*;
 
+@Getter
 @Slf4j(topic = "TA")
 public class TA {
 
     public static final IpResourceSet ALL_RESOURCES_SET = IpResourceSet.parse("AS0-AS4294967295, 0/0, 0::/0");
 
-    @Getter
     private TAState state;
-
     private final ValidityPeriods validityPeriods;
 
     public static TA initialise(Config config) throws GeneralSecurityException, IOException {
@@ -85,8 +85,8 @@ public class TA {
         final TAStateBuilder taStateBuilder = new TAStateBuilder(config);
         final X509CertificateInformationAccessDescriptor[] descriptors = generateSiaDescriptors(config);
         final KeyStore keyStore = KeyStore.of(config);
-        final X509ResourceCertificate rootCert = issueRootCertificate(config.getTrustAnchorName(),
-                    keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider());
+        final X509ResourceCertificate rootCert = issueRootCertificate(
+                config, keyPair, descriptors, BigInteger.ONE, config.getSignatureProvider());
         final byte[] encoded = keyStore.encode(keyPair, rootCert);
 
         return createTaState(taStateBuilder, encoded, keyStore, BigInteger.ONE);
@@ -150,7 +150,7 @@ public class TA {
     }
 
     private static X509ResourceCertificate issueRootCertificate(
-            final X500Principal trustAnchorName,
+            final Config config,
             final KeyPair rootKeyPair,
             final X509CertificateInformationAccessDescriptor[] descriptors,
             final BigInteger serial,
@@ -160,11 +160,11 @@ public class TA {
 
         taBuilder.withCa(true);
         taBuilder.withKeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign);
-        taBuilder.withIssuerDN(trustAnchorName);
-        taBuilder.withSubjectDN(trustAnchorName);
+        taBuilder.withIssuerDN(config.getTrustAnchorName());
+        taBuilder.withSubjectDN(config.getTrustAnchorName());
         taBuilder.withSerial(serial);
         taBuilder.withResources(ALL_RESOURCES_SET);
-        taBuilder.withValidityPeriod(ValidityPeriods.taCertificate());
+        taBuilder.withValidityPeriod(new ValidityPeriods(config).taCertificate());
         taBuilder.withPublicKey(rootKeyPair.getPublic());
         taBuilder.withSigningKeyPair(rootKeyPair);
         taBuilder.withSignatureProvider(signatureProvider);
@@ -186,7 +186,7 @@ public class TA {
         taCertificateBuilder.withSubjectDN(state.getConfig().getTrustAnchorName());
         taCertificateBuilder.withSerial(serial);
         taCertificateBuilder.withResources(ALL_RESOURCES_SET);
-        taCertificateBuilder.withValidityPeriod(ValidityPeriods.taCertificate());
+        taCertificateBuilder.withValidityPeriod(validityPeriods.taCertificate());
         taCertificateBuilder.withPublicKey(rootKeyPair.getPublic());
         taCertificateBuilder.withSigningKeyPair(rootKeyPair);
         taCertificateBuilder.withSignatureProvider(getSignatureProvider());
@@ -302,17 +302,33 @@ public class TA {
             revokeAllIssuedResourceCertificates(newTAState);
         }
 
-        // re-issue TA certificate if some of the publication points are changed
-        final Optional<String> whyReissue = taCertificateHasToBeReIssued(request, signCtx.taState.getConfig());
-        if (whyReissue.isPresent()) {
-            if (!options.hasForceNewTaCertificate()) {
-                throw new OperationAbortedException("TA certificate has to be re-issued: " + whyReissue.get() +
+        final Optional<String> differentLocations = locationsAreDifferent(request, signCtx.taState.getConfig());
+
+        // If the TA certificate publication point or the notification.xml URL has changed,
+        // we need to re-issue the TA certificate, but we don't want to do it implicitly,
+        // so we require the --force-new-ta-certificate option to be provided.
+        if (differentLocations.isPresent() && !options.hasForceNewTaCertificate()) {
+            throw new OperationAbortedException("The TA certificate has to be re-issued: " + differentLocations.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
+        }
+
+        var expiresAt = signCtx.taCertificate.getValidityPeriod().getNotValidAfter();
+        boolean taCertCloseToExpiration = expiresAt.isBefore(ValidityPeriods.now().plus(signCtx.taState.getConfig().getMinimumValidityPeriod()));
+
+        // The same comes to the TA certificate being close to expiration: require --force-new-ta-certificate
+        // option to be provided and when it is provided re-issue the certificate.
+        if (taCertCloseToExpiration && !options.hasForceNewTaCertificate()) {
+            throw new OperationAbortedException("The TA certificate is about to expire, please re-run with " +
+                    ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to re-issue the TA certificate.");
+        }
+
+        // There are two cases when we will re-issue the TA certificate:
+        // 1. We explicitly ask for it by providing the --force-new-ta-certificate option
+        // 2. The TA certificate publication point or the notification.xml URL has changed
+        if (options.hasForceNewTaCertificate() || differentLocations.isPresent()) {
+            if (differentLocations.isPresent()) {
+                updateTaConfigUrls(request, signCtx);
             }
-
-            // copy new SIAs to the TA config
-            updateTaConfigUrls(request, signCtx);
-
             final KeyPair keyPair = decoded.getLeft();
             final X509ResourceCertificate taCertificate = decoded.getRight();
             final BigInteger nextSerial = nextIssuedCertSerial(state);
@@ -321,7 +337,7 @@ public class TA {
                     signCtx.taState.getConfig()
             );
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
-                merge(ta0SiaDescriptors, request.getSiaDescriptors()), taCertificate, nextSerial);
+                    merge(ta0SiaDescriptors, request.getSiaDescriptors()), taCertificate, nextSerial);
 
             TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
             taStateBuilder.withCrl(newTAState.getCrl());
@@ -343,7 +359,7 @@ public class TA {
         return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), publishedObjects, taResponses), newTAState);
     }
 
-    private Optional<String> taCertificateHasToBeReIssued(TrustAnchorRequest taRequest, Config taConfig) {
+    private Optional<String> locationsAreDifferent(TrustAnchorRequest taRequest, Config taConfig) {
         if (!taConfig.getTaCertificatePublicationUri().equals(taRequest.getTaCertificatePublicationUri())) {
             return Optional.of("Different TA certificate location, request has '" +
                     taRequest.getTaCertificatePublicationUri() + "', config has '" + taConfig.getTaCertificatePublicationUri() + "'");
@@ -351,7 +367,7 @@ public class TA {
         for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
             if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getTaProductsPublicationUri())) {
                 return Optional.of("Different TA products URL, request has '" +
-                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
+                    descriptor.getLocation() + "', config has '" + taConfig.getTaProductsPublicationUri() + "'");
             } else if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getNotificationUri())) {
                 return Optional.of("Different notification.xml URL, request has '" +
                     descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
@@ -471,10 +487,12 @@ public class TA {
     }
 
     private ManifestCms createNewManifest(final SignCtx signCtx) {
-        // Generate a new key pair for the one-time-use EE certificate and do not store it, this prevents accidental
-        // re-use in the future, and prevents keys from piling up in the HSM 'security world'
+        // Generate a new key pair for the one-time-use EE certificate
+        // this key _needs_ to be stored in the HSM (and thus use the HSM keypair factory) because otherwise
+        // the operation triggers an import of the key _into_ the security world, which is not allowed
+        // in FIPS 140-[23] level 3 mode.
         final KeyPairFactory keyPairFactory = new KeyPairFactory(state.getConfig().getKeystoreProvider());
-        final KeyPair eeKeyPair = keyPairFactory.withProvider("SunRsaSign").generate();
+        final KeyPair eeKeyPair = keyPairFactory.withProvider(state.getConfig().getKeypairGeneratorProvider()).generate();
         final X509ResourceCertificate eeCertificate = createEeCertificateForManifest(eeKeyPair, signCtx);
 
         final ManifestCmsBuilder manifestBuilder = createBasicManifestBuilder(eeCertificate, signCtx);
@@ -486,6 +504,13 @@ public class TA {
             }
         }
         final ManifestCms manifest = manifestBuilder.build(eeKeyPair.getPrivate());
+        // Destroy the keypair to prevent it from being kept.
+        try {
+            eeKeyPair.getPrivate().destroy();
+        } catch (DestroyFailedException e) {
+            log.info("Could not destroy private key for {} provider, this is probably expected.",
+                    state.getConfig().getKeypairGeneratorProvider());
+        }
         signCtx.taState.getSignedManifests().add(new SignedManifest(manifest));
         return manifest;
     }
@@ -534,7 +559,7 @@ public class TA {
         builder.withSerial(nextIssuedCertSerial(signCtx.taState));
         builder.withPublicKey(eeKeyPair.getPublic());
         builder.withSigningKeyPair(signCtx.keyPair);
-        builder.withValidityPeriod(validityPeriods.eeCert());
+        builder.withValidityPeriod(validityPeriods.manifest());
         builder.withParentResourceCertificatePublicationUri(TaNames.certificatePublicationUri(taCertificatePublicationUri, caName));
         builder.withCrlUri(TaNames.crlPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));
         builder.withCorrespondingCmsPublicationPoint(TaNames.manifestPublicationUri(signCtx.taState.getConfig().getTaProductsPublicationUri(), caName));

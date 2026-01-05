@@ -15,6 +15,12 @@ https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 Changelog
 ---------
 
+### v0.5.3
+  * Fix issues when working with HSM in FIPS 140-[23] level 3 mode
+
+### v0.5.2
+  * Releases are made using GitHub actions from now on
+
 ### v0.5.1
   * Publish releases on GitHub
 

@@ -10,14 +10,12 @@ import net.ripe.rpki.commons.crypto.x509cert.X509ResourceCertificate;
 import net.ripe.rpki.ta.KeyStore;
 import net.ripe.rpki.ta.Main;
 import net.ripe.rpki.ta.TA;
-import net.ripe.rpki.ta.config.Config;
-import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.EnvStub;
 import net.ripe.rpki.ta.domain.TAState;
-import net.ripe.rpki.ta.exception.OperationAbortedException;
 import net.ripe.rpki.ta.serializers.legacy.SignedManifest;
 import net.ripe.rpki.ta.serializers.legacy.SignedObjectTracker;
 import net.ripe.rpki.ta.serializers.legacy.SignedResourceCertificate;
+import net.ripe.rpki.ta.util.ValidityPeriods;
 import org.joda.time.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,8 +98,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0,
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+
         final TAState taState2 = reloadTaState();
-        assertEquals(BigInteger.valueOf(6L), taState2.getLastIssuedCertificateSerial());
+        // TA certificate will be reissued, so serial numbers will be incremented
+        assertEquals(BigInteger.valueOf(7L), taState2.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastMftSerial());
         assertEquals(BigInteger.valueOf(2L), taState2.getLastCrlSerial());
         assertEquals(2, taState2.getSignedProductionCertificates().size());
@@ -111,8 +111,10 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(0,
             run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
+
         final TAState taState3 = reloadTaState();
-        assertEquals(BigInteger.valueOf(8L), taState3.getLastIssuedCertificateSerial());
+        // TA certificate will be re-issued simply because of the -force-new-ta-certificate
+        assertEquals(BigInteger.valueOf(10L), taState3.getLastIssuedCertificateSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastMftSerial());
         assertEquals(BigInteger.valueOf(3L), taState3.getLastCrlSerial());
 
@@ -373,6 +375,12 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         final TAState taState0 = reloadTaState();
         final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
 
+        // Check that it only works with the --force-new-ta-certificate option
+        assertThat(
+                run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
+            "--response=" + response.getAbsolutePath() +
+            " --env=test").exitCode).isNotZero();
+
         assertThat(
                 run("--request=./src/test/resources/ta-request-changed-rrdp-url.xml " +
             "--response=" + response.getAbsolutePath() +
@@ -392,6 +400,58 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(taCertBefore.getPublicKey(), taCertAfter.getPublicKey());
     }
 
+
+    @Test
+    public void test_process_request_make_sure_ta_certificate_reissued_if_it_is_too_close_to_expiration() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        try {
+            // Set the time to be more than one minimal validity period before now.
+            var state = TA.load(EnvStub.test()).getState();
+            var withinMinimalValidityPeriod = state.getConfig().getMinimumValidityPeriod().minusWeeks(1);
+            DateTime faketime = DateTime.now().minus(withinMinimalValidityPeriod).minusWeeks(2);
+            ValidityPeriods.setGlobalNow(faketime);
+
+            assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
+
+            final File tmpResponses = Files.createTempDirectory("process_request_make_sure_ta_certificate_reissued_because_its_too_old").toFile();
+            tmpResponses.deleteOnExit();
+            final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+            final TAState taState0 = reloadTaState();
+            final X509ResourceCertificate taCertBefore = getTaCertificate(taState0);
+
+            // With the normal current time the TA certificate should get into the state of
+            // "it is about to expire soon" and should be re-issued.
+            ValidityPeriods.setGlobalNow(DateTime.now());
+
+            // It shouldn't work without the --force-new-ta-certificate option
+            assertThat(
+                    run("--request=./src/test/resources/ta-request.xml " +
+                            "--response=" + response.getAbsolutePath() +
+                            " --env=test").exitCode).isNotZero();
+
+            assertThat(
+                    run("--request=./src/test/resources/ta-request.xml " +
+                            "--response=" + response.getAbsolutePath() +
+                            " --force-new-ta-certificate --env=test").exitCode).isZero();
+
+            final TAState taStateAfterReissue = reloadTaState();
+
+            assertThat(taStateAfterReissue).isNotNull();
+
+            final X509ResourceCertificate taCertAfter = getTaCertificate(taStateAfterReissue);
+            assertThat(taCertBefore.getSerialNumber()).isNotEqualTo(taCertAfter.getSerialNumber());
+
+            // Check that TA certificate was re-issued
+            assertThat(taCertAfter.getValidityPeriod().getNotValidBefore().isAfter(taCertBefore.getValidityPeriod().getNotValidBefore())).isTrue();
+            assertThat(taCertAfter.getValidityPeriod().getNotValidAfter().isAfter(taCertBefore.getValidityPeriod().getNotValidAfter())).isTrue();
+
+        } finally {
+            ValidityPeriods.setGlobalNow(DateTime.now());
+        }
+    }
+
     @Test
     public void test_process_request_do_not_reissue_ta_certificate_without_force_option() throws Exception {
         assertEquals(0, run("--initialise --env=test").exitCode);
@@ -409,7 +469,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             " --env=test");
         assertEquals(EXIT_ERROR_2, run.exitCode);
         assertThat(run.stderr).contains("The following problem occurred: " +
-            "TA certificate has to be re-issued: Different notification.xml URL, " +
+            "The TA certificate has to be re-issued: Different notification.xml URL, " +
             "request has 'https://new-url.ripe.net/notification.xml', config has 'https://localhost:7788/notification.xml', " +
             "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue.");
     }

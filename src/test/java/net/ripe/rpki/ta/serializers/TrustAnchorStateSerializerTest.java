@@ -81,7 +81,7 @@ public class TrustAnchorStateSerializerTest {
         assertEquals(Long.valueOf(xpathQuery("/TA/lastProcessedRequestTimestamp")),
                      state.getLastProcessedRequestTimestamp());
 
-        assertEquals(new ArrayList(), state.getPreviousTaCertificates());
+        assertEquals(new ArrayList<>(), state.getPreviousTaCertificates());
     }
 
     @Test
@@ -109,8 +109,6 @@ public class TrustAnchorStateSerializerTest {
                      config.getPersistentStorageDir());
         assertEquals(Period.parse(xpathQuery("/TA/config/minimumValidityPeriod")),
                      config.getMinimumValidityPeriod());
-        assertEquals(Period.parse(xpathQuery("/TA/config/updatePeriod")),
-                     config.getUpdatePeriod());
     }
 
     /**
