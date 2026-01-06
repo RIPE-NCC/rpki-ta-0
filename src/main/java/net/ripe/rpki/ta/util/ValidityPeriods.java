@@ -1,11 +1,14 @@
 package net.ripe.rpki.ta.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.commons.crypto.ValidityPeriod;
 import net.ripe.rpki.ta.config.Config;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Period;
 
+@Slf4j(topic = "ValidityPeriods")
 public class ValidityPeriods {
 
     // Since this program runs within a script, we can safely assume that all
@@ -34,8 +37,17 @@ public class ValidityPeriods {
     }
 
     public ValidityPeriod taCertificate() {
-        final DateTime notValidBefore = ValidityPeriods.now();
-        final DateTime notValidAfter = notValidBefore.plus(config.getMinimumValidityPeriod().multipliedBy(2));
+        var notValidBefore = ValidityPeriods.now();
+        var notValidAfter = notValidBefore.plus(config.getMinimumValidityPeriod());
+
+        // Do not allow validity periods of less than three months for TA certificates.
+        // Smaller values may appear because of the configuration already stored in the
+        // persistent state of the TA.
+        var threeMonthsFromNow = notValidBefore.plus(Period.months(3));
+        if (notValidAfter.isBefore(threeMonthsFromNow)) {
+            notValidAfter = threeMonthsFromNow;
+        }
+
         return new ValidityPeriod(notValidBefore, notValidAfter);
     }
 

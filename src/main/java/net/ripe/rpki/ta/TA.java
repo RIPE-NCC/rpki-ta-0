@@ -288,7 +288,7 @@ public class TA {
         SignCtx signCtx = new SignCtx(request, newTAState, decoded.getRight(), decoded.getLeft());
 
         // First process revocation requests, before processing the "revoke all issued resource certificates" command
-        // line option. Otherwise error responses are generated due to requesting a revocation for an already revoked
+        // line option. Otherwise, error responses are generated due to requesting a revocation for an already revoked
         // certificate.
         final List<TaResponse> taResponses = new ArrayList<>();
         for (final TaRequest r : request.getTaRequests()) {

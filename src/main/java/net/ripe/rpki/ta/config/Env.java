@@ -3,6 +3,7 @@ package net.ripe.rpki.ta.config;
 
 
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.ta.exception.BadOptionsException;
 import org.joda.time.Period;
 
@@ -11,10 +12,13 @@ import java.io.File;
 import java.net.URI;
 
 @UtilityClass
+@Slf4j(topic = "Env")
 public class Env {
 
     public static Config config(ProgramOptions options) throws BadOptionsException {
         final Config config = byEnvironment(options.getEnv());
+
+        log.info("Environment: {}, configuration: {}", options.getEnv(), config);
 
         if (options.hasPersistentStoragePath()) {
             final File storageDirectory = new File(options.getPersistentStoragePath());
