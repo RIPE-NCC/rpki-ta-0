@@ -43,6 +43,8 @@ public class Main {
     private static Exit run(final Config cliConfig, final ProgramOptions options) throws Exception {
         options.validateOptions();
 
+        log.info("Environment: {}, configuration: {}", options.getEnv(), cliConfig);
+
         if (options.hasInitialiseOption() && TA.hasState(cliConfig)) {
             throw new OperationAbortedException("TA state is already serialised to " + cliConfig.getPersistentStorageDir() + ".");
         }

@@ -17,9 +17,6 @@ public class Env {
 
     public static Config config(ProgramOptions options) throws BadOptionsException {
         final Config config = byEnvironment(options.getEnv());
-
-        log.info("Environment: {}, configuration: {}", options.getEnv(), config);
-
         if (options.hasPersistentStoragePath()) {
             final File storageDirectory = new File(options.getPersistentStoragePath());
             if (!storageDirectory.isDirectory()) {
