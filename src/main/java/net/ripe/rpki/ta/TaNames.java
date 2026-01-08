@@ -31,10 +31,6 @@ public final class TaNames {
         return objectPublicationUri(publicationUri, crlFileName(taCertificateName));
     }
 
-    public static URI clrPublicationUriForParentCertificate(X509ResourceCertificate currentTaCertificate) {
-        return crlPublicationUri(currentTaCertificate.getRepositoryUri(), currentTaCertificate.getIssuer());
-    }
-
     public static String manifestFileName(X500Principal taCertificateName) {
         return encodePath(stripCNEqualsFromPrincipal(taCertificateName) + ".mft");
     }
