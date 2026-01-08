@@ -8,6 +8,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public final class TaNames {
 
@@ -47,11 +48,7 @@ public final class TaNames {
     }
 
     private static String encodePath(String path) {
-        try {
-            return URLEncoder.encode(path, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException("Can't encode path:" + path, e);
-        }
+        return URLEncoder.encode(path, StandardCharsets.UTF_8);
     }
 
     private static String stripCNEqualsFromPrincipal(X500Principal certificateName) {
