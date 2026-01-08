@@ -38,16 +38,7 @@ public class ValidityPeriods {
 
     public ValidityPeriod taCertificate() {
         var notValidBefore = ValidityPeriods.now();
-        var notValidAfter = notValidBefore.plus(config.getMinimumValidityPeriod());
-
-        // Do not allow validity periods of less than three months for TA certificates.
-        // Smaller values may appear because of the configuration already stored in the
-        // persistent state of the TA.
-        var threeMonthsFromNow = notValidBefore.plus(Period.months(3));
-        if (notValidAfter.isBefore(threeMonthsFromNow)) {
-            notValidAfter = threeMonthsFromNow;
-        }
-
+        var notValidAfter = notValidBefore.plus(config.getTaCertificateValidityPeriod());
         return new ValidityPeriod(notValidBefore, notValidAfter);
     }
 
