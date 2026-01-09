@@ -23,9 +23,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -100,6 +100,69 @@ public class TATest {
         final TAState state = new TAStateSerializer().deserialize(xml);
         assertThat(state).isNotNull();
         assertThat(state.getConfig().getMinimumValidityPeriod()).isEqualTo(Period.months(6));
+    }
+
+    @Test
+    public void deserialize_ta_with_ta_cert_validity_perio_too_small() throws Exception {
+        final TAState state = makeTaState("P2M");
+        assertThat(state).isNotNull();
+        assertThat(state.getConfig().getTaCertificateValidityPeriod()).isEqualTo(Period.months(3));
+
+        String xml = new TAStateSerializer().serialize(state);
+        assertThat(xml).contains("<taCertificateValidityPeriod>P3M</taCertificateValidityPeriod>");
+    }
+
+    @Test
+    public void deserialize_ta_with_ta_cert_validity_period_good_enough() throws Exception {
+        final TAState state = makeTaState("P4M");
+        assertThat(state).isNotNull();
+        assertThat(state.getConfig().getTaCertificateValidityPeriod()).isEqualTo(Period.months(4));
+
+        String xml = new TAStateSerializer().serialize(state);
+        assertThat(xml).contains("<taCertificateValidityPeriod>P4M</taCertificateValidityPeriod>");
+    }
+
+    @Test
+    public void deserialize_ta_and_serialize_again() throws Exception {
+        final TAState state = makeTaState("P4M");
+
+        String xml = new TAStateSerializer().serialize(state);
+
+        assertThat(state).isNotNull();
+        assertThat(state.getConfig().getTaCertificateValidityPeriod()).isEqualTo(Period.months(4));
+    }
+
+    private static TAState makeTaState(String taCertValidityPeriod) throws GeneralSecurityException, IOException {
+        // Do no store big base64 blob in the code, generate it every time
+        var encodedState = TA.initialise(Env.local()).getState().getEncoded();
+        var encoded = Base64.getEncoder().encodeToString(encodedState);
+
+        final String xml = "<TA>" +
+                "<encoded>" + encoded + "</encoded>" +
+                "<config>" +
+                "<trustAnchorName>CN=RIPE-NCC-TA-TEST</trustAnchorName>" +
+                "<keystoreProvider>SUN</keystoreProvider>" +
+                "<keypairGeneratorProvider>SunRsaSign</keypairGeneratorProvider>" +
+                "<signatureProvider>SunRsaSign</signatureProvider>" +
+                "<keystoreType>JKS</keystoreType>" +
+                "<persistentStorageDir>/export/certification/ta/data</persistentStorageDir>" +
+                "<taCertificatePublicationUri>rsync://localhost:10873/ta/</taCertificatePublicationUri>" +
+                "<taProductsPublicationUri>rsync://localhost:10873/repository/</taProductsPublicationUri>" +
+                "<notificationUri>https://localhost:7788/notification.xml</notificationUri>" +
+                "<minimumValidityPeriod>P6M</minimumValidityPeriod>" +
+                "<taCertificateValidityPeriod>" + taCertValidityPeriod + "</taCertificateValidityPeriod>" +
+                "<updatePeriod>P3M</updatePeriod>" +
+                "</config>" +
+                "<keyStorePassphrase>2fe5a028-861a-47a0-a27f-7c657ea6ed49</keyStorePassphrase>" +
+                "<keyStoreKeyAlias>RTA2</keyStoreKeyAlias>" +
+                "<lastIssuedCertificateSerial>1</lastIssuedCertificateSerial>" +
+                "<lastProcessedRequestTimestamp>0</lastProcessedRequestTimestamp>" +
+                "<previousTaCertificates/>" +
+                "<signedProductionCertificates/>" +
+                "<signedManifests/>" +
+                "</TA>";
+
+        return new TAStateSerializer().deserialize(xml);
     }
 
 

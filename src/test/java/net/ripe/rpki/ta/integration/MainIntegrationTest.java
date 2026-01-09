@@ -406,10 +406,8 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertThat(run("--initialise --env=test").exitCode).isZero();
 
         try {
-            // Set the time to be more than one minimal validity period before now.
-            var state = TA.load(EnvStub.test()).getState();
-            var withinMinimalValidityPeriod = state.getConfig().getMinimumValidityPeriod().minusWeeks(1);
-            DateTime faketime = DateTime.now().minus(withinMinimalValidityPeriod).minusWeeks(2);
+            // Set the time to be 2.5 months in the past
+            DateTime faketime = DateTime.now().minusMonths(2).minusWeeks(2);
             ValidityPeriods.setGlobalNow(faketime);
 
             assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();

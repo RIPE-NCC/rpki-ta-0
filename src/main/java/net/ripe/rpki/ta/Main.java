@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 public class Main {
@@ -43,6 +44,8 @@ public class Main {
     private static Exit run(final Config cliConfig, final ProgramOptions options) throws Exception {
         options.validateOptions();
 
+        log.info("Environment: {}, configuration: {}", options.getEnv(), cliConfig);
+
         if (options.hasInitialiseOption() && TA.hasState(cliConfig)) {
             throw new OperationAbortedException("TA state is already serialised to " + cliConfig.getPersistentStorageDir() + ".");
         }
@@ -64,7 +67,7 @@ public class Main {
 
         if (options.hasPrintTALOption()) {
             try (PrintStream out = getOutput(options.getTalFilePath())) {
-                String tal = new String(ta.getCurrentTrustAnchorLocator().getBytes(), "UTF-8");
+                String tal = new String(ta.getCurrentTrustAnchorLocator().getBytes(), StandardCharsets.UTF_8);
                 out.print(tal);
             }
         }
