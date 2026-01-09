@@ -1,7 +1,6 @@
 stages:
   - build
   - test
-  - qa
   - security
   - deploy
 
@@ -78,23 +77,6 @@ build-release:
         - build/test-results/test/*.xml
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-
-######### Test stage #########
-sonarqube:
-  stage: qa
-  cache:
-    <<: *global_cache
-    policy: pull
-  needs: ["build"]
-  dependencies: ["build"]
-  variables:
-    GIT_DEPTH: 0
-  script:
-    - ./gradlew -i -Dsonar.projectKey=rpki-ta-0 sonarqube
-  allow_failure: true
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .deploy: &deploy
   stage: deploy
