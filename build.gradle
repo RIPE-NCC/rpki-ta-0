@@ -2,7 +2,6 @@ plugins {
     id 'application'
     id 'jacoco'
     id 'io.freefair.lombok' version '8.6'
-    id 'org.sonarqube' version '3.4.0.2513'
     id 'com.google.cloud.tools.jib' version '3.4.4'
 }
 
@@ -95,14 +94,6 @@ jacocoTestReport {
         xml.required = true
     }
 }
-
-sonarqube {
-    properties {
-        property 'sonar.qualitygate.wait', 'true'
-        property 'sonar.qualitygate.timeout', System.getenv('SONAR_QUALITYGATE_TIMEOUT') ?: '300'
-    }
-}
-project.tasks["sonarqube"].dependsOn "test"
 
 // Application plugin sets up distribution. We have to add the buildscripts manually.
 distributions {
