@@ -45,6 +45,10 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.26.3'
 }
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 compileJava.options.encoding = 'UTF-8'
 compileJava.options.compilerArgs << "-Xlint:all" << "-Werror"
 distTar.compression = Compression.GZIP
