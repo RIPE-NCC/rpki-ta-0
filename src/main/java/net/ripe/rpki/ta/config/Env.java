@@ -12,7 +12,6 @@ import java.io.File;
 import java.net.URI;
 
 @UtilityClass
-@Slf4j(topic = "Env")
 public class Env {
 
     public static Config config(ProgramOptions options) throws BadOptionsException {
