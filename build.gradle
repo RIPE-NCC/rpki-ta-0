@@ -2,7 +2,7 @@ plugins {
     id 'application'
     id 'jacoco'
     id 'io.freefair.lombok' version '8.6'
-    id 'com.google.cloud.tools.jib' version '3.4.4'
+    id 'com.google.cloud.tools.jib' version '3.5.3'
 }
 
 repositories {
