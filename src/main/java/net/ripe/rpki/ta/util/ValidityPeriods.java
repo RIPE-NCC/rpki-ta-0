@@ -22,7 +22,7 @@ public class ValidityPeriods {
     // This is for testing purposes only.
     @VisibleForTesting
     public static void setGlobalNow(final DateTime dateTime) {
-        ValidityPeriods.globalNow = dateTime;
+        ValidityPeriods.globalNow = dateTime.withZone(DateTimeZone.UTC);
     }
 
     private final Config config;
