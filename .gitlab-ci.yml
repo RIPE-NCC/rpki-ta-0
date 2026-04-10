@@ -120,4 +120,4 @@ qa:
   variables:
     NODES: "qa-01.rpki.prepdev.ripe.net"
   environment:
-    name: prepdev
+    name: qa
