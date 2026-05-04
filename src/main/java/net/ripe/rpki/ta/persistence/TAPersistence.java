@@ -1,7 +1,5 @@
 package net.ripe.rpki.ta.persistence;
 
-
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.hash.HashCode;
