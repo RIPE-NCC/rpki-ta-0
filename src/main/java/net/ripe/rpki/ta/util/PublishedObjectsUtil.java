@@ -86,7 +86,7 @@ public class PublishedObjectsUtil {
         log.info(LINE_SEPARATOR);
         log.info("Currently published files:");
         log.info(LINE_SEPARATOR);
-        objects.entrySet().forEach((entry) -> log.info("{}:", entry.getKey()));
+        objects.forEach((key, value) -> log.info("{}:", key));
         // logObject adds header.
         objects.entrySet().forEach(PublishedObjectsUtil::logObjectEntry);
         log.info(LINE_SEPARATOR);

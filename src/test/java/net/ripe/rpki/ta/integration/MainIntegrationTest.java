@@ -402,7 +402,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
 
     @Test
-    public void test_process_request_make_sure_ta_certificate_reissued_if_it_is_too_close_to_expiration() throws Exception {
+    public void test_process_request_make_sure_ta_certificate_automatically_reissued_if_it_is_too_close_to_expiration() throws Exception {
         assertThat(run("--initialise --env=test").exitCode).isZero();
 
         try {
@@ -422,12 +422,6 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             // With the normal current time the TA certificate should get into the state of
             // "it is about to expire soon" and should be re-issued.
             ValidityPeriods.setGlobalNow(DateTime.now());
-
-            // It shouldn't work without the --force-new-ta-certificate option
-            assertThat(
-                    run("--request=./src/test/resources/ta-request.xml " +
-                            "--response=" + response.getAbsolutePath() +
-                            " --env=test").exitCode).isNotZero();
 
             assertThat(
                     run("--request=./src/test/resources/ta-request.xml " +

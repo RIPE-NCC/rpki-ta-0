@@ -103,7 +103,7 @@ public class TATest {
     }
 
     @Test
-    public void deserialize_ta_with_ta_cert_validity_perio_too_small() throws Exception {
+    public void deserialize_ta_with_ta_cert_validity_period_too_small() throws Exception {
         final TAState state = makeTaState("P2M");
         assertThat(state).isNotNull();
         assertThat(state.getConfig().getTaCertificateValidityPeriod()).isEqualTo(Period.months(3));
