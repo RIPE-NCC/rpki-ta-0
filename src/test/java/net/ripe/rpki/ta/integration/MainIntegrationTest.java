@@ -412,7 +412,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
             assertThat(run("--generate-ta-certificate --env=test").exitCode).isZero();
 
-            final File tmpResponses = Files.createTempDirectory("process_request_make_sure_ta_certificate_reissued_because_its_too_old").toFile();
+            final File tmpResponses = Files.createTempDirectory("ta_cert_too_old").toFile();
             tmpResponses.deleteOnExit();
             final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
 
@@ -423,10 +423,12 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             // "it is about to expire soon" and should be re-issued.
             ValidityPeriods.setGlobalNow(DateTime.now());
 
+            // It should work without the --force-new-ta-certificate option, just because
+            // the certificate is close to its expiration date
             assertThat(
                     run("--request=./src/test/resources/ta-request.xml " +
-                            "--response=" + response.getAbsolutePath() +
-                            " --force-new-ta-certificate --env=test").exitCode).isZero();
+                            " --response=" + response.getAbsolutePath() +
+                            " --env=test").exitCode).isZero();
 
             final TAState taStateAfterReissue = reloadTaState();
 
