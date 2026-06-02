@@ -285,7 +285,7 @@ public class TA {
         final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
         TAState newTAState = copyTAState(state);
 
-        SignCtx signCtx = new SignCtx(request, newTAState, decoded.getRight(), decoded.getLeft());
+        var signCtx = new SignCtx(request, newTAState, decoded.getRight(), decoded.getLeft());
 
         // First process revocation requests, before processing the "revoke all issued resource certificates" command
         // line option. Otherwise, error responses are generated due to requesting a revocation for an already revoked
@@ -307,25 +307,22 @@ public class TA {
         // If the TA certificate publication point or the notification.xml URL has changed,
         // we need to re-issue the TA certificate, but we don't want to do it implicitly,
         // so we require the --force-new-ta-certificate option to be provided.
+        //
+        // It is done to prevent a case when a request from a mismatching environment
+        // is used which can corrupt the configuration of the TA.
         if (differentLocations.isPresent() && !options.hasForceNewTaCertificate()) {
             throw new OperationAbortedException("The TA certificate has to be re-issued: " + differentLocations.get() +
                     ", bailing out. Provide " + ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to force TA certificate re-issue.");
         }
 
         var expiresAt = signCtx.taCertificate.getValidityPeriod().getNotValidAfter();
-        boolean taCertCloseToExpiration = expiresAt.isBefore(ValidityPeriods.now().plus(signCtx.taState.getConfig().getMinimumValidityPeriod()));
+        boolean taCertIsCloseToExpiration = expiresAt.isBefore(ValidityPeriods.now().plus(signCtx.taState.getConfig().getMinimumValidityPeriod()));
 
-        // The same comes to the TA certificate being close to expiration: require --force-new-ta-certificate
-        // option to be provided and when it is provided re-issue the certificate.
-        if (taCertCloseToExpiration && !options.hasForceNewTaCertificate()) {
-            throw new OperationAbortedException("The TA certificate is about to expire, please re-run with " +
-                    ProgramOptions.FORCE_NEW_TA_CERT_OPT + " option to re-issue the TA certificate.");
-        }
-
-        // There are two cases when we will re-issue the TA certificate:
+        // There are three cases when we will re-issue the TA certificate:
         // 1. We explicitly ask for it by providing the --force-new-ta-certificate option
         // 2. The TA certificate publication point or the notification.xml URL has changed
-        if (options.hasForceNewTaCertificate() || differentLocations.isPresent()) {
+        // 3. The TA certificate is close to expiration
+        if (options.hasForceNewTaCertificate() || differentLocations.isPresent() || taCertIsCloseToExpiration) {
             if (differentLocations.isPresent()) {
                 updateTaConfigUrls(request, signCtx);
             }
@@ -333,9 +330,7 @@ public class TA {
             final X509ResourceCertificate taCertificate = decoded.getRight();
             final BigInteger nextSerial = nextIssuedCertSerial(state);
 
-            X509CertificateInformationAccessDescriptor[] ta0SiaDescriptors = generateSiaDescriptors(
-                    signCtx.taState.getConfig()
-            );
+            X509CertificateInformationAccessDescriptor[] ta0SiaDescriptors = generateSiaDescriptors(signCtx.taState.getConfig());
             final X509ResourceCertificate newTACertificate = reIssueRootCertificate(keyPair,
                     merge(ta0SiaDescriptors, request.getSiaDescriptors()), taCertificate, nextSerial);
 
@@ -358,6 +353,8 @@ public class TA {
 
         return Pair.of(new TrustAnchorResponse(request.getCreationTimestamp(), publishedObjects, taResponses), newTAState);
     }
+
+
 
     private Optional<String> locationsAreDifferent(TrustAnchorRequest taRequest, Config taConfig) {
         if (!taConfig.getTaCertificatePublicationUri().equals(taRequest.getTaCertificatePublicationUri())) {
