@@ -1,7 +1,5 @@
 package net.ripe.rpki.ta.persistence;
 
-
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.hash.HashCode;
@@ -13,6 +11,7 @@ import net.ripe.rpki.ta.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @Slf4j(topic = "TAPersistence")
@@ -45,7 +44,7 @@ public class TAPersistence {
                log.info("Initial save of trust anchor state.");
            }
 
-            Files.asCharSink(tempFile, Charsets.UTF_8).write(xml);
+            Files.asCharSink(tempFile, StandardCharsets.UTF_8).write(xml);
             Files.move(tempFile, trustAnchorFile);
             log.info("Trust Anchor written to: '{}' (sha256={})", trustAnchorFile, getTrustAnchorSha256());
         } finally {
@@ -61,7 +60,7 @@ public class TAPersistence {
         byte[] content = Files.asByteSource(trustAnchorFile).read();
 
         log.info("Loaded trust anchor state (sha256={})", Hashing.sha256().hashBytes(content));
-        return new String(content, Charsets.UTF_8);
+        return new String(content, StandardCharsets.UTF_8);
     }
 
     public boolean taStateExists() {
