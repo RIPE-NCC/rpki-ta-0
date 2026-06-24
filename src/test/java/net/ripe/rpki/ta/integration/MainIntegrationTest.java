@@ -25,6 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.X509Certificate;
@@ -470,6 +471,31 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
             "The TA certificate has to be re-issued: Different notification.xml URL, " +
             "request has 'https://new-url.ripe.net/notification.xml', config has 'https://localhost:7788/notification.xml', " +
             "bailing out. Provide force-new-ta-certificate option to force TA certificate re-issue.");
+    }
+
+
+    @Test
+    public void test_validate_ta_config() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final String taXml = readFile(taXmlPath);
+        // Make minimal validity period too short
+        var taXmlTooShortPeriod =
+                taXml.replace("<minimumValidityPeriod>P1M</minimumValidityPeriod>",
+                "<minimumValidityPeriod>P2W</minimumValidityPeriod>");
+
+        Files.write(Path.of(taXmlPath), taXmlTooShortPeriod.getBytes(StandardCharsets.UTF_8));
+
+        final File tmpResponses = Files.createTempDirectory("process_request").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        Main.Exit run = run(
+                "--request=./src/test/resources/ta-request.xml " +
+                "--response=" + response.getAbsolutePath() + " --env=test");
+
+        assertThat(run.exitCode).isNotZero();
+        assertThat(run.stderr).contains("Minimum validity period is P2W, it cannot be less than 1 month");
     }
 
     @Test

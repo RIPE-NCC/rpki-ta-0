@@ -26,6 +26,7 @@ import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.ProgramOptions;
 import net.ripe.rpki.ta.domain.TAState;
 import net.ripe.rpki.ta.domain.TAStateBuilder;
+import net.ripe.rpki.ta.exception.BadConfigException;
 import net.ripe.rpki.ta.exception.OperationAbortedException;
 import net.ripe.rpki.ta.exception.RequestProcessorException;
 import net.ripe.rpki.ta.persistence.TAPersistence;
@@ -40,6 +41,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Period;
 
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
@@ -367,10 +369,10 @@ public class TA {
         for (final X509CertificateInformationAccessDescriptor descriptor : taRequest.getSiaDescriptors()) {
             if (ID_AD_CA_REPOSITORY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getTaProductsPublicationUri())) {
                 return Optional.of("Different TA products URL, request has '" +
-                    descriptor.getLocation() + "', config has '" + taConfig.getTaProductsPublicationUri() + "'");
+                        descriptor.getLocation() + "', config has '" + taConfig.getTaProductsPublicationUri() + "'");
             } else if (ID_AD_RPKI_NOTIFY.equals(descriptor.getMethod()) && !descriptor.getLocation().equals(taConfig.getNotificationUri())) {
                 return Optional.of("Different notification.xml URL, request has '" +
-                    descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
+                        descriptor.getLocation() + "', config has '" + taConfig.getNotificationUri() + "'");
             }
         }
         return Optional.empty();
@@ -419,13 +421,13 @@ public class TA {
                 TaNames.certificateFileName(allResourcesCertificate.getSubject()), allResourcesCertificate));
 
         final URI publicationPoint = TaNames.certificatePublicationUri(
-            signCtx.taState.getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
+                signCtx.taState.getConfig().getTaProductsPublicationUri(), allResourcesCertificate.getSubject());
 
         return new SigningResponse(signingRequest.getRequestId(), requestData.getResourceClassName(), publicationPoint, allResourcesCertificate);
     }
 
     private TaResponse processRevocationRequest(final RevocationRequest revocationRequest, final SignCtx signCtx) {
-        boolean revoked = revokeAllCertificatesForKey(revocationRequest.getEncodedPublicKey(),  signCtx.taState);
+        boolean revoked = revokeAllCertificatesForKey(revocationRequest.getEncodedPublicKey(), signCtx.taState);
         if (revoked) {
             return new RevocationResponse(revocationRequest.getRequestId(), revocationRequest.getResourceClassName(), revocationRequest.getEncodedPublicKey());
         } else {
@@ -610,6 +612,7 @@ public class TA {
     /**
      * Revoke all certificates signed by the TA.
      * Needed when you intend to replace all signed objects by just those in the request.
+     *
      * @return true if anything was revoked.
      */
     private void revokeAllIssuedResourceCertificates(final TAState taState) {
@@ -634,6 +637,15 @@ public class TA {
             this.taState = taState;
             this.taCertificate = taCertificate;
             this.keyPair = keyPair;
+        }
+    }
+
+    public static void validateTaConfig(Config config) throws BadConfigException {
+        // Don't allow minimal validity period to be less than 1 month
+        var oneMonth = Period.months(1);
+        var now = ValidityPeriods.now();
+        if (now.plus(config.getMinimumValidityPeriod()).isBefore(now.plus(oneMonth))) {
+            throw new BadConfigException("Minimum validity period is " + config.getMinimumValidityPeriod() + ", it cannot be less than 1 month");
         }
     }
 

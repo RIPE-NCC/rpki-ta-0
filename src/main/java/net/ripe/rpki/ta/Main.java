@@ -5,15 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import net.ripe.rpki.ta.config.Config;
 import net.ripe.rpki.ta.config.Env;
 import net.ripe.rpki.ta.config.ProgramOptions;
+import net.ripe.rpki.ta.exception.BadConfigException;
 import net.ripe.rpki.ta.exception.BadOptionsException;
 import net.ripe.rpki.ta.exception.OperationAbortedException;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -35,6 +32,8 @@ public class Main {
             return run(Env.config(options), options);
         } catch (BadOptionsException e) {
             return new Exit(EXIT_ERROR_2, e.getMessage() + "\n" + ProgramOptions.getUsageString());
+        } catch (BadConfigException e) {
+            return new Exit(EXIT_ERROR_2, e.getMessage());
         } catch (Exception e) {
             log.error("Exiting due to uncaught exception", e);
             return Exit.of(e);
@@ -51,6 +50,8 @@ public class Main {
         }
 
         TA ta = options.hasInitialiseOption() ? TA.initialise(cliConfig) : TA.load(cliConfig);
+        TA.validateTaConfig(ta.getState().getConfig());
+
         if (options.hasGenerateTACertificateOption()) {
             ta.generateTACertificate();
         }
