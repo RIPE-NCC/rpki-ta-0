@@ -12,6 +12,24 @@ terms of the BSD 3-Clause License. If a copy of the license was not distributed
 to you, you can obtain one at
 https://github.com/RIPE-NCC/rpki-ta-0/blob/main/LICENSE.txt.
 
+Setup
+-----
+
+### Prerequisites
+* Requires Java 11 
+
+### Running the TA
+* Build the project. <br />
+* Navigate to `build/distributions`
+* Extract the generated `rpki-ta-0-c908a76` archive and navigate into it.
+* Start the TA with the required environment:
+`APPLICATION_ENVIRONMENT=<env> ta.sh`
+
+### Signing Requests
+* Generate the signing request in RPKI Core.
+* Provide the signing request to the TA using the --request parameter and a path for the --response parameter.
+* Upload the response back to RPKI Core.
+
 Changelog
 ---------
 
