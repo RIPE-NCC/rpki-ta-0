@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+set -eo pipefail
+
+panic() {
+    echo "$*" >&2
+    exit 1
+}
 
 EXECUTION_DIR=`dirname "$BASH_SOURCE"`
 cd ${EXECUTION_DIR}
@@ -9,13 +15,12 @@ cd ${EXECUTION_DIR}
 : ${JAVA_HOME:?"Please export JAVA_HOME"}
 
 if [[ ! -x "${JAVA_HOME}/bin/java" ]]; then
-  echo "${JAVA_HOME}/bin/java not found or not executable, exiting (is JAVA_HOME really a JAVA_HOME?)"
-  exit
+  panic "${JAVA_HOME}/bin/java not found or not executable, exiting (is JAVA_HOME really a JAVA_HOME?)"
 fi
 
 echo "Running mode APPLICATION_ENVIRONMENT=\"${APPLICATION_ENVIRONMENT}\" with JAVA_HOME=\"${JAVA_HOME}\"" >&2
 
-if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
+if [ "${APPLICATION_ENVIRONMENT}" == "production" ]; then
     NFAST_BIN=/opt/nfast/bin/
 fi
 
@@ -25,7 +30,7 @@ CLASSPATH=${CONF_DIR}:"$LIB_DIR/*"
 CARDSET="OCS2024"
 MAIN_CLASS="net.ripe.rpki.ta.Main"
 
-if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
+if [ "${APPLICATION_ENVIRONMENT}" == "production" ]; then
   # production:
   # * uses cardset protected keys
   # * load the JCE provider from the module path
@@ -34,7 +39,7 @@ fi
 
 TA_TOOL_COMMAND="${JAVA_HOME}/bin/java ${JAVA_OPTS} -classpath ${CLASSPATH} ${MAIN_CLASS} --env=${APPLICATION_ENVIRONMENT} $@"
 
-if [ ${APPLICATION_ENVIRONMENT} == "production" ]; then
+if [ "${APPLICATION_ENVIRONMENT}" == "production" ]; then
   # preload the keys (and provide OCS authorisation with 3/10 cards), then execute the trust anchor binary.
   ${NFAST_BIN}/preload -c ${CARDSET} ${TA_TOOL_COMMAND}
 else
