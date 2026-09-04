@@ -281,21 +281,19 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) throws OperationAbortedException {
-        try {
-            return withRequestSerialUpdate(request, state, () -> {
-                try {
-                    return processRequestActual(request, options);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof OperationAbortedException) {
-                throw (OperationAbortedException) e.getCause();
-            }
-            throw e;
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) throws Exception {
+        final DateTime requestTime = new DateTime(request.getCreationTimestamp(), DateTimeZone.UTC);
+        final DateTime lastRequestTime = new DateTime(state.getLastProcessedRequestTimestamp(), DateTimeZone.UTC);
+
+        if (requestTime.isBefore(lastRequestTime)) {
+            throw new RequestProcessorException("Request, dated: " + requestTime + ", is BEFORE last processed request, dated: " + lastRequestTime);
         }
+        if (requestTime.equals(lastRequestTime)) {
+            throw new RequestProcessorException("Request has EXACT millisecond date as previously processed request. Response should already exist! Cowardly bailing out..");
+        }
+        var result = processRequestActual(request, options);
+        result.getRight().setLastProcessedRequestTimestamp(request.getCreationTimestamp());
+        return result;
     }
 
     private Pair<TrustAnchorResponse, TAState> processRequestActual(final TrustAnchorRequest request, ProgramOptions options) throws Exception {
@@ -398,21 +396,6 @@ public class TA {
     private static TAState copyTAState(final TAState ts) {
         final TAStateSerializer serializer = new TAStateSerializer();
         return serializer.deserialize(serializer.serialize(ts));
-    }
-
-    private <T> Pair<T, TAState> withRequestSerialUpdate(TrustAnchorRequest request, final TAState taState, Supplier<Pair<T, TAState>> f) {
-        final DateTime requestTime = new DateTime(request.getCreationTimestamp(), DateTimeZone.UTC);
-        final DateTime lastRequestTime = new DateTime(taState.getLastProcessedRequestTimestamp(), DateTimeZone.UTC);
-
-        if (requestTime.isBefore(lastRequestTime)) {
-            throw new RequestProcessorException("Request, dated: " + requestTime + ", is BEFORE last processed request, dated: " + lastRequestTime);
-        }
-        if (requestTime.equals(lastRequestTime)) {
-            throw new RequestProcessorException("Request has EXACT millisecond date as previously processed request. Response should already exist! Cowardly bailing out..");
-        }
-        var result = f.get();
-        result.getRight().setLastProcessedRequestTimestamp(request.getCreationTimestamp());
-        return result;
     }
 
     private void updateTaConfigUrls(final TrustAnchorRequest taRequest, final SignCtx signCtx) {
