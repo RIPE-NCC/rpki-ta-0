@@ -281,14 +281,21 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) {
-        return withRequestSerialUpdate(request, state, () -> {
-            try {
-                return processRequestActual(request, options);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) throws OperationAbortedException {
+        try {
+            return withRequestSerialUpdate(request, state, () -> {
+                try {
+                    return processRequestActual(request, options);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof OperationAbortedException) {
+                throw (OperationAbortedException) e.getCause();
             }
-        });
+            throw e;
+        }
     }
 
     private Pair<TrustAnchorResponse, TAState> processRequestActual(final TrustAnchorRequest request, ProgramOptions options) throws Exception {

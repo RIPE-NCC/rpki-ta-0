@@ -42,6 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Slf4j
 public class MainIntegrationTest extends AbstractIntegrationTest {
 
+    // Timestamp used in the static ta-request.xml fixture
+    private static final long BASE_REQUEST_TIMESTAMP = 1572266158744L;
+
     private static String taXmlPath;
     private static String talPath;
 
@@ -97,7 +100,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertThat(taState1.getCrl().getCrl().getRevokedCertificates()).isNull();
 
         assertEquals(0,
-            run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+            run("--request=" + writeRequestXml(BASE_REQUEST_TIMESTAMP + 1) + " --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
 
         final TAState taState2 = reloadTaState();
@@ -110,7 +113,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         assertEquals(2, taState2.getCrl().getCrl().getRevokedCertificates().size());
 
         assertEquals(0,
-            run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+            run("--request=" + writeRequestXml(BASE_REQUEST_TIMESTAMP + 2) + " --force-new-ta-certificate " +
                       "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
 
         final TAState taState3 = reloadTaState();
@@ -141,7 +144,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         final TAState initialState = reloadTaState();
         assertEquals(0,
-                run("--request=./src/test/resources/ta-request.xml " +
+                run("--request=" + writeRequestXml(BASE_REQUEST_TIMESTAMP + 1) + " " +
                         "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState secondState = reloadTaState();
 
@@ -212,7 +215,7 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
         final TAState initialState = reloadTaState();
         assertEquals(0,
-                run("--request=./src/test/resources/ta-request.xml " +
+                run("--request=" + writeRequestXml(BASE_REQUEST_TIMESTAMP + 1) + " " +
                         "--response=" + response.getAbsolutePath() + " --env=test").exitCode);
         final TAState secondState = reloadTaState();
 
@@ -537,5 +540,18 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
         var state = TA.load(EnvStub.test()).getState();
         validateManifestAndCrlInvariants(state);
         return state;
+    }
+
+    private String writeRequestXml(long timestamp) throws Exception {
+        String xml = new String(
+                getClass().getResourceAsStream("/ta-request.xml").readAllBytes(),
+                java.nio.charset.StandardCharsets.UTF_8)
+            .replaceFirst(
+                "<creationTimestamp>\\d+</creationTimestamp>",
+                "<creationTimestamp>" + timestamp + "</creationTimestamp>");
+        File tmp = File.createTempFile("ta-request-", ".xml");
+        tmp.deleteOnExit();
+        java.nio.file.Files.writeString(tmp.toPath(), xml);
+        return tmp.getAbsolutePath();
     }
 }
