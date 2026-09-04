@@ -227,6 +227,12 @@ public class TATest {
             assertThat(siaLocationFor(ID_AD_RPKI_NOTIFY, siaDescriptors)).hasValue("https://localhost:7788/notification.xml");
             assertThat(siaLocationFor(ID_AD_RPKI_MANIFEST, siaDescriptors)).hasValue("rsync://localhost:10873/repository/RIPE-NCC-TA-TEST.mft");
         }
+
+        @Test
+        void last_processed_request_timestamp_is_updated_after_processing() {
+            assertThat(ta.getState().getLastProcessedRequestTimestamp())
+                    .isEqualTo(taRequest.getCreationTimestamp());
+        }
     }
 
     private Optional<String> siaLocationFor(ASN1ObjectIdentifier identifier, X509CertificateInformationAccessDescriptor[] descriptors) {

@@ -53,6 +53,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static net.ripe.rpki.commons.crypto.x509cert.X509CertificateInformationAccessDescriptor.*;
 
@@ -280,9 +281,17 @@ public class TA {
         }
     }
 
-    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) throws Exception {
-        validateRequestSerial(request, state);
+    private Pair<TrustAnchorResponse, TAState> processRequest(final TrustAnchorRequest request, ProgramOptions options) {
+        return withRequestSerialUpdate(request, state, () -> {
+            try {
+                return processRequestActual(request, options);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
+    private Pair<TrustAnchorResponse, TAState> processRequestActual(final TrustAnchorRequest request, ProgramOptions options) throws Exception {
         final KeyStore keyStore = KeyStore.of(state.getConfig());
         final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
         TAState newTAState = copyTAState(state);
@@ -384,8 +393,7 @@ public class TA {
         return serializer.deserialize(serializer.serialize(ts));
     }
 
-
-    private void validateRequestSerial(TrustAnchorRequest request, final TAState taState) {
+    private <T> Pair<T, TAState> withRequestSerialUpdate(TrustAnchorRequest request, final TAState taState, Supplier<Pair<T, TAState>> f) {
         final DateTime requestTime = new DateTime(request.getCreationTimestamp(), DateTimeZone.UTC);
         final DateTime lastRequestTime = new DateTime(taState.getLastProcessedRequestTimestamp(), DateTimeZone.UTC);
 
@@ -395,6 +403,9 @@ public class TA {
         if (requestTime.equals(lastRequestTime)) {
             throw new RequestProcessorException("Request has EXACT millisecond date as previously processed request. Response should already exist! Cowardly bailing out..");
         }
+        var result = f.get();
+        result.getRight().setLastProcessedRequestTimestamp(request.getCreationTimestamp());
+        return result;
     }
 
     private void updateTaConfigUrls(final TrustAnchorRequest taRequest, final SignCtx signCtx) {
