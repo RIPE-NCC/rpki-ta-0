@@ -474,6 +474,40 @@ public class MainIntegrationTest extends AbstractIntegrationTest {
 
 
     @Test
+    public void test_process_request_with_same_timestamp_is_rejected() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final File tmpResponses = Files.createTempDirectory("process_request_same_timestamp").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        assertThat(run("--request=./src/test/resources/ta-request.xml --force-new-ta-certificate " +
+                "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
+
+        final Main.Exit run = run("--request=./src/test/resources/ta-request.xml " +
+                "--response=" + response.getAbsolutePath() + " --env=test");
+        assertEquals(EXIT_ERROR_2, run.exitCode);
+        assertThat(run.stderr).contains("Request has EXACT millisecond date as previously processed request.");
+    }
+
+    @Test
+    public void test_process_request_with_older_timestamp_is_rejected() throws Exception {
+        assertThat(run("--initialise --env=test").exitCode).isZero();
+
+        final File tmpResponses = Files.createTempDirectory("process_request_older_timestamp").toFile();
+        tmpResponses.deleteOnExit();
+        final File response = new File(tmpResponses.getAbsolutePath(), "response.xml");
+
+        assertThat(run("--request=" + writeRequestXml(BASE_REQUEST_TIMESTAMP + 1) + " --force-new-ta-certificate " +
+                "--response=" + response.getAbsolutePath() + " --env=test").exitCode).isZero();
+
+        final Main.Exit run = run("--request=./src/test/resources/ta-request.xml " +
+                "--response=" + response.getAbsolutePath() + " --env=test");
+        assertEquals(EXIT_ERROR_2, run.exitCode);
+        assertThat(run.stderr).contains("is BEFORE last processed request");
+    }
+
+    @Test
     public void test_validate_ta_config() throws Exception {
         assertThat(run("--initialise --env=test").exitCode).isZero();
 
