@@ -54,7 +54,7 @@ distTar.compression = Compression.GZIP
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -109,7 +109,7 @@ distributions {
 
 jib {
     from {
-      image = "eclipse-temurin:17-jammy"
+      image = "eclipse-temurin:21-jammy"
       platforms {
         platform {
           architecture = 'amd64'

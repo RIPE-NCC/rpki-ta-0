@@ -287,7 +287,7 @@ public class TA {
         final Pair<KeyPair, X509ResourceCertificate> decoded = keyStore.decode(state.getEncoded());
         TAState newTAState = copyTAState(state);
 
-        var signCtx = new SignCtx(request, newTAState, decoded.getRight(), decoded.getLeft());
+        var signCtx = new SignCtx(newTAState, decoded.getRight(), decoded.getLeft());
 
         // First process revocation requests, before processing the "revoke all issued resource certificates" command
         // line option. Otherwise, error responses are generated due to requesting a revocation for an already revoked
@@ -339,7 +339,7 @@ public class TA {
             TAStateBuilder taStateBuilder = new TAStateBuilder(newTAState);
             taStateBuilder.withCrl(newTAState.getCrl());
             newTAState = createTaState(taStateBuilder, keyStore.encode(keyPair, newTACertificate), keyStore, nextSerial);
-            signCtx = new SignCtx(request, newTAState, newTACertificate, keyPair);
+            signCtx = new SignCtx(newTAState, newTACertificate, keyPair);
         }
 
         // Process sign requests _after_ revoking all issued certificates (command line option), to avoid immediately
@@ -624,13 +624,11 @@ public class TA {
      * Just an utility class to carry the environment around when doing the signing.
      */
     private static class SignCtx {
-        final TrustAnchorRequest request;
         final TAState taState;
         final X509ResourceCertificate taCertificate;
         final KeyPair keyPair;
 
-        private SignCtx(TrustAnchorRequest request, TAState taState, X509ResourceCertificate taCertificate, KeyPair keyPair) {
-            this.request = request;
+        private SignCtx(TAState taState, X509ResourceCertificate taCertificate, KeyPair keyPair) {
             this.taState = taState;
             this.taCertificate = taCertificate;
             this.keyPair = keyPair;
