@@ -37,7 +37,7 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.daemon=false"
 
 default:
-  image: gradle:jdk21
+  image: gradle:jdk25
 
 lockfile:
   stage: .pre

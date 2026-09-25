@@ -21,12 +21,9 @@ repositories {
 def ENV = System.getenv()
 
 def gitRef = { ->
-  def stdout = new ByteArrayOutputStream()
-  exec {
+  return providers.exec {
     commandLine 'git', 'rev-parse', '--quiet', '--revs-only', '--verify', '--short', 'HEAD'
-    standardOutput = stdout
-  }
-  return stdout.toString().trim()
+  }.standardOutput.asText.get().trim()
 }
 
 group = 'net.ripe.rpki.ta'
@@ -41,7 +38,13 @@ dependencies {
 
     testImplementation(platform('org.junit:junit-bom:5.9.3'))
     testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
     testImplementation 'org.assertj:assertj-core:3.27.7'
+}
+
+lombok {
+    // Java 25 needs lombok >= 1.18.40, newer than the plugin's default
+    version = '1.18.48'
 }
 
 dependencyLocking {
@@ -54,7 +57,7 @@ distTar.compression = Compression.GZIP
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -88,6 +91,10 @@ test {
     // Coverage with jacoco
     finalizedBy jacocoTestReport
 }
+jacoco {
+    // Java 25 class files need jacoco >= 0.8.14, newer than Gradle's default
+    toolVersion = '0.8.15'
+}
 jacocoTestReport {
     dependsOn test
     reports {
@@ -100,8 +107,8 @@ distributions {
   main {
     contents {
       from('src/main/scripts') {
-        dirMode = 0755
-        fileMode = 0555
+        dirPermissions { unix(0755) }
+        filePermissions { unix(0555) }
       }
     }
   }
@@ -109,7 +116,7 @@ distributions {
 
 jib {
     from {
-      image = "eclipse-temurin:21-jammy"
+      image = "eclipse-temurin:25-jammy"
       platforms {
         platform {
           architecture = 'amd64'
