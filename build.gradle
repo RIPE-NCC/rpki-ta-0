@@ -93,7 +93,7 @@ test {
 }
 jacoco {
     // Java 25 class files need jacoco >= 0.8.14, newer than Gradle's default
-    toolVersion = '0.8.15'
+    toolVersion = '0.8.16'
 }
 jacocoTestReport {
     dependsOn test
